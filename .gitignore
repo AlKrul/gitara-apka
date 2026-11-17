@@ -1,0 +1,23 @@
+# Katalogi budowania
+build/
+cmake-build-*/
+out/
+
+# Pliki tymczasowe i IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Artefakty kompilacji
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe

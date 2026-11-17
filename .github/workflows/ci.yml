@@ -1,0 +1,21 @@
+name: CI (Windows & Linux)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  test-core:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure CMake (Core + Tests)
+        run: cmake -B build -DGITARA_BUILD_JUCE_APP=OFF -DGITARA_BUILD_TESTS=ON
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Run Unit & DSP Tests
+        run: ctest --test-dir build --output-on-failure -C Release

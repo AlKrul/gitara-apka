@@ -1,0 +1,10 @@
+image: gcc:13
+
+stages:
+  - test
+
+unit_and_dsp_tests:
+  stage: test
+  script:
+    - make all
+    - make test
