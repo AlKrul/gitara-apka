@@ -45,16 +45,14 @@ bool Chord::containsPitchClass(int pitchClass) const noexcept {
 const std::vector<ChordDefinition>& allChordDefinitions() {
     using namespace intervals;
     static const std::vector<ChordDefinition> defs = {
-        // Trójdźwięki i podstawowe
+        // Trójdźwięki (dokładnie 3 składniki) oraz dwudźwięk power chord
         {"major",  "maj",   "Durowy",              "Trójdźwięki", {P1, M3, P5}, {2}},
         {"minor",  "m",     "Molowy",              "Trójdźwięki", {P1, m3, P5}, {2}},
         {"dim",    "dim",   "Zmniejszony",         "Trójdźwięki", {P1, m3, d5}, {}},
         {"aug",    "aug",   "Zwiększony",          "Trójdźwięki", {P1, M3, A5}, {}},
         {"sus2",   "sus2",  "Zawieszony sus2",     "Trójdźwięki", {P1, M2, P5}, {}},
         {"sus4",   "sus4",  "Zawieszony sus4",     "Trójdźwięki", {P1, P4, P5}, {}},
-        {"5",      "5",     "Power chord (kwinta)","Trójdźwięki", {P1, P5},     {}},
-        {"6",      "6",     "Durowy sekstowy",     "Trójdźwięki", {P1, M3, P5, M6}, {2}},
-        {"m6",     "m6",    "Molowy sekstowy",     "Trójdźwięki", {P1, m3, P5, M6}, {2}},
+        {"5",      "5",     "Power chord (kwinta)","Dwudźwięki",  {P1, P5},     {}},
 
         // Septymowe
         {"7",      "7",     "Dominantowy septymowy", "Septymowe", {P1, M3, P5, m7}, {2}},
@@ -67,7 +65,9 @@ const std::vector<ChordDefinition>& allChordDefinitions() {
         {"aug7",   "aug7",  "Zwiększony septymowy",  "Septymowe", {P1, M3, A5, m7}, {}},
         {"augMaj7","maj7♯5","Zwiększony z wielką septymą","Septymowe",{P1, M3, A5, M7},{}},
 
-        // Rozszerzone (add, nonowe, undecymowe, tercdecymowe)
+        // Rozszerzone (sekstowe, add, nonowe, undecymowe, tercdecymowe)
+        {"6",      "6",     "Durowy sekstowy",       "Rozszerzone", {P1, M3, P5, M6}, {2}},
+        {"m6",     "m6",    "Molowy sekstowy",       "Rozszerzone", {P1, m3, P5, M6}, {2}},
         {"add9",   "add9",  "Durowy z dodaną noną",  "Rozszerzone", {P1, M3, P5, M9}, {2}},
         {"madd9",  "m(add9)","Molowy z dodaną noną", "Rozszerzone", {P1, m3, P5, M9}, {2}},
         {"9",      "9",     "Dominantowy nonowy",    "Rozszerzone", {P1, M3, P5, m7, M9}, {2}},
@@ -86,7 +86,7 @@ const std::vector<ChordDefinition>& allChordDefinitions() {
         {"7#9",    "7♯9",   "Dominantowy ♯9 (Hendrix)","Alterowane",{P1, M3, P5, m7, A9}, {2}},
         {"7#11",   "7♯11",  "Dominantowy ♯11",       "Alterowane", {P1, M3, P5, m7, A11}, {2}},
         {"7b13",   "7♭13",  "Dominantowy ♭13",       "Alterowane", {P1, M3, P5, m7, m13}, {2}},
-        {"7alt",   "7alt",  "Dominantowy alterowany","Alterowane", {P1, M3, d5, m7, m9, m13}, {}}
+        {"7alt",   "7alt",  "Dominantowy alterowany","Alterowane", {P1, M3, d5, m7, m9, m13}, {2, 4}}
     };
     return defs;
 }
@@ -98,6 +98,21 @@ const ChordDefinition* findChordDefinition(std::string_view id) noexcept {
         }
     }
     return nullptr;
+}
+
+bool chordMatchesGroup(const ChordDefinition& def, std::string_view group) noexcept {
+    if (group.empty() || group == "all") return true;
+    if (group == "basic") {
+        return def.id == "major" || def.id == "minor" || def.id == "7" ||
+               def.id == "maj7"  || def.id == "m7"    || def.id == "sus2" ||
+               def.id == "sus4"  || def.id == "5"     || def.id == "dim" ||
+               def.id == "add9";
+    }
+    if (group == "triad")    return def.category == "Trójdźwięki";
+    if (group == "seventh")  return def.category == "Septymowe";
+    if (group == "extended") return def.category == "Rozszerzone";
+    if (group == "altered")  return def.category == "Alterowane";
+    return true;
 }
 
 std::vector<ChordScaleMatch> findScalesForChord(const Chord& chord, AccidentalMode mode) {

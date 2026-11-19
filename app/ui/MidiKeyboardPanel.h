@@ -24,12 +24,6 @@ public:
         focusToggleButton_.setButtonText("🎹 Klawiatura QWERTY: WYŁ. (kliknij, aby przejąć focus)");
         focusToggleButton_.onClick = [this] { toggleKeyboardCapture(); };
         addAndMakeVisible(focusToggleButton_);
-
-        ghostingHintLabel_.setText(
-            "Uwaga (Key Ghosting): zwykłe klawiatury sprzętowo limitują wciśnięcie do ~3 klawiszy jednocześnie.",
-            juce::dontSendNotification);
-        ghostingHintLabel_.setJustificationType(juce::Justification::centredRight);
-        addAndMakeVisible(ghostingHintLabel_);
     }
 
     void toggleKeyboardCapture() {
@@ -74,7 +68,6 @@ public:
         auto area = getLocalBounds().reduced(6);
         auto topBar = area.removeFromTop(28);
         focusToggleButton_.setBounds(topBar.removeFromLeft(360));
-        ghostingHintLabel_.setBounds(topBar);
         area.removeFromTop(4);
         keyboardComponent_.setBounds(area);
     }

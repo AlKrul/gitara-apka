@@ -13,13 +13,18 @@ LIB_SRCS := \
     libs/theory/src/Scale.cpp \
     libs/theory/src/Chord.cpp \
     libs/theory/src/Fretboard.cpp \
+    libs/theory/src/Arpeggio.cpp \
     libs/score/src/Score.cpp \
     libs/dsp/src/SignalConditioner.cpp \
     libs/dsp/src/PitchDetector.cpp \
     libs/dsp/src/OnsetDetector.cpp \
     libs/dsp/src/ChordDetector.cpp \
     libs/dsp/src/KarplusStrongSynth.cpp \
-    libs/engine/src/PracticeEngine.cpp
+    libs/engine/src/PracticeEngine.cpp \
+    libs/engine/src/WorkshopGenerator.cpp \
+    libs/engine/src/EarTrainer.cpp \
+    libs/engine/src/ProgressionEngine.cpp \
+    libs/engine/src/SessionManager.cpp
 
 BUILD_DIR := build
 
@@ -33,7 +38,7 @@ $(BUILD_DIR):
 $(BUILD_DIR)/GitaraTests: $(LIB_SRCS) tests/test_main.cpp | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(LIB_SRCS) tests/test_main.cpp -o $(BUILD_DIR)/GitaraTests -lm
 
-$(BUILD_DIR)/GitaraApp: $(LIB_SRCS) app/Main.cpp | $(BUILD_DIR)
+$(BUILD_DIR)/GitaraApp: $(LIB_SRCS) app/Main.cpp app/ui/DesktopGuiHtml.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(LIB_SRCS) app/Main.cpp -o $(BUILD_DIR)/GitaraApp -lm
 
 test: $(BUILD_DIR)/GitaraTests

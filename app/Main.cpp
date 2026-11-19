@@ -1,5 +1,25 @@
 #include "app/MainWindow.h"
+#include "app/ui/DesktopGuiHtml.h"
+#include "gitara/engine/EarTrainer.h"
+#include "gitara/engine/ProgressionEngine.h"
+#include "gitara/engine/SessionManager.h"
+#include "gitara/engine/WorkshopGenerator.h"
+#include "gitara/score/Score.h"
+#include "gitara/theory/Arpeggio.h"
+#include "gitara/theory/Chord.h"
+#include "gitara/theory/Fretboard.h"
+#include "gitara/theory/Scale.h"
+
+#include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #if __has_include(<juce_gui_basics/juce_gui_basics.h>)
 
@@ -8,7 +28,7 @@ namespace gitara::app {
 class GitaraApplication final : public juce::JUCEApplication {
 public:
     const juce::String getApplicationName() override { return "Apka Gitarowa"; }
-    const juce::String getApplicationVersion() override { return "0.1.0"; }
+    const juce::String getApplicationVersion() override { return "0.3.0"; }
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const juce::String&) override {
@@ -51,9 +71,910 @@ START_JUCE_APPLICATION(gitara::app::GitaraApplication)
 
 #else
 
-int main() {
-    std::cout << "Apka Gitarowa (rdzen C++20: libs/theory, libs/score, libs/dsp, libs/engine).\n"
-              << "Aby zbudowac pelne okno GUI, skonfiguruj CMake z opcja -DGITARA_BUILD_JUCE_APP=ON.\n";
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+namespace {
+
+using namespace gitara::theory;
+using namespace gitara::engine;
+using namespace gitara::score;
+
+std::string jsonEscape(std::string_view s) {
+    std::string out;
+    out.reserve(s.size() + 8);
+    for (char c : s) {
+        if (c == '"') out += "\\\"";
+        else if (c == '\\') out += "\\\\";
+        else if (c == '\n') out += "\\n";
+        else if (c == '\r') continue;
+        else out.push_back(c);
+    }
+    return out;
+}
+
+std::string urlDecode(std::string_view in) {
+    std::string out;
+    for (std::size_t i = 0; i < in.size(); ++i) {
+        if (in[i] == '%' && i + 2 < in.size()) {
+            char hex[3] = {in[i + 1], in[i + 2], 0};
+            out.push_back(static_cast<char>(std::strtol(hex, nullptr, 16)));
+            i += 2;
+        } else if (in[i] == '+') {
+            out.push_back(' ');
+        } else {
+            out.push_back(in[i]);
+        }
+    }
+    return out;
+}
+
+std::string getQueryParam(std::string_view query, std::string_view key, std::string_view defVal = "") {
+    std::string pattern = std::string(key) + "=";
+    std::size_t pos = 0;
+    while (pos < query.size()) {
+        std::size_t amp = query.find('&', pos);
+        std::string_view pair = (amp == std::string_view::npos)
+            ? query.substr(pos)
+            : query.substr(pos, amp - pos);
+        if (pair.substr(0, pattern.size()) == pattern) {
+            return urlDecode(pair.substr(pattern.size()));
+        }
+        if (amp == std::string_view::npos) break;
+        pos = amp + 1;
+    }
+    return std::string(defVal);
+}
+
+int getQueryInt(std::string_view query, std::string_view key, int defVal) {
+    auto s = getQueryParam(query, key);
+    if (s.empty()) return defVal;
+    return std::atoi(s.c_str());
+}
+
+AccidentalMode toAccMode(int m) {
+    if (m == 1) return AccidentalMode::Flats;
+    if (m == 2) return AccidentalMode::Sharps;
+    return AccidentalMode::Auto;
+}
+
+Tuning resolveRequestedTuning(std::string_view query) {
+    std::string tuningId = getQueryParam(query, "tuning", "standard");
+    std::string customStr = getQueryParam(query, "customMidis", "");
+    Tuning t = findTuning(tuningId);
+    if (!customStr.empty()) {
+        std::vector<Pitch> customPitches;
+        std::size_t pos = 0;
+        while (pos < customStr.size()) {
+            std::size_t comma = customStr.find(',', pos);
+            std::string tok = (comma == std::string::npos)
+                ? customStr.substr(pos)
+                : customStr.substr(pos, comma - pos);
+            int midi = std::clamp(std::atoi(tok.c_str()), 24, 88);
+            customPitches.push_back(Pitch::fromMidiNumber(midi, AccidentalMode::Sharps));
+            if (comma == std::string::npos) break;
+            pos = comma + 1;
+        }
+        if (customPitches.size() == 6) {
+            t.id = "custom";
+            t.polishName = "Własny strój";
+            t.openStrings = std::move(customPitches);
+        }
+    }
+    return t;
+}
+
+std::string handleInitApi() {
+    std::ostringstream oss;
+    oss << "{";
+
+    oss << "\"scales\":[";
+    const auto& scales = allScaleDefinitions();
+    for (std::size_t i = 0; i < scales.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "{\"id\":\"" << jsonEscape(scales[i].id)
+            << "\",\"name\":\"" << jsonEscape(scales[i].polishName)
+            << "\",\"category\":\"" << jsonEscape(scales[i].category) << "\"}";
+    }
+    oss << "],";
+
+    oss << "\"chords\":[";
+    const auto& chords = allChordDefinitions();
+    for (std::size_t i = 0; i < chords.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "{\"id\":\"" << jsonEscape(chords[i].id)
+            << "\",\"name\":\"" << jsonEscape(chords[i].polishName)
+            << "\",\"category\":\"" << jsonEscape(chords[i].category) << "\"}";
+    }
+    oss << "],";
+
+    oss << "\"tunings\":[";
+    const auto& tunings = builtinTunings();
+    for (std::size_t i = 0; i < tunings.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "{\"id\":\"" << jsonEscape(tunings[i].id)
+            << "\",\"name\":\"" << jsonEscape(tunings[i].polishName)
+            << "\",\"midis\":[";
+        for (int s = 0; s < tunings[i].stringCount(); ++s) {
+            if (s > 0) oss << ",";
+            oss << tunings[i].openStrings[static_cast<std::size_t>(s)].midiNumber();
+        }
+        oss << "]}";
+    }
+    oss << "],";
+
+    oss << "\"intervals\":[";
+    const auto& ivs = earTrainingIntervals();
+    for (std::size_t i = 0; i < ivs.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "{\"semitones\":" << ivs[i].semitones
+            << ",\"symbol\":\"" << jsonEscape(ivs[i].symbol(true))
+            << "\",\"shortCode\":\"" << jsonEscape(ivs[i].shortCode())
+            << "\",\"name\":\"" << jsonEscape(ivs[i].polishName())
+            << "\",\"hint\":\"" << jsonEscape(ivs[i].songHintAscending()) << "\"}";
+    }
+    oss << "],";
+
+    oss << "\"progressions\":[";
+    const auto& progs = builtinProgressions();
+    for (std::size_t i = 0; i < progs.size(); ++i) {
+        if (i > 0) oss << ",";
+        const auto& p = progs[i];
+        oss << "{\"id\":\"" << jsonEscape(p.id)
+            << "\",\"title\":\"" << jsonEscape(p.title)
+            << "\",\"style\":\"" << jsonEscape(p.styleCategory)
+            << "\",\"keyRootPc\":" << p.keyRoot.pitchClass()
+            << ",\"isMinor\":" << (p.isMinorKey ? "true" : "false")
+            << ",\"swing\":" << static_cast<int>(p.swing)
+            << ",\"groove\":" << static_cast<int>(p.groove)
+            << ",\"cycleKeys\":" << (p.cycleThroughKeys ? "true" : "false")
+            << ",\"bpm\":" << p.tempoBpm << ",\"bars\":[";
+        if (!p.sections.empty()) {
+            const auto& measures = p.sections.front().measures;
+            for (std::size_t m = 0; m < measures.size(); ++m) {
+                if (m > 0) oss << ",";
+                const auto& slot = measures[m].chords.front();
+                auto ch = slot.resolveInKey(p.keyRoot, AccidentalMode::Sharps);
+                Pitch rootP{ch.root, 3};
+                oss << "{\"symbol\":\"" << jsonEscape(ch.symbol(false, AccidentalMode::Sharps))
+                    << "\",\"roman\":\"" << jsonEscape(slot.romanNumeral)
+                    << "\",\"offsetSemi\":" << slot.rootOffsetFromKey.semitones
+                    << ",\"chordId\":\"" << jsonEscape(slot.chordDefId) << "\""
+                    << ",\"freq\":" << rootP.frequencyHz() << "}";
+            }
+        }
+        oss << "]}";
+    }
+    oss << "],";
+
+    SessionManager sm;
+    oss << "\"sessions\":[";
+    const auto& sessions = sm.sessions();
+    for (std::size_t i = 0; i < sessions.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "{\"id\":\"" << jsonEscape(sessions[i].id)
+            << "\",\"name\":\"" << jsonEscape(sessions[i].name)
+            << "\",\"breakBars\":" << sessions[i].breakBars << "}";
+    }
+    oss << "]}";
+    return oss.str();
+}
+
+std::string handleFretboardApi(std::string_view query) {
+    int rootPc = getQueryInt(query, "rootPc", 0);
+    std::string scaleId = getQueryParam(query, "scaleId", "major");
+    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 2));
+    int posSysInt = getQueryInt(query, "posSystem", 0);
+    int posIdx = getQueryInt(query, "posIdx", 0);
+
+    Fretboard fb{resolveRequestedTuning(query), 24};
+    const auto* scaleDef = findScaleDefinition(scaleId);
+    if (!scaleDef) scaleDef = findScaleDefinition("major");
+    Scale scale{Note::fromPitchClass(rootPc, mode), scaleDef};
+
+    auto activePositions = fb.generateScalePositions(
+        scale, static_cast<PositionSystem>(posSysInt), posIdx);
+
+    auto isInPos = [&](int s, int f) {
+        return std::any_of(activePositions.begin(), activePositions.end(),
+                           [&](const FretPosition& p) { return p.stringIndex == s && p.fret == f; });
+    };
+
+    std::ostringstream oss;
+    oss << "{\"scaleFullName\":\"" << jsonEscape(scale.fullName(false)) << "\",\"scaleNotes\":[";
+    auto sNotes = scale.notes(mode);
+    for (std::size_t i = 0; i < sNotes.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "\"" << jsonEscape(sNotes[i].toString(false)) << "\"";
+    }
+    oss << "],\"scaleDegrees\":[";
+    auto diatonicTriads = generateDiatonicArpeggios(scale, false, mode);
+    auto scaleFuncName = [](int semitones) -> const char* {
+        switch (((semitones % 12) + 12) % 12) {
+            case 0:  return "Tonika (I)";
+            case 1:  return "Stopień frygijski (♭II)";
+            case 2:  return "Supertonika (II)";
+            case 3:  return "Medianta molowa (♭III)";
+            case 4:  return "Medianta durowa (III)";
+            case 5:  return "Subdominanta (IV)";
+            case 6:  return "Tryton / Kwarta lidyjska (♯IV/♭V)";
+            case 7:  return "Dominanta (V)";
+            case 8:  return "Submedianta molowa (♭VI)";
+            case 9:  return "Submedianta durowa (VI)";
+            case 10: return "Subtonika (♭VII)";
+            case 11: return "Dźwięk prowadzący (VII)";
+            default: return "Stopień skali";
+        }
+    };
+    for (std::size_t i = 0; i < sNotes.size(); ++i) {
+        if (i > 0) oss << ",";
+        Interval iv = (i < scaleDef->intervals.size()) ? scaleDef->intervals[i] : intervals::P1;
+        std::string triadSym;
+        std::string triadRoman;
+        if (i < diatonicTriads.size()) {
+            triadSym = diatonicTriads[i].chord.symbol(false, mode);
+            triadRoman = diatonicTriads[i].romanNumeral;
+        }
+        int degPc = ((scale.root.pitchClass() + iv.semitones) % 12 + 12) % 12;
+        oss << "{\"note\":\"" << jsonEscape(sNotes[i].toString(false)) << "\""
+            << ",\"pc\":" << degPc
+            << ",\"semitones\":" << iv.semitones
+            << ",\"deg\":" << (i + 1)
+            << ",\"interval\":\"" << jsonEscape(iv.symbol(true)) << "\""
+            << ",\"intervalName\":\"" << jsonEscape(iv.polishName()) << "\""
+            << ",\"functionName\":\"" << jsonEscape(scaleFuncName(iv.semitones)) << "\""
+            << ",\"triad\":\"" << jsonEscape(triadSym) << "\""
+            << ",\"roman\":\"" << jsonEscape(triadRoman) << "\"}";
+    }
+    oss << "],\"cells\":[";
+
+    bool first = true;
+    for (int s = 0; s < fb.stringCount(); ++s) {
+        for (int f = 0; f <= fb.fretCount(); ++f) {
+            if (!first) oss << ",";
+            first = false;
+            int midi = fb.midiAt(s, f);
+            auto pitch = fb.pitchAt(s, f, mode, &scale);
+            std::string ivStr;
+            if (auto iv = scale.intervalForPitchClass(midi % 12)) {
+                ivStr = iv->symbol(false);
+            }
+            bool isRoot = ((midi % 12) == scale.root.pitchClass());
+            oss << "{\"s\":" << s
+                << ",\"f\":" << f
+                << ",\"midi\":" << midi
+                << ",\"freq\":" << pitch.frequencyHz()
+                << ",\"note\":\"" << jsonEscape(pitch.note.toString(false)) << "\""
+                << ",\"interval\":\"" << jsonEscape(ivStr) << "\""
+                << ",\"isRoot\":" << (isRoot ? "true" : "false")
+                << ",\"inPosition\":" << (isInPos(s, f) ? "true" : "false") << "}";
+        }
+    }
+    oss << "]}";
+    return oss.str();
+}
+
+std::string handleVoicingsApi(std::string_view query) {
+    int rootPc = getQueryInt(query, "rootPc", 0);
+    std::string chordId = getQueryParam(query, "chordId", "major");
+    std::string group = getQueryParam(query, "group", "all");
+    std::string sharpnessStr = getQueryParam(query, "sharpness", "mild");
+    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 2));
+    bool allTypes = getQueryInt(query, "allTypes", 0) != 0;
+    bool filterByScale = getQueryInt(query, "filterByScale", 0) != 0;
+    int scaleRootPc = getQueryInt(query, "scaleRootPc", rootPc);
+    std::string scaleId = getQueryParam(query, "scaleId", "major");
+
+    VoicingSharpness sharpness = VoicingSharpness::Mild;
+    if (sharpnessStr == "sharp") sharpness = VoicingSharpness::Sharp;
+    else if (sharpnessStr == "all") sharpness = VoicingSharpness::All;
+    const int maxStrings = (group == "triad") ? 3 : 0;
+
+    Fretboard fb{resolveRequestedTuning(query), 24};
+
+    const auto* scaleDef = findScaleDefinition(scaleId);
+    if (!scaleDef) scaleDef = findScaleDefinition("major");
+    Scale filterScale{Note::fromPitchClass(scaleRootPc, mode), scaleDef};
+
+    auto chordFitsScale = [&](int rPc, const ChordDefinition* d) {
+        if (!filterByScale) return true;
+        Chord testCh{Note::fromPitchClass(rPc, mode), d, std::nullopt};
+        for (const auto& n : testCh.notes()) {
+            if (!filterScale.containsPitchClass(n.pitchClass())) return false;
+        }
+        return true;
+    };
+
+    std::vector<int> matchingRootPcs;
+    for (int pc = 0; pc < 12; ++pc) {
+        if (!filterByScale || filterScale.containsPitchClass(pc)) {
+            matchingRootPcs.push_back(pc);
+        }
+    }
+    if (filterByScale && !filterScale.containsPitchClass(rootPc) && !matchingRootPcs.empty()) {
+        rootPc = matchingRootPcs.front();
+    }
+
+    std::vector<const ChordDefinition*> matchingDefsForRoot;
+    for (const auto& d : allChordDefinitions()) {
+        if (chordFitsScale(rootPc, &d)) {
+            matchingDefsForRoot.push_back(&d);
+        }
+    }
+
+    std::vector<const ChordDefinition*> groupDefs;
+    for (const auto* d : matchingDefsForRoot) {
+        if (chordMatchesGroup(*d, group)) {
+            groupDefs.push_back(d);
+        }
+    }
+    if (groupDefs.empty()) {
+        groupDefs = matchingDefsForRoot;
+    }
+
+    Note root = Note::fromPitchClass(rootPc, mode);
+    std::vector<const ChordDefinition*> defs;
+    if (allTypes) {
+        defs = groupDefs;
+    } else {
+        const auto* d = findChordDefinition(chordId);
+        if (!d) d = findChordDefinition("major");
+        bool fitsGroup = std::find(groupDefs.begin(), groupDefs.end(), d) != groupDefs.end();
+        if (!fitsGroup && !groupDefs.empty()) {
+            d = groupDefs.front();
+            chordId = d->id;
+        } else if (filterByScale && !chordFitsScale(rootPc, d) && !matchingDefsForRoot.empty()) {
+            d = matchingDefsForRoot.front();
+            chordId = d->id;
+        }
+        defs.push_back(d);
+    }
+
+    std::ostringstream oss;
+    oss << "{\"resolvedRootPc\":" << rootPc
+        << ",\"resolvedChordId\":\"" << jsonEscape(chordId) << "\""
+        << ",\"matchingRootPcs\":[";
+    for (std::size_t i = 0; i < matchingRootPcs.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << matchingRootPcs[i];
+    }
+    oss << "],\"matchingChordIds\":[";
+    for (std::size_t i = 0; i < matchingDefsForRoot.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "\"" << jsonEscape(matchingDefsForRoot[i]->id) << "\"";
+    }
+    oss << "],\"voicings\":[";
+    bool first = true;
+    int count = 0;
+    const int globalCap = allTypes ? 84 : 28;
+
+    for (const auto* d : defs) {
+        Chord ch{root, d, std::nullopt};
+        auto list = fb.generateChordVoicings(ch, sharpness != VoicingSharpness::Mild, nullptr, sharpness, maxStrings);
+        std::size_t limit = (!allTypes || defs.size() == 1)
+            ? std::min<std::size_t>(28, list.size())
+            : std::min<std::size_t>(defs.size() <= 4 ? 6 : 4, list.size());
+        for (std::size_t i = 0; i < limit; ++i) {
+            if (!first) oss << ",";
+            first = false;
+            const auto& v = list[i];
+            std::string info = v.usesTapping
+                ? "T = tapping prawą ręką"
+                : (v.isSharpVoicing ? "Chwyt ostry (rozciągnięty)" : "Chwyt łagodny");
+            if (!v.openStringsNote.empty()) info += " · " + v.openStringsNote;
+
+            oss << "{\"symbol\":\"" << jsonEscape(ch.symbol(false, mode))
+                << "\",\"rootPc\":" << rootPc
+                << ",\"activeStrings\":" << v.activeStrings
+                << ",\"fretSpan\":" << v.fretSpan
+                << ",\"info\":\"" << jsonEscape(info)
+                << "\",\"usesTapping\":" << (v.usesTapping ? "true" : "false")
+                << ",\"isSharp\":" << (v.isSharpVoicing ? "true" : "false")
+                << ",\"openNote\":\"" << jsonEscape(v.openStringsNote) << "\""
+                << ",\"frets\":[";
+            for (int s = 0; s < fb.stringCount(); ++s) {
+                if (s > 0) oss << ",";
+                oss << v.frets[static_cast<std::size_t>(s)];
+            }
+            oss << "],\"tapped\":[";
+            for (int s = 0; s < fb.stringCount(); ++s) {
+                if (s > 0) oss << ",";
+                oss << (v.tapped[static_cast<std::size_t>(s)] ? "true" : "false");
+            }
+            oss << "],\"freqs\":[";
+            bool fFirst = true;
+            for (int s = 0; s < fb.stringCount(); ++s) {
+                int fr = v.frets[static_cast<std::size_t>(s)];
+                if (fr >= 0) {
+                    if (!fFirst) oss << ",";
+                    fFirst = false;
+                    oss << fb.pitchAt(s, fr, mode).frequencyHz();
+                }
+            }
+            oss << "]}";
+            if (++count >= globalCap) break;
+        }
+        if (count >= globalCap) break;
+    }
+
+    oss << "]}";
+    return oss.str();
+}
+
+std::string handleHarmonicsApi(std::string_view query) {
+    int stringIdx = getQueryInt(query, "stringIdx", -1);
+    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 2));
+
+    Fretboard fb{resolveRequestedTuning(query), 24};
+    std::optional<int> optStr = (stringIdx >= 0 && stringIdx < 6) ? std::optional<int>(stringIdx) : std::nullopt;
+    auto list = fb.computeNaturalHarmonics(optStr, 0.0, 12.0, 15, mode);
+
+    std::ostringstream oss;
+    oss << "{\"harmonics\":[";
+    for (std::size_t i = 0; i < list.size(); ++i) {
+        if (i > 0) oss << ",";
+        const auto& h = list[i];
+        const char* color = "#10b981";
+        if (h.difficulty == HarmonicDifficulty::Medium) color = "#eab308";
+        else if (h.difficulty == HarmonicDifficulty::Hard) color = "#f97316";
+        else if (h.difficulty == HarmonicDifficulty::VeryHard) color = "#ef4444";
+
+        int diffLevel = 0;
+        if (h.difficulty == HarmonicDifficulty::Medium) diffLevel = 1;
+        else if (h.difficulty == HarmonicDifficulty::Hard) diffLevel = 2;
+        else if (h.difficulty == HarmonicDifficulty::VeryHard) diffLevel = 3;
+
+        oss << "{\"pitch\":\"" << jsonEscape(h.soundingPitch.toString(false))
+            << "\",\"noteOnly\":\"" << jsonEscape(h.soundingPitch.note.toString(false))
+            << "\",\"location\":\"" << jsonEscape(h.polishLocation)
+            << "\",\"interval\":\"" << jsonEscape(h.intervalOverOpen.symbol(false))
+            << "\",\"stringIdx\":" << h.stringIndex
+            << ",\"stringNum\":" << (6 - h.stringIndex)
+            << ",\"stringName\":\"" << jsonEscape(fb.tuning().openStrings[static_cast<std::size_t>(h.stringIndex)].note.toString(false))
+            << "\",\"exactFret\":" << h.exactFret
+            << ",\"midi\":" << h.soundingPitch.midiNumber()
+            << ",\"freq\":" << h.soundingPitch.frequencyHz()
+            << ",\"diff\":" << diffLevel
+            << ",\"color\":\"" << color << "\"}";
+    }
+    oss << "]}";
+    return oss.str();
+}
+
+std::string handleSearchApi(std::string_view query) {
+    int rootPc = getQueryInt(query, "rootPc", 0);
+    std::string chordId = getQueryParam(query, "chordId", "major");
+    std::string scaleId = getQueryParam(query, "scaleId", "major");
+    std::string dir = getQueryParam(query, "dir", "chord_to_scale");
+    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 2));
+
+    if (dir == "scale_to_chord") {
+        const auto* sDef = findScaleDefinition(scaleId);
+        if (!sDef) sDef = findScaleDefinition("major");
+        Scale sc{Note::fromPitchClass(rootPc, mode), sDef};
+        auto chords = findChordsForScale(sc, true, mode);
+
+        std::ostringstream oss;
+        oss << "{\"scaleFullName\":\"" << jsonEscape(sc.fullName(true)) << "\",\"chords\":[";
+        for (std::size_t i = 0; i < chords.size(); ++i) {
+            if (i > 0) oss << ",";
+            const auto& c = chords[i];
+            std::string notesStr;
+            auto cNotes = c.notes(mode);
+            std::ostringstream pcs;
+            for (std::size_t n = 0; n < cNotes.size(); ++n) {
+                if (n > 0) {
+                    notesStr += " ";
+                    pcs << ",";
+                }
+                notesStr += cNotes[n].toString(true);
+                pcs << cNotes[n].pitchClass();
+            }
+            oss << "{\"symbol\":\"" << jsonEscape(c.symbol(true, mode))
+                << "\",\"name\":\"" << jsonEscape(c.definition->polishName)
+                << "\",\"notes\":\"" << jsonEscape(notesStr)
+                << "\",\"chordPcs\":[" << pcs.str() << "]}";
+        }
+        oss << "]}";
+        return oss.str();
+    }
+
+    const auto* def = findChordDefinition(chordId);
+    if (!def) def = findChordDefinition("major");
+    Chord ch{Note::fromPitchClass(rootPc, mode), def, std::nullopt};
+    auto matches = findScalesForChord(ch, mode);
+
+    std::ostringstream oss;
+    oss << "{\"chordSymbol\":\"" << jsonEscape(ch.symbol(false, mode)) << "\",\"chordPcs\":[";
+    auto baseChordNotes = ch.notes(mode);
+    for (std::size_t i = 0; i < baseChordNotes.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << baseChordNotes[i].pitchClass();
+    }
+    oss << "],\"matches\":[";
+    for (std::size_t i = 0; i < matches.size(); ++i) {
+        if (i > 0) oss << ",";
+        const auto& m = matches[i];
+        std::string tens;
+        for (std::size_t t = 0; t < m.tensions.size(); ++t) {
+            if (t > 0) tens += " ";
+            tens += m.tensions[t].toString(false);
+        }
+        std::string av;
+        for (std::size_t a = 0; a < m.avoidNotes.size(); ++a) {
+            if (a > 0) av += " ";
+            av += m.avoidNotes[a].toString(false);
+        }
+        oss << "{\"scaleId\":\"" << jsonEscape(m.scale.definition->id)
+            << "\",\"scaleName\":\"" << jsonEscape(m.scale.fullName(false))
+            << "\",\"tensions\":\"" << jsonEscape(tens)
+            << "\",\"avoid\":\"" << jsonEscape(av)
+            << "\",\"chordPcs\":[";
+        for (std::size_t c = 0; c < m.chordTones.size(); ++c) {
+            if (c > 0) oss << ",";
+            oss << m.chordTones[c].pitchClass();
+        }
+        oss << "],\"tensionPcs\":[";
+        for (std::size_t t = 0; t < m.tensions.size(); ++t) {
+            if (t > 0) oss << ",";
+            oss << m.tensions[t].pitchClass();
+        }
+        oss << "],\"avoidPcs\":[";
+        for (std::size_t a = 0; a < m.avoidNotes.size(); ++a) {
+            if (a > 0) oss << ",";
+            oss << m.avoidNotes[a].pitchClass();
+        }
+        oss << "]}";
+    }
+    oss << "]}";
+    return oss.str();
+}
+
+std::string handleArpeggioApi(std::string_view query) {
+    int rootPc = getQueryInt(query, "rootPc", 0);
+    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 0));
+    Scale sc{Note::fromPitchClass(rootPc, mode), findScaleDefinition("major")};
+    auto diatonic = generateDiatonicArpeggios(sc, true, mode);
+
+    std::ostringstream oss;
+    oss << "{\"diatonic\":[";
+    for (std::size_t i = 0; i < diatonic.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "{\"roman\":\"" << jsonEscape(diatonic[i].romanNumeral)
+            << "\",\"symbol\":\"" << jsonEscape(diatonic[i].chord.symbol(true, mode))
+            << "\",\"chordId\":\"" << jsonEscape(diatonic[i].chord.definition->id) << "\"}";
+    }
+    oss << "]}";
+    return oss.str();
+}
+
+Song buildSongFromJsonEvents(std::string_view eventsJson, int bpm) {
+    Song song{};
+    song.title = "Twoje Cwiczenie";
+    song.tempoBpm = std::max(40, bpm);
+
+    Track track{};
+    track.name = "Gitara";
+    track.tuning = findTuning("standard");
+    Fretboard fb{track.tuning, 24};
+
+    Measure currentM{};
+    currentM.numerator = 4;
+    currentM.denominator = 4;
+    double measureQuarters = 0.0;
+
+    auto pushBeat = [&](Beat b) {
+        double qLen = b.quarterNoteLength();
+        if (measureQuarters + qLen > 4.0 + 1e-4 && !currentM.beats.empty()) {
+            track.measures.push_back(std::move(currentM));
+            currentM = Measure{};
+            measureQuarters = 0.0;
+        }
+        measureQuarters += qLen;
+        currentM.beats.push_back(std::move(b));
+    };
+
+    std::size_t pos = 0;
+    while ((pos = eventsJson.find('{', pos)) != std::string_view::npos) {
+        std::size_t endObj = eventsJson.find('}', pos);
+        if (endObj == std::string_view::npos) break;
+        std::string_view obj = eventsJson.substr(pos, endObj - pos + 1);
+        pos = endObj + 1;
+
+        auto extractInt = [&](std::string_view key, int defVal) -> int {
+            std::size_t kPos = obj.find(key);
+            if (kPos == std::string_view::npos) return defVal;
+            return std::atoi(obj.substr(kPos + key.size()).data());
+        };
+
+        int isRest = extractInt("\"rest\":", 0);
+        int durCode = extractInt("\"dur\":", 0); // -2=Whole, -1=Half, 0=Quarter, 1=Eighth, 2=Sixteenth
+        int tuplet = extractInt("\"tuplet\":", 0);
+        int s = extractInt("\"s\":", -1);
+        int f = extractInt("\"f\":", -1);
+        int midi = extractInt("\"midi\":", -1);
+
+        Beat b{};
+        b.duration = static_cast<DurationValue>(std::clamp(durCode, -2, 3));
+        if (tuplet == 3) {
+            b.tupletNumerator = 3;
+            b.tupletDenominator = 2;
+        }
+
+        if (isRest != 0) {
+            b.isRest = true;
+            pushBeat(std::move(b));
+            continue;
+        }
+
+        if (s >= 0 && f >= 0) {
+            b.isRest = false;
+            b.notes.push_back(TabNote{s, f, 95});
+            pushBeat(std::move(b));
+        } else if (midi > 0) {
+            if (auto best = fb.selectBestPosition(midi)) {
+                b.isRest = false;
+                b.notes.push_back(TabNote{best->stringIndex, best->fret, 95});
+                pushBeat(std::move(b));
+            }
+        }
+    }
+
+    if (!currentM.beats.empty() || track.measures.empty()) {
+        track.measures.push_back(std::move(currentM));
+    }
+    song.tracks.push_back(std::move(track));
+    return song;
+}
+
+std::string handleTabPreviewApi(std::string_view query) {
+    std::string evs = getQueryParam(query, "events", "[]");
+    int bpm = getQueryInt(query, "bpm", 120);
+    Song song = buildSongFromJsonEvents(evs, bpm);
+    std::string tab = exportToAsciiTab(song);
+    Scale key = detectKeyFromSong(song);
+    std::ostringstream oss;
+    oss << "{\"asciiTab\":\"" << jsonEscape(tab)
+        << "\",\"detectedKey\":\"" << jsonEscape(key.fullName(true)) << "\"}";
+    return oss.str();
+}
+
+std::string handleWorkshopEventsApi(std::string_view query) {
+    int rootPc = getQueryInt(query, "rootPc", 0);
+    std::string scaleId = getQueryParam(query, "scaleId", "major");
+    int posSystem = getQueryInt(query, "posSystem", 1);
+    int startStr = getQueryInt(query, "startString", -1);
+    int dir = getQueryInt(query, "direction", 0);
+    int octaves = getQueryInt(query, "octaves", 2);
+    int pattern = getQueryInt(query, "pattern", 0);
+    if (query.find("group=") != std::string_view::npos) {
+        int group = getQueryInt(query, "group", 3);
+        pattern = (group == 4) ? 4 : 3;
+    }
+
+    Fretboard fb{resolveRequestedTuning(query), 24};
+    WorkshopExerciseConfig cfg{};
+    cfg.scale = Scale{Note::fromPitchClass(rootPc, AccidentalMode::Sharps), findScaleDefinition(scaleId)};
+    cfg.positionSystem = static_cast<PositionSystem>(std::clamp(posSystem, 0, 3));
+    cfg.startStringIndex = startStr;
+    cfg.direction = static_cast<ExerciseDirection>(std::clamp(dir, 0, 3));
+    cfg.octaves = (octaves == 1) ? 1 : 2;
+    cfg.pattern = static_cast<ExercisePattern>(std::clamp(pattern, 0, 9));
+
+    auto gen = generateScaleExercise(fb, cfg);
+
+    std::ostringstream oss;
+    oss << "{\"title\":\"" << jsonEscape(gen.song.title) << "\",\"events\":[";
+    std::size_t limit = std::min<std::size_t>(64, gen.steps.size());
+    for (std::size_t i = 0; i < limit; ++i) {
+        if (i > 0) oss << ",";
+        const auto& st = gen.steps[i];
+        auto p = fb.pitchAt(st.targetPosition.stringIndex, st.targetPosition.fret, AccidentalMode::Sharps);
+        oss << "{\"s\":" << st.targetPosition.stringIndex
+            << ",\"f\":" << st.targetPosition.fret
+            << ",\"midi\":" << st.expectedMidiNote
+            << ",\"note\":\"" << jsonEscape(p.note.toString(false)) << "\""
+            << ",\"freq\":" << p.frequencyHz() << "}";
+    }
+    oss << "]}";
+    return oss.str();
+}
+
+void openDesktopAppWindow(int port) {
+    std::string url = "http://127.0.0.1:" + std::to_string(port);
+    // W środowisku Windows + WSL2 otwieramy natywne okno aplikacyjne bez paska adresu (--app=...)
+    std::string cmd =
+        "( \"/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe\" --app=" + url +
+        " >/dev/null 2>&1 || cmd.exe /c start " + url +
+        " >/dev/null 2>&1 || xdg-open " + url + " >/dev/null 2>&1 ) &";
+    int rc = std::system(cmd.c_str());
+    (void)rc;
+}
+
+} // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        if (std::string_view(argv[i]) == "--headless-check") {
+            auto initJson = handleInitApi();
+            auto fbJson = handleFretboardApi("rootPc=0&scaleId=major");
+            return (!initJson.empty() && !fbJson.empty()) ? 0 : 1;
+        }
+    }
+
+    int serverFd = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (serverFd < 0) {
+        std::cerr << "Blad utworzenia gniazda GUI.\n";
+        return 1;
+    }
+
+    int opt = 1;
+    ::setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    int port = 8765;
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    bool bound = false;
+    for (int p = 8765; p < 8785; ++p) {
+        addr.sin_port = htons(static_cast<std::uint16_t>(p));
+        if (::bind(serverFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
+            port = p;
+            bound = true;
+            break;
+        }
+    }
+    if (!bound || ::listen(serverFd, 16) < 0) {
+        std::cerr << "Nie udalo sie uruchomic lokalnego serwera GUI.\n";
+        ::close(serverFd);
+        return 1;
+    }
+
+    std::cout << "====================================================================\n";
+    std::cout << " 🎸 Apka Gitarowa (GUI) uruchomiona!\n";
+    std::cout << " -> Okno graficzne otwiera sie automatycznie: http://127.0.0.1:" << port << "\n";
+    std::cout << " -> Nacisnij Ctrl+C, aby zamknac aplikacje.\n";
+    std::cout << "====================================================================\n";
+
+    openDesktopAppWindow(port);
+
+    while (true) {
+        sockaddr_in clientAddr{};
+        socklen_t clientLen = sizeof(clientAddr);
+        int clientFd = ::accept(serverFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
+        if (clientFd < 0) continue;
+
+        char reqBuf[8192]{};
+        ssize_t nRead = ::read(clientFd, reqBuf, sizeof(reqBuf) - 1);
+        if (nRead <= 0) {
+            ::close(clientFd);
+            continue;
+        }
+
+        std::string_view req(reqBuf, static_cast<std::size_t>(nRead));
+        std::size_t firstSpace = req.find(' ');
+        std::size_t secondSpace = (firstSpace != std::string_view::npos)
+            ? req.find(' ', firstSpace + 1)
+            : std::string_view::npos;
+
+        std::string_view fullTarget = (firstSpace != std::string_view::npos && secondSpace != std::string_view::npos)
+            ? req.substr(firstSpace + 1, secondSpace - firstSpace - 1)
+            : "/";
+
+        std::size_t qPos = fullTarget.find('?');
+        std::string_view path = (qPos == std::string_view::npos) ? fullTarget : fullTarget.substr(0, qPos);
+        std::string_view query = (qPos == std::string_view::npos) ? "" : fullTarget.substr(qPos + 1);
+
+        auto sendResponse = [&](std::string_view status,
+                                std::string_view contentType,
+                                const void* data,
+                                std::size_t size,
+                                std::string_view extraHeaders = "") {
+            std::ostringstream hdr;
+            hdr << "HTTP/1.1 " << status << "\r\n"
+                << "Content-Type: " << contentType << "\r\n"
+                << "Content-Length: " << size << "\r\n"
+                << "Cache-Control: no-store\r\n"
+                << extraHeaders
+                << "Connection: close\r\n\r\n";
+            std::string hStr = hdr.str();
+            auto w1 = ::write(clientFd, hStr.data(), hStr.size());
+            auto w2 = ::write(clientFd, data, size);
+            (void)w1;
+            (void)w2;
+        };
+
+        if (path == "/" || path == "/index.html") {
+            std::string liveHtml;
+            std::ifstream ifs("app/ui/DesktopGuiHtml.h", std::ios::binary);
+            if (ifs) {
+                std::string fileContent((std::istreambuf_iterator<char>(ifs)),
+                                        std::istreambuf_iterator<char>());
+                const std::string startTag = "R\"HTML(";
+                const std::string endTag = ")HTML\"";
+                auto p1 = fileContent.find(startTag);
+                auto p2 = fileContent.rfind(endTag);
+                if (p1 != std::string::npos && p2 != std::string::npos && p2 > p1 + startTag.size()) {
+                    liveHtml = fileContent.substr(p1 + startTag.size(), p2 - (p1 + startTag.size()));
+                }
+            }
+            if (!liveHtml.empty()) {
+                sendResponse("200 OK", "text/html; charset=utf-8", liveHtml.data(), liveHtml.size());
+            } else {
+                const char* html = gitara::app::ui::kDesktopGuiHtml;
+                sendResponse("200 OK", "text/html; charset=utf-8", html, std::strlen(html));
+            }
+        } else if (path == "/api/init") {
+            std::string body = handleInitApi();
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/settings") {
+            std::ifstream sfs(".apka_gitara_settings.json", std::ios::binary);
+            std::string body = "{}";
+            if (sfs) {
+                body.assign((std::istreambuf_iterator<char>(sfs)),
+                            std::istreambuf_iterator<char>());
+                if (body.empty()) body = "{}";
+            }
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/save_settings") {
+            std::string jsonPayload = getQueryParam(query, "data", "{}");
+            if (!jsonPayload.empty() && jsonPayload.front() == '{') {
+                std::ofstream ofs(".apka_gitara_settings.json", std::ios::binary | std::ios::trunc);
+                if (ofs) ofs.write(jsonPayload.data(), static_cast<std::streamsize>(jsonPayload.size()));
+            }
+            const char* ok = "{\"ok\":true}";
+            sendResponse("200 OK", "application/json; charset=utf-8", ok, std::strlen(ok));
+        } else if (path == "/api/fretboard") {
+            std::string body = handleFretboardApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/voicings") {
+            std::string body = handleVoicingsApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/harmonics") {
+            std::string body = handleHarmonicsApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/search") {
+            std::string body = handleSearchApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/arpeggio") {
+            std::string body = handleArpeggioApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/tab_preview") {
+            std::string body = handleTabPreviewApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/workshop_events") {
+            std::string body = handleWorkshopEventsApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/export/gp5") {
+            Song song = buildSongFromJsonEvents(getQueryParam(query, "events", "[]"),
+                                                getQueryInt(query, "bpm", 120));
+            auto bytes = exportToGp5Bytes(song);
+            sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
+                         "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.gp5\"\r\n");
+        } else if (path == "/api/export/mid") {
+            Song song = buildSongFromJsonEvents(getQueryParam(query, "events", "[]"),
+                                                getQueryInt(query, "bpm", 120));
+            auto bytes = exportToMidiBytes(song);
+            sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
+                         "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.mid\"\r\n");
+        } else if (path == "/api/export/progression_gp5") {
+            auto prog = findBuiltinProgression(getQueryParam(query, "id", "blues_12"));
+            Song song = generateBackingTrackSong(prog.value_or(builtinProgressions().front()));
+            auto bytes = exportToGp5Bytes(song);
+            sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
+                         "Content-Disposition: attachment; filename=\"blues_12_tuxguitar.gp5\"\r\n");
+        } else {
+            const char* notFound = "{}";
+            sendResponse("404 Not Found", "application/json", notFound, 2);
+        }
+
+        ::close(clientFd);
+    }
+
+    ::close(serverFd);
     return 0;
 }
 

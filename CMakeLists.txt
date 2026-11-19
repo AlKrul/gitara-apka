@@ -18,6 +18,7 @@ add_library(gitara_theory STATIC
     libs/theory/src/Scale.cpp
     libs/theory/src/Chord.cpp
     libs/theory/src/Fretboard.cpp
+    libs/theory/src/Arpeggio.cpp
 )
 target_include_directories(gitara_theory PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/theory/include
@@ -55,6 +56,10 @@ target_link_libraries(gitara_dsp PUBLIC gitara_theory)
 # ------------------------------------------------------------------------------
 add_library(gitara_engine STATIC
     libs/engine/src/PracticeEngine.cpp
+    libs/engine/src/WorkshopGenerator.cpp
+    libs/engine/src/EarTrainer.cpp
+    libs/engine/src/ProgressionEngine.cpp
+    libs/engine/src/SessionManager.cpp
 )
 target_include_directories(gitara_engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/engine/include

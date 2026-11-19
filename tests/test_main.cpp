@@ -3,8 +3,13 @@
 #include "gitara/dsp/OnsetDetector.h"
 #include "gitara/dsp/PitchDetector.h"
 #include "gitara/dsp/SignalConditioner.h"
+#include "gitara/engine/EarTrainer.h"
 #include "gitara/engine/PracticeEngine.h"
+#include "gitara/engine/ProgressionEngine.h"
+#include "gitara/engine/SessionManager.h"
+#include "gitara/engine/WorkshopGenerator.h"
 #include "gitara/score/Score.h"
+#include "gitara/theory/Arpeggio.h"
 #include "gitara/theory/Chord.h"
 #include "gitara/theory/Fretboard.h"
 #include "gitara/theory/Interval.h"
@@ -190,6 +195,69 @@ void testFretboardMaskVoicingsAndHarmonics() {
     CHECK(hasTapped);
     CHECK(hasOpenString);
 
+    // Weryfikacja ostrości (Łagodne vs Ostre), ścisłych 3-strunowych trójdźwięków oraz kompletu 35 akordów
+    int triadDefs = 0, seventhDefs = 0, extDefs = 0, altDefs = 0, basicDefs = 0;
+    for (const auto& def : allChordDefinitions()) {
+        if (chordMatchesGroup(def, "basic")) ++basicDefs;
+        if (chordMatchesGroup(def, "triad")) {
+            ++triadDefs;
+            CHECK(def.intervals.size() == 3);
+        }
+        if (chordMatchesGroup(def, "seventh")) ++seventhDefs;
+        if (chordMatchesGroup(def, "extended")) ++extDefs;
+        if (chordMatchesGroup(def, "altered")) ++altDefs;
+
+        Chord ch{Note{Letter::C, Accidental::Natural}, &def};
+        auto mildList = fb.generateChordVoicings(ch, false, nullptr, VoicingSharpness::Mild, 0);
+        auto sharpList = fb.generateChordVoicings(ch, true, nullptr, VoicingSharpness::Sharp, 0);
+        CHECK(!mildList.empty());
+        CHECK(!sharpList.empty());
+        for (const auto& mv : mildList) {
+            CHECK(!mv.usesTapping);
+        }
+        bool anySharpFlag = false;
+        for (const auto& sv : sharpList) {
+            CHECK(sv.isSharpVoicing);
+            if (sv.usesTapping || sv.fretSpan >= 4) anySharpFlag = true;
+        }
+        CHECK(anySharpFlag);
+
+        if (chordMatchesGroup(def, "triad")) {
+            auto triadMild = fb.generateChordVoicings(ch, false, nullptr, VoicingSharpness::Mild, 3);
+            auto triadSharp = fb.generateChordVoicings(ch, true, nullptr, VoicingSharpness::Sharp, 3);
+            CHECK(!triadMild.empty());
+            CHECK(!triadSharp.empty());
+            for (const auto& tv : triadMild) {
+                CHECK(tv.activeStrings == 3);
+                CHECK(!tv.usesTapping);
+            }
+            for (const auto& tv : triadSharp) {
+                CHECK(tv.activeStrings == 3);
+                CHECK(tv.isSharpVoicing);
+            }
+        }
+    }
+    CHECK(basicDefs == 10);
+    CHECK(triadDefs == 6);
+    CHECK(seventhDefs == 9);
+    CHECK(extDefs == 13);
+    CHECK(altDefs == 6);
+
+    // Weryfikacja, że akord C7 w Łagodnych i Ostrych ma zawsze dźwięki charakterystyczne (C, E, Bb)
+    Chord c7Chord{Note{Letter::C, Accidental::Natural}, findChordDefinition("7")};
+    for (const auto& v : fb.generateChordVoicings(c7Chord, true, nullptr, VoicingSharpness::Mild, 0)) {
+        bool hasC = false, hasE = false, hasBb = false;
+        for (int s = 0; s < fb.stringCount(); ++s) {
+            if (v.frets[static_cast<std::size_t>(s)] >= 0) {
+                int pc = fb.midiAt(s, v.frets[static_cast<std::size_t>(s)]) % 12;
+                if (pc == 0) hasC = true;
+                if (pc == 4) hasE = true;
+                if (pc == 10) hasBb = true;
+            }
+        }
+        CHECK(hasC && hasE && hasBb);
+    }
+
     // Flażolety naturalne na 6. strunie (E2): węzły nad progami 12 (E3), 7 (B3), 5 (E4) i tuż pod 4 (G#4)
     auto harmonics = fb.computeNaturalHarmonics(0, 0.0, 12.0, 6);
     CHECK(!harmonics.empty());
@@ -356,6 +424,79 @@ void testExerciseVerifierAndMetronome() {
     CHECK(maxAbs > 0.1f);
 }
 
+void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
+    using namespace gitara::theory;
+    using namespace gitara::engine;
+    using namespace gitara::score;
+
+    Fretboard fb{findTuning("standard"), 24};
+    Chord cMaj7{Note{Letter::C, Accidental::Natural}, findChordDefinition("maj7")};
+
+    // 1. Zakładka Arpeggio (FullNeck, CAGED, 2NPS, Sweep + diatoniczne arpeggio w tonacji)
+    auto fullArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::FullNeck);
+    auto cagedArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::CAGED, 0);
+    auto sweepArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::Sweep, 0);
+    CHECK(fullArp.size() > cagedArp.size());
+    CHECK(!cagedArp.empty());
+    CHECK(!sweepArp.empty());
+
+    Scale cMajScale{Note{Letter::C, Accidental::Natural}, findScaleDefinition("major")};
+    auto diatonicArps = generateDiatonicArpeggios(cMajScale, true);
+    CHECK(diatonicArps.size() == 7);
+    CHECK(diatonicArps[0].romanNumeral == "Imaj7");
+    CHECK(diatonicArps[1].romanNumeral == "iim7");
+    CHECK(diatonicArps[4].romanNumeral == "V7");
+    CHECK(diatonicArps[6].romanNumeral == "viim7♭5");
+    CHECK(diatonicArps[6].chord.symbol(false) == "Bm7♭5");
+
+    // 2. Warsztat: generowanie ćwiczeń sekwencyjnych (Grupy po 3, Grupy po 4, Skoki tercjowe)
+    WorkshopExerciseConfig exCfg{};
+    exCfg.scale = cMajScale;
+    exCfg.positionSystem = PositionSystem::TNPS;
+    exCfg.pattern = ExercisePattern::GroupsOf4;
+    auto genEx = generateScaleExercise(fb, exCfg);
+    CHECK(genEx.steps.size() == (18 - 3) * 4); // 15 grup czwórkowych z 18 dźwięków 3NPS = 60 kroków
+    CHECK(!genEx.song.tracks.empty());
+
+    // 3. Kształcenie Słuchu: pytania, odpowiedź przyciskiem, odpowiedź na gitarze i „Zaskocz mnie”
+    EarTrainer ear;
+    ear.setupSurpriseMeSession(5);
+    CHECK(ear.config().activeIntervals.size() == 5);
+    auto q1 = ear.nextQuestion();
+    CHECK(!q1.songHint.empty());
+    CHECK(ear.submitIntervalAnswer(q1.interval.semitones, 420.0));
+    auto q2 = ear.nextQuestion();
+    CHECK(ear.submitPlayedGuitarMidi(q2.secondPitch.midiNumber(), 510.0));
+    CHECK(ear.completedRounds() == 2);
+    CHECK(std::abs(ear.sessionAccuracyPercent() - 100.0) < 1e-6);
+
+    // 4. Zmiany / Biblioteka: 9 standardów, transpozycja, 12 tonacji, reharmonizacja, podkład (Gitara + Bas)
+    CHECK(builtinProgressions().size() == 9);
+    auto blues = findBuiltinProgression("blues_12");
+    CHECK(blues.has_value());
+    CHECK(blues->sections.front().measures.size() == 12);
+
+    auto reharmBlues = reharmonizeProgression(*blues);
+    CHECK(reharmBlues.sections.front().measures[8].chords[0].romanNumeral == "♭II7");
+
+    auto iiVi = findBuiltinProgression("ii_v_i_major");
+    CHECK(iiVi.has_value());
+    auto all12 = expandThroughAll12Keys(*iiVi);
+    CHECK(all12.sections.size() == 12);
+
+    auto backingSong = generateBackingTrackSong(*blues);
+    CHECK(backingSong.tracks.size() == 2); // Gitara rytmiczna + Bas elektryczny (Walking Bass)
+    CHECK(backingSong.tracks[0].measures.size() == 12);
+    CHECK(backingSong.tracks[1].measures.size() == 12);
+
+    // 5. Warsztat -> Sesje i Dashboard („Pierwszy tydzień”)
+    SessionManager sessionMgr;
+    CHECK(!sessionMgr.sessions().empty());
+    sessionMgr.recordCompletedSession(20, 94.5);
+    CHECK(sessionMgr.dashboardStats().todayMinutesPracticed == 20);
+    CHECK(sessionMgr.dashboardStats().firstWeekPlanDayCompleted == 1);
+}
+
 } // namespace
 
 int main() {
@@ -364,6 +505,7 @@ int main() {
     testDspPitchChordAndSynth();
     testScoreTabRecorderAndTuxGuitarExport();
     testExerciseVerifierAndMetronome();
+    testArpeggioWorkshopEarTrainerProgressionsAndSessions();
 
     std::cout << "========================================\n"
               << "Wynik testow: " << g_passed << " zaliczonych, "

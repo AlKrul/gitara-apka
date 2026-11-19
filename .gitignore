@@ -21,3 +21,4 @@ Thumbs.db
 *.dll
 *.dylib
 *.exe
+.apka_gitara_settings.json

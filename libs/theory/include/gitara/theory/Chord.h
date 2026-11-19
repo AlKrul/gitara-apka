@@ -51,6 +51,10 @@ struct ChordScaleMatch {
 /// Wyszukuje definicję akordu po identyfikatorze (np. "major", "minor", "maj7", "7", "m7", "m7b5", "dim7").
 [[nodiscard]] const ChordDefinition* findChordDefinition(std::string_view id) noexcept;
 
+/// Sprawdza, czy definicja akordu należy do wybranej grupy filtra w UI
+/// ("basic" | "triad" | "seventh" | "extended" | "altered" | "all").
+[[nodiscard]] bool chordMatchesGroup(const ChordDefinition& def, std::string_view group) noexcept;
+
 /// Zakładka „Szukaj (Akord -> skale)”: znajduje wszystkie skale zawierające dźwięki akordu
 /// oraz wylicza ich napięcia (z poprawną pisownią A–G!) i dźwięki unikane.
 [[nodiscard]] std::vector<ChordScaleMatch> findScalesForChord(

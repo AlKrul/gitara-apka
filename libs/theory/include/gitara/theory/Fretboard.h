@@ -58,6 +58,13 @@ enum class PositionSystem : std::uint8_t {
     CAGED = 3  ///< 5 pozycji systemu CAGED (kształty C, A, G, E, D)
 };
 
+/// Tryb ostrości chwytów w zakładce „Akord: Odkrywanie”.
+enum class VoicingSharpness : std::uint8_t {
+    All   = 0, ///< Zarówno chwyty łagodne, jak i ostre
+    Mild  = 1, ///< „Łagodne”: zwarte chwyty jednej ręki bez dużych rozciągnięć i bez tapingu
+    Sharp = 2  ///< „Ostre”: szerokie rozciągnięcia dłoni (>= 4 progi) lub tapping prawą ręką (T)
+};
+
 /// Pojedynczy chwyt (voicing) akordu w zakładce „Akord: Odkrywanie”.
 struct ChordVoicing {
     /// Dla każdej struny: numer progu (0..24) lub -1 jeśli struna tłumiona / niegrana.
@@ -68,6 +75,12 @@ struct ChordVoicing {
     std::string openStringsNote;
     /// Czy chwyt wykorzystuje tapping prawą ręką.
     bool usesTapping{false};
+    /// Rozpiętość przyciśniętych progów (maxFret - minFret).
+    int fretSpan{0};
+    /// Liczba aktywnych (brzmiących) strun.
+    int activeStrings{0};
+    /// Czy chwyt należy do kategorii „Ostre” (tapping lub szerokie rozciągnięcie >= 4 progi).
+    bool isSharpVoicing{false};
 };
 
 /// Poziom trudności wydobycia flażoletu naturalnego (zakładka „Flażolety”).
@@ -129,11 +142,13 @@ public:
         int positionIndex = 0,
         const FretboardMask* mask = nullptr) const;
 
-    /// Generuje grywalne chwyty (voicingi) akordu na gryfie (w tym z pustymi strunami i opcjonalnym tappingiem T).
+    /// Generuje grywalne chwyty (voicingi) akordu na gryfie (w tym z pustymi strunami, szerokimi chwytami i tappingiem T).
     [[nodiscard]] std::vector<ChordVoicing> generateChordVoicings(
         const Chord& chord,
         bool includeTapping = true,
-        const FretboardMask* mask = nullptr) const;
+        const FretboardMask* mask = nullptr,
+        VoicingSharpness sharpness = VoicingSharpness::All,
+        int maxStrings = 0) const;
 
     /// Wylicza wszystkie flażolety naturalne na gryfie (lub wybranej strunie) w zadanym zakresie progów.
     [[nodiscard]] std::vector<NaturalHarmonic> computeNaturalHarmonics(
