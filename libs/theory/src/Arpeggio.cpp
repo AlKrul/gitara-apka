@@ -1,8 +1,346 @@
 #include "gitara/theory/Arpeggio.h"
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <limits>
+#include <set>
 
 namespace gitara::theory {
+
+namespace {
+
+ArpeggioPositionNode makeArpNode(
+    const Fretboard& fretboard,
+    const Chord& chord,
+    int s,
+    int f,
+    AccidentalMode mode) {
+    int midi = fretboard.midiAt(s, f);
+    int pc = midi % 12;
+    Interval foundIv = intervals::P1;
+    Note spelled = Note::fromPitchClass(pc, mode);
+
+    if (chord.definition) {
+        for (const auto& iv : chord.definition->intervals) {
+            if ((chord.root.pitchClass() + iv.semitones) % 12 == pc) {
+                foundIv = iv;
+                spelled = iv.applyTo(chord.root).withAccidentalMode(mode);
+                break;
+            }
+        }
+    }
+
+    ArpeggioPositionNode node{};
+    node.position = FretPosition{s, f};
+    node.note = spelled;
+    node.intervalFromRoot = foundIv;
+    node.isRoot = (pc == chord.root.pitchClass());
+    return node;
+}
+
+ArpeggioStep makeStepFromNode(
+    const Fretboard& fretboard,
+    const ArpeggioPositionNode& node,
+    const std::string& technique,
+    bool isRoll,
+    int segmentIndex,
+    AccidentalMode mode) {
+    ArpeggioStep st{};
+    st.stringIndex = node.position.stringIndex;
+    st.fret = node.position.fret;
+    st.midi = fretboard.midiAt(st.stringIndex, st.fret);
+    st.frequencyHz = fretboard.pitchAt(st.stringIndex, st.fret, mode).frequencyHz();
+    st.noteName = node.note.toString(false);
+    st.interval = node.intervalFromRoot.symbol(true);
+    st.isRoot = node.isRoot;
+    st.technique = technique;
+    st.isRoll = isRoll;
+    st.segmentIndex = segmentIndex;
+    return st;
+}
+
+std::vector<ArpeggioStep> buildSweepStepsFromNodes(
+    const Fretboard& fretboard,
+    const std::vector<ArpeggioPositionNode>& nodes,
+    int direction,
+    int segmentIndex,
+    AccidentalMode mode,
+    bool& outHasRoll) {
+    outHasRoll = false;
+    if (nodes.empty()) return {};
+
+    // Grupuj po strunach (rosnąco od najgrubszej do najcieńszej) i progach rosnąco
+    std::vector<ArpeggioPositionNode> sorted = nodes;
+    std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b) {
+        if (a.position.stringIndex != b.position.stringIndex)
+            return a.position.stringIndex < b.position.stringIndex;
+        return a.position.fret < b.position.fret;
+    });
+
+    std::vector<ArpeggioStep> asc;
+    for (std::size_t i = 0; i < sorted.size(); ++i) {
+        std::string tech = "D";
+        bool roll = false;
+        if (i > 0) {
+            const auto& prev = sorted[i - 1];
+            if (prev.position.stringIndex == sorted[i].position.stringIndex) {
+                tech = "H"; // Hammer-on na tej samej strunie (np. zwrot na strunie E1 lub baza E6)
+            } else if (prev.position.fret > 0 && prev.position.fret == sorted[i].position.fret &&
+                       sorted[i].position.stringIndex == prev.position.stringIndex + 1) {
+                roll = true;
+                outHasRoll = true;
+            }
+        }
+        asc.push_back(makeStepFromNode(fretboard, sorted[i], tech, roll, segmentIndex, mode));
+    }
+
+    std::vector<ArpeggioStep> desc;
+    for (int idx = static_cast<int>(sorted.size()) - 1; idx >= 0; --idx) {
+        std::size_t i = static_cast<std::size_t>(idx);
+        std::string tech = "U";
+        bool roll = false;
+        if (idx < static_cast<int>(sorted.size()) - 1) {
+            const auto& prev = sorted[static_cast<std::size_t>(idx + 1)];
+            if (prev.position.stringIndex == sorted[i].position.stringIndex) {
+                tech = "P"; // Pull-off w dół na tej samej strunie
+            } else if (prev.position.fret > 0 && prev.position.fret == sorted[i].position.fret &&
+                       prev.position.stringIndex == sorted[i].position.stringIndex + 1) {
+                roll = true;
+                outHasRoll = true;
+            }
+        }
+        desc.push_back(makeStepFromNode(fretboard, sorted[i], tech, roll, segmentIndex, mode));
+    }
+
+    if (direction == 1) return asc;
+    if (direction == 2) return desc;
+
+    // W górę i w dół bez powtarzania najwyższego ani najniższego dźwięku zwrotnego
+    std::vector<ArpeggioStep> full = asc;
+    for (std::size_t i = 1; i + 1 < desc.size(); ++i) {
+        full.push_back(desc[i]);
+    }
+    return full;
+}
+
+} // namespace
+
+std::vector<SweepShape> generateSweepShapes(
+    const Fretboard& fretboard,
+    const Chord& chord,
+    int stringSpan,
+    int direction,
+    AccidentalMode mode,
+    const FretboardMask* mask) {
+    std::vector<SweepShape> shapes;
+    if (!chord.definition || fretboard.stringCount() < 3) {
+        return shapes;
+    }
+
+    const int nStrings = fretboard.stringCount();
+    const int nFrets = fretboard.fretCount();
+    const int span = (stringSpan == 6 && nStrings >= 6) ? 6
+                   : (stringSpan == 5 && nStrings >= 5) ? 5
+                   : 3;
+
+    // Zestaw kolejnych strun dla sweepu (zawsze kończy się na najcieńszej strunie wiolinowej)
+    const int startString = nStrings - span; // 3-str: G-B-e (3..5), 5-str: A-D-G-B-e (1..5), 6-str: E-A-D-G-B-e (0..5)
+    const int topString = nStrings - 1;
+
+    const auto chordNotes = chord.notes(mode);
+    const int reqCount = static_cast<int>(chordNotes.size());
+    int essentialMask = 0;
+    for (int i = 0; i < reqCount; ++i) {
+        bool isOpt = (reqCount > 3) &&
+            std::find(chord.definition->optionalIndices.begin(),
+                      chord.definition->optionalIndices.end(), i) != chord.definition->optionalIndices.end();
+        if (!isOpt) {
+            essentialMask |= (1 << chordNotes[static_cast<std::size_t>(i)].pitchClass());
+        }
+    }
+
+    // Zbieramy kandydatów na najwyższej strunie (topString): każda para (fTop1, fTop2) gdzie fTop1 < fTop2
+    // to klasyczny zwrot hammer-on / pull-off na strunie E1!
+    std::vector<int> topFrets;
+    for (int f = 1; f <= nFrets; ++f) {
+        if (mask && !mask->isAllowed(topString, f)) continue;
+        if (chord.containsPitchClass(fretboard.midiAt(topString, f) % 12)) {
+            topFrets.push_back(f);
+        }
+    }
+
+    auto signatureOf = [](const std::vector<ArpeggioPositionNode>& ns) {
+        std::vector<std::pair<int, int>> sig;
+        sig.reserve(ns.size());
+        for (const auto& n : ns) sig.emplace_back(n.position.stringIndex, n.position.fret);
+        std::sort(sig.begin(), sig.end());
+        return sig;
+    };
+    std::set<std::vector<std::pair<int, int>>> seen;
+
+    for (std::size_t ti = 0; ti + 1 < topFrets.size(); ++ti) {
+        int fTop1 = topFrets[ti];
+        int fTop2 = topFrets[ti + 1];
+        if (fTop2 - fTop1 < 2 || fTop2 - fTop1 > 6) continue;
+        if (fTop1 > 19) continue;
+
+        // Okno pozycji lewej dłoni wokół fTop1 (dla 3 strun bardzo zwarte, dla 5-6 strun do 5 progów)
+        int boxMin = std::max(1, fTop1 - (span == 3 ? 2 : 3));
+        int boxMax = std::min(nFrets, fTop1 + (span == 3 ? 3 : 4));
+
+        // Dobieramy po 1 nucie na każdą niższą strunę w kolejności od góry w dół, zachowując ściśle malejące MIDI
+        std::vector<ArpeggioPositionNode> picked;
+        picked.push_back(makeArpNode(fretboard, chord, topString, fTop2, mode));
+        picked.push_back(makeArpNode(fretboard, chord, topString, fTop1, mode));
+
+        int prevMidi = fretboard.midiAt(topString, fTop1);
+        int pcMask = (1 << (fretboard.midiAt(topString, fTop1) % 12)) |
+                     (1 << (fretboard.midiAt(topString, fTop2) % 12));
+        bool valid = true;
+
+        for (int s = topString - 1; s >= startString; --s) {
+            int bestFret = -1;
+            int bestScore = -9999;
+
+            for (int f = boxMin; f <= boxMax; ++f) {
+                if (mask && !mask->isAllowed(s, f)) continue;
+                int m = fretboard.midiAt(s, f);
+                if (m >= prevMidi) continue;
+                int pc = m % 12;
+                if (!chord.containsPitchClass(pc)) continue;
+
+                // Preferuj brakujące składniki akordu, zwartą pozycję i unikaj skrajnych rozciągnięć
+                int score = 0;
+                bool missingEssential = ((essentialMask & (1 << pc)) != 0) && ((pcMask & (1 << pc)) == 0);
+                if (missingEssential) score += 100;
+                if ((pcMask & (1 << pc)) == 0) score += 45;
+                int distFromTop1 = std::abs(f - fTop1);
+                score -= distFromTop1 * 8;
+                // Lekki bonus za klasyczną piramidę/roll sweepową (progi blisko fTop1..fTop1+2)
+                if (f >= fTop1 - 1 && f <= fTop1 + 3) score += 15;
+                // Dla 5- i 6-strunowego sweepu preferuj prymę na najniższej strunie (E lub A)
+                if (s == startString && pc == chord.root.pitchClass()) score += 35;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestFret = f;
+                }
+            }
+
+            if (bestFret < 0) {
+                valid = false;
+                break;
+            }
+            picked.push_back(makeArpNode(fretboard, chord, s, bestFret, mode));
+            prevMidi = fretboard.midiAt(s, bestFret);
+            pcMask |= (1 << (prevMidi % 12));
+        }
+
+        if (!valid) continue;
+
+        // Dla 6-strunowego sweepu sprawdź opcjonalny 2. dźwięk (hammer-on) na najgrubszej strunie E6
+        if (span == 6) {
+            int lowFret = picked.back().position.fret;
+            int lowMidi = fretboard.midiAt(startString, lowFret);
+            int nextStrMidi = fretboard.midiAt(startString + 1, picked[picked.size() - 2].position.fret);
+            for (int f2 = lowFret + 2; f2 <= std::min(nFrets, lowFret + 5); ++f2) {
+                if (mask && !mask->isAllowed(startString, f2)) continue;
+                int m2 = fretboard.midiAt(startString, f2);
+                if (m2 > lowMidi && m2 < nextStrMidi && chord.containsPitchClass(m2 % 12)) {
+                    picked.push_back(makeArpNode(fretboard, chord, startString, f2, mode));
+                    pcMask |= (1 << (m2 % 12));
+                    break;
+                }
+            }
+        }
+
+        // Wymagaj przynajmniej 3 różnych składników akordu (dla trójdźwięku: wszystkie 3; dla power chord: 2)
+        int minDistinct = (reqCount <= 2) ? 2 : 3;
+        int distinctCount = 0;
+        for (int b = 0; b < 12; ++b) if (pcMask & (1 << b)) ++distinctCount;
+        if (distinctCount < minDistinct) continue;
+        // Dla akordów 4+ składnikowych wymagaj obecności tercji/kwarty i septymy/rozszerzenia (essentialMask)
+        if (reqCount >= 4 && span >= 5 && (pcMask & essentialMask) != essentialMask) {
+            // Jeśli brakuje tylko 1 składnika w 3-strunowym, przepuść poniżej; w 5/6-strunowym pilnuj pokrycia
+            int missing = 0;
+            for (int b = 0; b < 12; ++b) {
+                if ((essentialMask & (1 << b)) && !(pcMask & (1 << b))) ++missing;
+            }
+            if (missing > 1) continue;
+        }
+
+        int mnF = 99, mxF = 0;
+        for (const auto& n : picked) {
+            mnF = std::min(mnF, n.position.fret);
+            mxF = std::max(mxF, n.position.fret);
+        }
+        // Ogranicz całkowitą rozpiętość kształtu sweep (z włączeniem zwrotu H/P na E1)
+        if (mxF - mnF > 7) continue;
+
+        auto sig = signatureOf(picked);
+        if (!seen.insert(sig).second) continue;
+
+        std::sort(picked.begin(), picked.end(), [](const auto& a, const auto& b) {
+            if (a.position.stringIndex != b.position.stringIndex)
+                return a.position.stringIndex < b.position.stringIndex;
+            return a.position.fret < b.position.fret;
+        });
+
+        SweepShape sh{};
+        sh.stringSpan = span;
+        sh.minFret = mnF;
+        sh.maxFret = mxF;
+        sh.nodes = std::move(picked);
+        sh.steps = buildSweepStepsFromNodes(fretboard, sh.nodes, direction, 0, mode, sh.hasFingerRoll);
+        shapes.push_back(std::move(sh));
+    }
+
+    // Fallback gdy akord z szerokimi interwałami nie znalazł zwrotu H/P (np. w niestandardowym stroju)
+    if (shapes.empty()) {
+        for (int anchor = 1; anchor <= std::min(nFrets, 16); anchor += 3) {
+            std::vector<ArpeggioPositionNode> picked;
+            int prevMidi = 0;
+            for (int s = startString; s < nStrings; ++s) {
+                for (int f = anchor; f <= std::min(nFrets, anchor + 5); ++f) {
+                    if (mask && !mask->isAllowed(s, f)) continue;
+                    int m = fretboard.midiAt(s, f);
+                    if (m > prevMidi && chord.containsPitchClass(m % 12)) {
+                        picked.push_back(makeArpNode(fretboard, chord, s, f, mode));
+                        prevMidi = m;
+                        break;
+                    }
+                }
+            }
+            if (static_cast<int>(picked.size()) >= 3) {
+                auto sig = signatureOf(picked);
+                if (seen.insert(sig).second) {
+                    int mnF = 99, mxF = 0;
+                    for (const auto& n : picked) { mnF = std::min(mnF, n.position.fret); mxF = std::max(mxF, n.position.fret); }
+                    SweepShape sh{};
+                    sh.stringSpan = span;
+                    sh.minFret = mnF;
+                    sh.maxFret = mxF;
+                    sh.nodes = std::move(picked);
+                    sh.steps = buildSweepStepsFromNodes(fretboard, sh.nodes, direction, 0, mode, sh.hasFingerRoll);
+                    shapes.push_back(std::move(sh));
+                }
+            }
+        }
+    }
+
+    std::sort(shapes.begin(), shapes.end(), [](const SweepShape& a, const SweepShape& b) {
+        if (a.minFret != b.minFret) return a.minFret < b.minFret;
+        return a.maxFret < b.maxFret;
+    });
+
+    for (std::size_t i = 0; i < shapes.size(); ++i) {
+        shapes[i].positionIndex = static_cast<int>(i);
+        shapes[i].label = "Poz. " + std::to_string(i + 1) + " · pr. " +
+                          std::to_string(shapes[i].minFret) + "–" + std::to_string(shapes[i].maxFret);
+    }
+
+    return shapes;
+}
 
 std::vector<ArpeggioPositionNode> generateArpeggio(
     const Fretboard& fretboard,
@@ -16,28 +354,6 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
         return nodes;
     }
 
-    auto makeNode = [&](int s, int f) -> ArpeggioPositionNode {
-        int midi = fretboard.midiAt(s, f);
-        int pc = midi % 12;
-        Interval foundIv = intervals::P1;
-        Note spelled = Note::fromPitchClass(pc, mode);
-
-        for (const auto& iv : chord.definition->intervals) {
-            if ((chord.root.pitchClass() + iv.semitones) % 12 == pc) {
-                foundIv = iv;
-                spelled = iv.applyTo(chord.root).withAccidentalMode(mode);
-                break;
-            }
-        }
-
-        ArpeggioPositionNode node{};
-        node.position = FretPosition{s, f};
-        node.note = spelled;
-        node.intervalFromRoot = foundIv;
-        node.isRoot = (pc == chord.root.pitchClass());
-        return node;
-    };
-
     const int nStrings = fretboard.stringCount();
     const int nFrets = fretboard.fretCount();
 
@@ -47,7 +363,7 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
                 if (mask && !mask->isAllowed(s, f)) continue;
                 int midi = fretboard.midiAt(s, f);
                 if (chord.containsPitchClass(midi % 12)) {
-                    nodes.push_back(makeNode(s, f));
+                    nodes.push_back(makeArpNode(fretboard, chord, s, f, mode));
                 }
             }
         }
@@ -55,19 +371,22 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
     }
 
     if (pattern == ArpeggioPattern::CAGED) {
+        // 5 realnych boksów CAGED (C, A, G, E, D) ułożonych wzdłuż gryfu wokół prymy
         int rootPc = chord.root.pitchClass();
         int openE = fretboard.midiAt(0, 0) % 12;
         int eRootFret = (rootPc - openE + 12) % 12;
+        // Kolejność kształtów na gryfie: E -> D -> C -> A -> G (albo C, A, G, E, D wg positionIndex 0..4)
         constexpr std::array<int, 5> offsets = {0, 2, 5, 7, 9};
         int box = ((positionIndex % 5) + 5) % 5;
         int minFret = (eRootFret + offsets[static_cast<std::size_t>(box)]) % 12;
-        int maxFret = minFret + 4;
+        if (minFret == 0 && box > 0) minFret = 12;
+        int maxFret = std::min(nFrets, minFret + 4);
 
         for (int s = 0; s < nStrings; ++s) {
-            for (int f = minFret; f <= std::min(nFrets, maxFret); ++f) {
+            for (int f = minFret; f <= maxFret; ++f) {
                 if (mask && !mask->isAllowed(s, f)) continue;
                 if (chord.containsPitchClass(fretboard.midiAt(s, f) % 12)) {
-                    nodes.push_back(makeNode(s, f));
+                    nodes.push_back(makeArpNode(fretboard, chord, s, f, mode));
                 }
             }
         }
@@ -85,6 +404,7 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
         int startPc = chordNotes[static_cast<std::size_t>(startIdx)].pitchClass();
         int openLowPc = fretboard.midiAt(0, 0) % 12;
         int firstFret = (startPc - openLowPc + 12) % 12;
+        if (firstFret == 0 && positionIndex >= static_cast<int>(chordNotes.size())) firstFret = 12;
         int minMidi = fretboard.midiAt(0, firstFret);
 
         for (int s = 0; s < nStrings; ++s) {
@@ -93,7 +413,7 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
                 int m = fretboard.midiAt(s, f);
                 if (m >= minMidi && chord.containsPitchClass(m % 12)) {
                     if (!mask || mask->isAllowed(s, f)) {
-                        nodes.push_back(makeNode(s, f));
+                        nodes.push_back(makeArpNode(fretboard, chord, s, f, mode));
                     }
                     minMidi = m + 1;
                     ++count;
@@ -104,21 +424,360 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
         return nodes;
     }
 
-    // ArpeggioPattern::Sweep — 1 dźwięk na każdą kolejną strunę w zwartym oknie 4–5 progów
-    int anchorFret = ((positionIndex * 3) % 12) + 1;
-    int prevMidi = 0;
-    for (int s = 0; s < nStrings; ++s) {
-        for (int f = anchorFret; f <= std::min(nFrets, anchorFret + 4); ++f) {
-            if (mask && !mask->isAllowed(s, f)) continue;
-            int m = fretboard.midiAt(s, f);
-            if (m > prevMidi && chord.containsPitchClass(m % 12)) {
-                nodes.push_back(makeNode(s, f));
-                prevMidi = m;
-                break;
-            }
-        }
+    // ArpeggioPattern::Sweep — wykorzystuje nowy generator kształtów Sweep (domyślnie 5-strunowy z pełnym zakresem)
+    auto shapes = generateSweepShapes(fretboard, chord, 5, 0, mode, mask);
+    if (shapes.empty()) {
+        shapes = generateSweepShapes(fretboard, chord, 3, 0, mode, mask);
+    }
+    if (!shapes.empty()) {
+        int idx = ((positionIndex % static_cast<int>(shapes.size())) + static_cast<int>(shapes.size())) %
+                  static_cast<int>(shapes.size());
+        return shapes[static_cast<std::size_t>(idx)].nodes;
     }
     return nodes;
+}
+
+std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
+    const Fretboard& fretboard,
+    const std::vector<ArpeggioPositionNode>& nodes,
+    ArpeggioPattern pattern,
+    int direction,
+    AccidentalMode mode) {
+    if (nodes.empty()) return {};
+
+    if (pattern == ArpeggioPattern::Sweep) {
+        bool roll = false;
+        return buildSweepStepsFromNodes(fretboard, nodes, direction, 0, mode, roll);
+    }
+
+    // Dla pozostałych wzorców (CAGED, 2NPS, 3NPS, FullNeck): sortuj rosnąco po wysokości (z limitem 24 nut dla FullNeck)
+    std::vector<ArpeggioPositionNode> sorted = nodes;
+    std::sort(sorted.begin(), sorted.end(), [&](const auto& a, const auto& b) {
+        int ma = fretboard.midiAt(a.position.stringIndex, a.position.fret);
+        int mb = fretboard.midiAt(b.position.stringIndex, b.position.fret);
+        if (ma != mb) return ma < mb;
+        return a.position.stringIndex < b.position.stringIndex;
+    });
+
+    // Deduplikuj identyczne wysokości MIDI w FullNeck (zostaw ergonomiczny ciąg po gryfie)
+    std::vector<ArpeggioPositionNode> clean;
+    int lastMidi = -1;
+    for (const auto& n : sorted) {
+        int m = fretboard.midiAt(n.position.stringIndex, n.position.fret);
+        if (pattern == ArpeggioPattern::FullNeck && m == lastMidi) continue;
+        clean.push_back(n);
+        lastMidi = m;
+        if (pattern == ArpeggioPattern::FullNeck && clean.size() >= 16) break;
+    }
+
+    std::vector<ArpeggioStep> asc;
+    for (std::size_t i = 0; i < clean.size(); ++i) {
+        std::string tech = (i % 2 == 0) ? "D" : "U";
+        if (pattern == ArpeggioPattern::ThreeNPS && i > 0 &&
+            clean[i].position.stringIndex == clean[i - 1].position.stringIndex) {
+            tech = "H";
+        }
+        asc.push_back(makeStepFromNode(fretboard, clean[i], tech, false, 0, mode));
+    }
+
+    std::vector<ArpeggioStep> desc;
+    for (int idx = static_cast<int>(clean.size()) - 1; idx >= 0; --idx) {
+        std::size_t i = static_cast<std::size_t>(idx);
+        std::string tech = ((clean.size() - 1 - i) % 2 == 0) ? "U" : "D";
+        if (pattern == ArpeggioPattern::ThreeNPS && idx < static_cast<int>(clean.size()) - 1 &&
+            clean[i].position.stringIndex == clean[static_cast<std::size_t>(idx + 1)].position.stringIndex) {
+            tech = "P";
+        }
+        desc.push_back(makeStepFromNode(fretboard, clean[i], tech, false, 0, mode));
+    }
+
+    if (direction == 1) return asc;
+    if (direction == 2) return desc;
+    std::vector<ArpeggioStep> full = asc;
+    for (std::size_t i = 1; i + 1 < desc.size(); ++i) full.push_back(desc[i]);
+    return full;
+}
+
+const std::vector<SweepTransitionPresetInfo>& allSweepTransitionPresets() {
+    static const std::vector<SweepTransitionPresetInfo> presets = {
+        {
+            "neoclassical_minor",
+            "Neoklasyczna kadencja (i → ♭VI → iv → V)",
+            "Neoklasyka",
+            "Klasyczne przejścia Yngwie / Bach w jednej strefie gryfu z minimalnym ruchem lewej dłoni (np. Am → F → Dm → E)."
+        },
+        {
+            "dim7_climb",
+            "Wspinaczka dim7 co 3 progi (i → vii°7 ↗ → i)",
+            "Shred / Neoklasyka",
+            "Symetryczne arpeggia zmniejszone przesuwane co tercję małą (+3 progi) ze slidem na strunie E1 i rozwiązaniem oktawę wyżej."
+        },
+        {
+            "same_chord_inversions",
+            "Inwersje jednego akordu po gryfie (Poz. 1 ↗ 2 ↗ 3)",
+            "Technika zmiany pozycji",
+            "Płynne łączenie 3 kolejnych inwersji wybranego arpeggio w górę gryfu przez slide na najwyższej strunie."
+        },
+        {
+            "three_to_five_expand",
+            "Przejście 3-strunowe → 5-strunowe (i → vii° → i → V)",
+            "Hybryda 3↔5 strun",
+            "Szybkie, zwarte 3-strunowe arpeggia przechodzące bezpośrednio w pełne, szerokie 5-strunowe sweepy."
+        },
+        {
+            "andalusian_metal",
+            "Pochód metalowy (i → ♭VII → ♭VI → V7)",
+            "Metal / Shred",
+            "Zstępująca progresja molowa (np. Am → G → F → E7) z ostrym rozwiązaniem dominantowym na V7."
+        },
+        {
+            "major_I_V_vi_IV",
+            "Progresja durowa (I → V → vi → IV)",
+            "Rock / Melodic",
+            "Płynne łączenie kształtów durowych i molowych (np. C → G → Am → F) w jednej pozycji bez skakania po gryfie."
+        },
+        {
+            "jazz_ii_V_I",
+            "Jazz / Fusion Sweep (ii7 → V7 → Imaj7 → VI7)",
+            "Jazz / Economy",
+            "Czterodźwiękowe arpeggia septymowe (styl Franka Gambale) z głosami prowadzącymi ♭7 → 3 między kolejnymi akordami."
+        },
+        {
+            "diatonic_climb",
+            "Wspinaczka diatoniczna w skali (I → ii → iii → IV → V)",
+            "Skala → Arpeggio",
+            "Kolejne trójdźwięki diatoniczne wybranej skali grane sweepem w górę gryfu (świetne do budowania melodii)."
+        }
+    };
+    return presets;
+}
+
+SweepTransition generateSweepTransition(
+    const Fretboard& fretboard,
+    std::string_view presetId,
+    int rootPc,
+    int stringSpan,
+    int startPositionIndex,
+    const Chord* customChord,
+    const Scale* customScale,
+    AccidentalMode mode) {
+    SweepTransition tr{};
+    tr.id = std::string(presetId);
+
+    const int effSpan = (stringSpan == 6) ? 6 : (stringSpan == 5 ? 5 : 3);
+
+    struct Spec {
+        int semiOffset;
+        std::string chordId;
+        std::string roman;
+        int overrideSpan; // 0 = użyj effSpan
+        bool climbStep;   // true = wybieraj wyższą pozycję (+2..+5 progów wyżej)
+    };
+    std::vector<Spec> specs;
+
+    if (presetId == "dim7_climb") {
+        tr.name = "Wspinaczka dim7 co 3 progi (i → vii°7 ↗ → i)";
+        tr.category = "Shred / Neoklasyka";
+        tr.description = "Symetryczne przesunięcia zmniejszone co 3 progi (tercja mała) ze slidem do kolejnej pozycji.";
+        tr.practiceTip = "Przy każdej zmianie dim7 przesuń palec wskazujący lub mały o dokładnie 3 progi (slide S) i zachowaj ciągły ruch kostki.";
+        specs = {
+            {0,  "minor", "i",     effSpan, false},
+            {11, "dim7",  "vii°7", effSpan, false},
+            {2,  "dim7",  "ii°7 (+3)", effSpan, true},
+            {5,  "dim7",  "iv°7 (+6)", effSpan, true},
+            {0,  "minor", "i (okt.)",  effSpan, true}
+        };
+    } else if (presetId == "same_chord_inversions") {
+        std::string cid = (customChord && customChord->definition) ? customChord->definition->id : "minor";
+        tr.name = "Inwersje jednego akordu po gryfie (Poz. 1 ↗ 2 ↗ 3)";
+        tr.category = "Technika zmiany pozycji";
+        tr.description = "Trzy kolejne inwersje tego samego akordu połączone płynnym przesunięciem w górę gryfu.";
+        tr.practiceTip = "Na szczycie każdej pozycji zrób slide (S) na strunie E1 do kolejnej inwersji, a przy zejściu płynnie złap nowy kształt.";
+        specs = {
+            {0, cid, "Poz. 1", effSpan, false},
+            {0, cid, "Poz. 2", effSpan, true},
+            {0, cid, "Poz. 3", effSpan, true}
+        };
+    } else if (presetId == "three_to_five_expand") {
+        tr.name = "Przejście 3-strunowe → 5-strunowe (i → vii° → i → V)";
+        tr.category = "Hybryda 3↔5 strun";
+        tr.description = "Dwa szybkie 3-strunowe sweepy rozwijające się w szerokie, 5-strunowe arpeggia w tej samej strefie gryfu.";
+        tr.practiceTip = "Na przejściu z 3 strun na 5 strun nie przerywaj ruchu nadgarstka — po powrocie ↑ na strunie G od razu wejdź ↓ na strunę A.";
+        specs = {
+            {0,  "minor", "i (3 str.)",    3, false},
+            {11, "dim",   "vii° (3 str.)", 3, false},
+            {0,  "minor", "i (5 str.)",    5, false},
+            {7,  "major", "V (5 str.)",    5, false}
+        };
+    } else if (presetId == "andalusian_metal") {
+        tr.name = "Pochód metalowy (i → ♭VII → ♭VI → V7)";
+        tr.category = "Metal / Shred";
+        tr.description = "Zstępująca sekwencja molowa z napięciem dominantowym na akordzie V7 wracającym do i.";
+        tr.practiceTip = "Zwróć uwagę na płynne obniżenie pozycji o 2 progi między i oraz ♭VII, a potem o kolejne 2 progi do ♭VI.";
+        specs = {
+            {0,  "minor", "i",    effSpan, false},
+            {10, "major", "♭VII", effSpan, false},
+            {8,  "major", "♭VI",  effSpan, false},
+            {7,  "7",     "V7",   effSpan, false}
+        };
+    } else if (presetId == "major_I_V_vi_IV") {
+        tr.name = "Progresja durowa (I → V → vi → IV)";
+        tr.category = "Rock / Melodic";
+        tr.description = "Popularna progresja w jednej strefie gryfu — uczy natychmiastowej zmiany kształtu durowego na molowy.";
+        tr.practiceTip = "Zauważ wspólne dźwięki (pivoty) między I a vi oraz między vi a IV — zostawiaj palec kotwiczący tam, gdzie próg się powtarza.";
+        specs = {
+            {0, "major", "I",  effSpan, false},
+            {7, "major", "V",  effSpan, false},
+            {9, "minor", "vi", effSpan, false},
+            {5, "major", "IV", effSpan, false}
+        };
+    } else if (presetId == "jazz_ii_V_I") {
+        tr.name = "Jazz / Fusion Sweep (ii7 → V7 → Imaj7 → VI7)";
+        tr.category = "Jazz / Economy";
+        tr.description = "Sekwencja czterodźwięków septymowych z głosem prowadzącym ♭7 → 3 w zwartym obszarze gryfu.";
+        tr.practiceTip = "Używaj 5 strun dla pełnego brzmienia septymy; przy przejściu ii7 → V7 septyma opada tylko o 1 półton na tercję dominanty.";
+        int jazzSpan = std::max(5, effSpan);
+        specs = {
+            {2, "m7",   "iim7",  jazzSpan, false},
+            {7, "7",    "V7",    jazzSpan, false},
+            {0, "maj7", "Imaj7", jazzSpan, false},
+            {9, "7",    "VI7",   jazzSpan, false}
+        };
+    } else if (presetId == "diatonic_climb") {
+        tr.name = "Wspinaczka diatoniczna w skali (I → ii → iii → IV → V)";
+        tr.category = "Skala → Arpeggio";
+        tr.description = "Kolejne diatoniczne trójdźwięki z wybranej skali grane sweepem w górę gryfu.";
+        tr.practiceTip = "Trzymaj stały puls (szesnastki lub triole) — każdy kolejny stopień przesuwa dłoń o 1–3 progi w górę gryfu.";
+        Scale sc = (customScale && customScale->definition)
+            ? *customScale
+            : Scale{Note::fromPitchClass(rootPc, mode), findScaleDefinition("major")};
+        auto diat = generateDiatonicArpeggios(sc, false, mode);
+        if (diat.size() >= 5) {
+            for (std::size_t i = 0; i < 5; ++i) {
+                int relSemi = (diat[i].chord.root.pitchClass() - rootPc + 12) % 12;
+                specs.push_back({relSemi, diat[i].chord.definition->id, diat[i].romanNumeral, effSpan, i > 0});
+            }
+        }
+    } else {
+        // Domyślnie: neoclassical_minor (i -> bVI -> iv -> V)
+        tr.id = "neoclassical_minor";
+        tr.name = "Neoklasyczna kadencja (i → ♭VI → iv → V)";
+        tr.category = "Neoklasyka";
+        tr.description = "Najpopularniejsze przejście sweep picking w stylu Yngwie Malmsteena / Bacha w jednej pozycji.";
+        tr.practiceTip = "Między i (Am) a ♭VI (F) zmienia się praktycznie tylko 1 dźwięk (E → F o 1 półton)! Ćwicz płynne przetoczenie palca (Roll).";
+        specs = {
+            {0, "minor", "i",   effSpan, false},
+            {8, "major", "♭VI", effSpan, false},
+            {5, "minor", "iv",  effSpan, false},
+            {7, "major", "V",   effSpan, false}
+        };
+    }
+
+    double prevCenterFret = -1.0;
+    int prevEndFret = -1;
+    int prevEndString = -1;
+
+    for (std::size_t idx = 0; idx < specs.size(); ++idx) {
+        const auto& sp = specs[idx];
+        int pc = (rootPc + sp.semiOffset + 120) % 12;
+        const ChordDefinition* def = findChordDefinition(sp.chordId);
+        if (!def) def = findChordDefinition("minor");
+        Chord ch{Note::fromPitchClass(pc, mode), def, std::nullopt};
+
+        int useSpan = sp.overrideSpan > 0 ? sp.overrideSpan : effSpan;
+        auto shapes = generateSweepShapes(fretboard, ch, useSpan, 0, mode, nullptr);
+        if (shapes.empty() && useSpan != 3) {
+            shapes = generateSweepShapes(fretboard, ch, 3, 0, mode, nullptr);
+        }
+        if (shapes.empty()) continue;
+
+        std::size_t chosenIdx = 0;
+        if (prevCenterFret < 0.0) {
+            // Pierwszy akord: wybierz wg startPositionIndex (domyślnie środek gryfu ok. progów 5..12)
+            if (startPositionIndex > 0) {
+                chosenIdx = static_cast<std::size_t>(startPositionIndex) % shapes.size();
+            } else {
+                double bestDiff = 1e9;
+                for (std::size_t i = 0; i < shapes.size(); ++i) {
+                    double c = 0.5 * (shapes[i].minFret + shapes[i].maxFret);
+                    double d = std::abs(c - 8.5);
+                    if (d < bestDiff) { bestDiff = d; chosenIdx = i; }
+                }
+            }
+        } else if (sp.climbStep) {
+            // Wspinaczka: wybierz najbliższą pozycję ściśle powyżej poprzedniej (+1.5 .. +7 progów)
+            double bestScore = 1e9;
+            bool foundHigher = false;
+            for (std::size_t i = 0; i < shapes.size(); ++i) {
+                double c = 0.5 * (shapes[i].minFret + shapes[i].maxFret);
+                if (c > prevCenterFret + 1.2) {
+                    double d = c - prevCenterFret;
+                    if (d < bestScore) { bestScore = d; chosenIdx = i; foundHigher = true; }
+                }
+            }
+            if (!foundHigher) {
+                // Jeśli zabrakło progów na górze, wybierz najwyższą dostępną pozycję
+                chosenIdx = shapes.size() - 1;
+            }
+        } else {
+            // Voice-leading w jednej strefie: zminimalizuj skok dłoni na gryfie!
+            double bestDiff = 1e9;
+            for (std::size_t i = 0; i < shapes.size(); ++i) {
+                double c = 0.5 * (shapes[i].minFret + shapes[i].maxFret);
+                double d = std::abs(c - prevCenterFret);
+                if (d < bestDiff) { bestDiff = d; chosenIdx = i; }
+            }
+        }
+
+        const auto& pickedShape = shapes[chosenIdx];
+        double curCenter = 0.5 * (pickedShape.minFret + pickedShape.maxFret);
+
+        SweepTransitionSegment seg{};
+        seg.romanNumeral = sp.roman;
+        seg.chordSymbol = ch.symbol(false, mode);
+        seg.chordId = def->id;
+        seg.rootPc = pc;
+        seg.stringSpan = pickedShape.stringSpan;
+        seg.minFret = pickedShape.minFret;
+        seg.maxFret = pickedShape.maxFret;
+        seg.nodes = pickedShape.nodes;
+
+        bool hasRoll = false;
+        seg.steps = buildSweepStepsFromNodes(fretboard, seg.nodes, 0, static_cast<int>(idx), mode, hasRoll);
+
+        // Oznacz połączenie (slide / płynne wejście) od poprzedniego segmentu
+        if (idx > 0 && !seg.steps.empty() && prevEndFret > 0) {
+            int startFret = seg.steps.front().fret;
+            int startStr = seg.steps.front().stringIndex;
+            int deltaFret = startFret - prevEndFret;
+            if (startStr == prevEndString && std::abs(deltaFret) >= 1 && std::abs(deltaFret) <= 5) {
+                seg.steps.front().technique = "S"; // Slide na tej samej strunie do kolejnego akordu!
+                seg.transitionHint = "Slide " + std::to_string(prevEndFret) + "→" + std::to_string(startFret) +
+                                     " na strunie " + std::to_string(fretboard.stringCount() - startStr);
+            } else if (deltaFret == 0 && startStr == prevEndString) {
+                seg.transitionHint = "Wspólny dźwięk kotwiczący (próg " + std::to_string(startFret) + ")";
+            } else if (std::abs(curCenter - prevCenterFret) <= 2.5) {
+                seg.transitionHint = "Ta sama pozycja (minimalny ruch dłoni)";
+            } else {
+                seg.transitionHint = (curCenter > prevCenterFret ? "Przesunięcie w górę gryfu (pr. " : "Przesunięcie w dół gryfu (pr. ") +
+                                     std::to_string(seg.minFret) + "–" + std::to_string(seg.maxFret) + ")";
+            }
+        } else {
+            seg.transitionHint = "Start pozycji (pr. " + std::to_string(seg.minFret) + "–" + std::to_string(seg.maxFret) + ")";
+        }
+        if (hasRoll) {
+            seg.transitionHint += " · Roll (przetoczenie palca)";
+        }
+
+        if (!seg.steps.empty()) {
+            prevEndFret = seg.steps.back().fret;
+            prevEndString = seg.steps.back().stringIndex;
+        }
+        prevCenterFret = curCenter;
+        tr.segments.push_back(std::move(seg));
+    }
+
+    return tr;
 }
 
 std::vector<DiatonicArpeggio> generateDiatonicArpeggios(

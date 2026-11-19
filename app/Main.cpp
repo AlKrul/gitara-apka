@@ -634,19 +634,184 @@ std::string handleSearchApi(std::string_view query) {
 
 std::string handleArpeggioApi(std::string_view query) {
     int rootPc = getQueryInt(query, "rootPc", 0);
-    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 0));
-    Scale sc{Note::fromPitchClass(rootPc, mode), findScaleDefinition("major")};
-    auto diatonic = generateDiatonicArpeggios(sc, true, mode);
+    std::string chordId = getQueryParam(query, "chordId", "minor");
+    int patternInt = getQueryInt(query, "pattern", 4);
+    int posIdx = getQueryInt(query, "posIdx", 0);
+    int sweepStrings = getQueryInt(query, "sweepStrings", 3);
+    int direction = getQueryInt(query, "direction", 0);
+    std::string viewMode = getQueryParam(query, "viewMode", "single"); // "single" | "transition"
+    std::string transitionId = getQueryParam(query, "transitionId", "neoclassical_minor");
+    int scaleRootPc = getQueryInt(query, "scaleRootPc", rootPc);
+    std::string scaleId = getQueryParam(query, "scaleId", "major");
+    bool diatonicSevenths = getQueryInt(query, "sevenths", 1) != 0;
+    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 2));
+
+    Fretboard fb{resolveRequestedTuning(query), 24};
+    const ChordDefinition* chDef = findChordDefinition(chordId);
+    if (!chDef) chDef = findChordDefinition("minor");
+    Chord ch{Note::fromPitchClass(rootPc, mode), chDef, std::nullopt};
+
+    const ScaleDefinition* scDef = findScaleDefinition(scaleId);
+    if (!scDef) scDef = findScaleDefinition("major");
+    Scale sc{Note::fromPitchClass(scaleRootPc, mode), scDef};
+
+    auto diatonic = generateDiatonicArpeggios(sc, diatonicSevenths, mode);
+    auto fullNeckNodes = generateArpeggio(fb, ch, ArpeggioPattern::FullNeck, 0, mode, nullptr);
+
+    auto writeNodeJson = [&](std::ostringstream& out, const ArpeggioPositionNode& n) {
+        int m = fb.midiAt(n.position.stringIndex, n.position.fret);
+        out << "{\"s\":" << n.position.stringIndex
+            << ",\"f\":" << n.position.fret
+            << ",\"midi\":" << m
+            << ",\"freq\":" << fb.pitchAt(n.position.stringIndex, n.position.fret, mode).frequencyHz()
+            << ",\"note\":\"" << jsonEscape(n.note.toString(false)) << "\""
+            << ",\"interval\":\"" << jsonEscape(n.intervalFromRoot.symbol(true)) << "\""
+            << ",\"isRoot\":" << (n.isRoot ? "true" : "false") << "}";
+    };
+    auto writeStepJson = [&](std::ostringstream& out, const ArpeggioStep& st) {
+        out << "{\"s\":" << st.stringIndex
+            << ",\"f\":" << st.fret
+            << ",\"midi\":" << st.midi
+            << ",\"freq\":" << st.frequencyHz
+            << ",\"note\":\"" << jsonEscape(st.noteName) << "\""
+            << ",\"interval\":\"" << jsonEscape(st.interval) << "\""
+            << ",\"isRoot\":" << (st.isRoot ? "true" : "false")
+            << ",\"tech\":\"" << jsonEscape(st.technique) << "\""
+            << ",\"roll\":" << (st.isRoll ? "true" : "false")
+            << ",\"seg\":" << st.segmentIndex << "}";
+    };
+
+    ArpeggioPattern pat = static_cast<ArpeggioPattern>(std::clamp(patternInt, 0, 4));
+    std::vector<ArpeggioPositionNode> activeNodes;
+    std::vector<ArpeggioStep> activeSteps;
+    struct PosMeta { int idx; std::string label; int minFret; int maxFret; bool hasRoll; };
+    std::vector<PosMeta> positions;
+    int resolvedPosIdx = posIdx;
+
+    if (pat == ArpeggioPattern::Sweep) {
+        auto shapes = generateSweepShapes(fb, ch, sweepStrings, direction, mode, nullptr);
+        if (!shapes.empty()) {
+            resolvedPosIdx = ((posIdx % static_cast<int>(shapes.size())) + static_cast<int>(shapes.size())) %
+                             static_cast<int>(shapes.size());
+            for (const auto& sh : shapes) {
+                positions.push_back({sh.positionIndex, sh.label, sh.minFret, sh.maxFret, sh.hasFingerRoll});
+            }
+            activeNodes = shapes[static_cast<std::size_t>(resolvedPosIdx)].nodes;
+            activeSteps = shapes[static_cast<std::size_t>(resolvedPosIdx)].steps;
+        }
+    } else if (pat == ArpeggioPattern::CAGED) {
+        constexpr std::array<const char*, 5> cagedNames = {"Kształt E", "Kształt D", "Kształt C", "Kształt A", "Kształt G"};
+        resolvedPosIdx = ((posIdx % 5) + 5) % 5;
+        for (int i = 0; i < 5; ++i) {
+            auto ns = generateArpeggio(fb, ch, ArpeggioPattern::CAGED, i, mode, nullptr);
+            int mn = 99, mx = 0;
+            for (const auto& n : ns) { mn = std::min(mn, n.position.fret); mx = std::max(mx, n.position.fret); }
+            if (mn > mx) mn = 0;
+            positions.push_back({i, std::string(cagedNames[static_cast<std::size_t>(i)]) + " (pr. " + std::to_string(mn) + "–" + std::to_string(mx) + ")", mn, mx, false});
+            if (i == resolvedPosIdx) activeNodes = std::move(ns);
+        }
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode);
+    } else if (pat == ArpeggioPattern::TwoNPS || pat == ArpeggioPattern::ThreeNPS) {
+        int countPos = std::max<int>(3, static_cast<int>(ch.notes(mode).size()));
+        resolvedPosIdx = ((posIdx % countPos) + countPos) % countPos;
+        for (int i = 0; i < countPos; ++i) {
+            auto ns = generateArpeggio(fb, ch, pat, i, mode, nullptr);
+            int mn = 99, mx = 0;
+            for (const auto& n : ns) { mn = std::min(mn, n.position.fret); mx = std::max(mx, n.position.fret); }
+            if (mn > mx) mn = 0;
+            positions.push_back({i, "Poz. " + std::to_string(i + 1) + " (pr. " + std::to_string(mn) + "–" + std::to_string(mx) + ")", mn, mx, false});
+            if (i == resolvedPosIdx) activeNodes = std::move(ns);
+        }
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode);
+    } else {
+        resolvedPosIdx = 0;
+        activeNodes = fullNeckNodes;
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode);
+    }
+
+    auto transition = generateSweepTransition(fb, transitionId, rootPc, sweepStrings, posIdx, &ch, &sc, mode);
 
     std::ostringstream oss;
-    oss << "{\"diatonic\":[";
+    oss << "{\"chordSymbol\":\"" << jsonEscape(ch.symbol(false, mode)) << "\""
+        << ",\"chordName\":\"" << jsonEscape(chDef->polishName) << "\""
+        << ",\"rootPc\":" << rootPc
+        << ",\"chordId\":\"" << jsonEscape(chDef->id) << "\""
+        << ",\"pattern\":" << static_cast<int>(pat)
+        << ",\"posIdx\":" << resolvedPosIdx
+        << ",\"sweepStrings\":" << sweepStrings
+        << ",\"viewMode\":\"" << jsonEscape(viewMode) << "\""
+        << ",\"scaleFullName\":\"" << jsonEscape(sc.fullName(false)) << "\""
+        << ",\"positions\":[";
+    for (std::size_t i = 0; i < positions.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "{\"idx\":" << positions[i].idx
+            << ",\"label\":\"" << jsonEscape(positions[i].label) << "\""
+            << ",\"minFret\":" << positions[i].minFret
+            << ",\"maxFret\":" << positions[i].maxFret
+            << ",\"hasRoll\":" << (positions[i].hasRoll ? "true" : "false") << "}";
+    }
+    oss << "],\"nodes\":[";
+    for (std::size_t i = 0; i < activeNodes.size(); ++i) {
+        if (i > 0) oss << ",";
+        writeNodeJson(oss, activeNodes[i]);
+    }
+    oss << "],\"fullNeckNodes\":[";
+    for (std::size_t i = 0; i < fullNeckNodes.size(); ++i) {
+        if (i > 0) oss << ",";
+        writeNodeJson(oss, fullNeckNodes[i]);
+    }
+    oss << "],\"steps\":[";
+    for (std::size_t i = 0; i < activeSteps.size(); ++i) {
+        if (i > 0) oss << ",";
+        writeStepJson(oss, activeSteps[i]);
+    }
+    oss << "],\"diatonic\":[";
     for (std::size_t i = 0; i < diatonic.size(); ++i) {
         if (i > 0) oss << ",";
-        oss << "{\"roman\":\"" << jsonEscape(diatonic[i].romanNumeral)
-            << "\",\"symbol\":\"" << jsonEscape(diatonic[i].chord.symbol(true, mode))
-            << "\",\"chordId\":\"" << jsonEscape(diatonic[i].chord.definition->id) << "\"}";
+        oss << "{\"roman\":\"" << jsonEscape(diatonic[i].romanNumeral) << "\""
+            << ",\"symbol\":\"" << jsonEscape(diatonic[i].chord.symbol(false, mode)) << "\""
+            << ",\"rootPc\":" << diatonic[i].chord.root.pitchClass()
+            << ",\"chordId\":\"" << jsonEscape(diatonic[i].chord.definition->id) << "\"}";
     }
-    oss << "]}";
+    oss << "],\"transitionPresets\":[";
+    const auto& presets = allSweepTransitionPresets();
+    for (std::size_t i = 0; i < presets.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "{\"id\":\"" << jsonEscape(presets[i].id) << "\""
+            << ",\"name\":\"" << jsonEscape(presets[i].name) << "\""
+            << ",\"category\":\"" << jsonEscape(presets[i].category) << "\""
+            << ",\"description\":\"" << jsonEscape(presets[i].description) << "\"}";
+    }
+    oss << "],\"transition\":{\"id\":\"" << jsonEscape(transition.id) << "\""
+        << ",\"name\":\"" << jsonEscape(transition.name) << "\""
+        << ",\"category\":\"" << jsonEscape(transition.category) << "\""
+        << ",\"description\":\"" << jsonEscape(transition.description) << "\""
+        << ",\"practiceTip\":\"" << jsonEscape(transition.practiceTip) << "\""
+        << ",\"segments\":[";
+    for (std::size_t i = 0; i < transition.segments.size(); ++i) {
+        if (i > 0) oss << ",";
+        const auto& seg = transition.segments[i];
+        oss << "{\"roman\":\"" << jsonEscape(seg.romanNumeral) << "\""
+            << ",\"symbol\":\"" << jsonEscape(seg.chordSymbol) << "\""
+            << ",\"chordId\":\"" << jsonEscape(seg.chordId) << "\""
+            << ",\"rootPc\":" << seg.rootPc
+            << ",\"stringSpan\":" << seg.stringSpan
+            << ",\"minFret\":" << seg.minFret
+            << ",\"maxFret\":" << seg.maxFret
+            << ",\"hint\":\"" << jsonEscape(seg.transitionHint) << "\""
+            << ",\"nodes\":[";
+        for (std::size_t ni = 0; ni < seg.nodes.size(); ++ni) {
+            if (ni > 0) oss << ",";
+            writeNodeJson(oss, seg.nodes[ni]);
+        }
+        oss << "],\"steps\":[";
+        for (std::size_t si = 0; si < seg.steps.size(); ++si) {
+            if (si > 0) oss << ",";
+            writeStepJson(oss, seg.steps[si]);
+        }
+        oss << "]}";
+    }
+    oss << "]}}";
     return oss.str();
 }
 

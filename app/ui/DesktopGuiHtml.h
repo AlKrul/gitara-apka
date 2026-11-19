@@ -1135,8 +1135,23 @@ const state = {
   leftHandedFretboard: false,
   todayPracticedMinutes: 6,
   streakDays: 3,
-  // Pozostałe
-  arpPattern: 0,
+  // Zakładka Arpeggio i Sweep Picking
+  arpViewMode: 'single', // 'single' | 'transition'
+  arpPattern: 4, // 0=Cały gryf, 1=CAGED, 2=2NPS, 3=3NPS, 4=Sweep Picking
+  arpPosIdx: 0,
+  arpSweepStrings: 3, // 3 | 5 | 6
+  arpDirection: 0, // 0=W górę i w dół, 1=W górę, 2=W dół
+  arpTransitionId: 'neoclassical_minor',
+  arpActiveSegIdx: 0,
+  arpShowGhostFullNeck: true,
+  arpDiatonicSevenths: true,
+  arpDiatonicScaleId: 'major',
+  arpDiatonicScaleRootPc: 0,
+  arpBpm: 90,
+  arpLoop: true,
+  arpPlaying: false,
+  arpPlayStepIdx: -1,
+  arpData: null,
   tabCreationEnabled: true,
   tempoBpm: 120,
   timeSigNum: 4,
@@ -3452,12 +3467,31 @@ function renderFretboardToolbarForActiveTab() {
         <span><b style="color:#ef4444">●</b> Do unikania</span>
       </div>`;
   } else if (state.subtab === 'arpeggio') {
+    const arpTitle = (state.arpViewMode === 'transition' && state.arpData && state.arpData.transition)
+      ? `⚡ Przejście Sweep: ${state.arpData.transition.name}`
+      : `Gryf Arpeggio: ${(state.arpData && state.arpData.chordSymbol) ? state.arpData.chordSymbol : state.chordId}`;
+    const patNames = ['Cały gryf', 'CAGED', '2NPS', '3NPS', `Sweep Picking (${state.arpSweepStrings} str.)`];
+    const subDesc = (state.arpViewMode === 'transition' && state.arpData && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments[state.arpActiveSegIdx])
+      ? `Aktywny akord: ${state.arpData.transition.segments[state.arpActiveSegIdx].symbol} (${state.arpData.transition.segments[state.arpActiveSegIdx].roman})`
+      : `Wzorzec: ${patNames[state.arpPattern] || 'Sweep Picking'}`;
     bar.innerHTML = `
       <div>
-        <strong style="color:var(--text);font-size:14px;">Gryf Arpeggio (${state.chordId})</strong>
-        <span style="margin-left:10px;">Wzorzec: ${['Cały gryf','CAGED','2NPS','3NPS','Sweep Picking (1 nuta na strunę)'][state.arpPattern] || 'Cały gryf'}</span>
+        <strong style="color:var(--text);font-size:14px;">${arpTitle}</strong>
+        <span style="margin-left:10px;color:var(--text-muted);">${subDesc}</span>
       </div>
-      ${zoomCtrl}`;
+      <div style="display:flex;gap:10px;align-items:center;font-size:12px;flex-wrap:wrap;">
+        ${zoomCtrl}
+        <button class="chip-btn ${state.labelType==='notes'?'active':''}" style="padding:3px 8px;font-size:11px;"
+                onclick="state.labelType='notes';renderFretboardToolbarForActiveTab();drawFretboard()">Nuty</button>
+        <button class="chip-btn ${state.labelType==='intervals'?'active':''}" style="padding:3px 8px;font-size:11px;"
+                onclick="state.labelType='intervals';renderFretboardToolbarForActiveTab();drawFretboard()">Interwały</button>
+        <button class="chip-btn ${state.arpShowGhostFullNeck?'active':''}" style="padding:3px 8px;font-size:11px;"
+                onclick="state.arpShowGhostFullNeck=!state.arpShowGhostFullNeck;renderFretboardToolbarForActiveTab();drawFretboard()">Tło całego gryfu</button>
+        <span><b style="color:#f39237">●</b> 1</span>
+        <span><b style="color:#4ade80">●</b> 3</span>
+        <span><b style="color:#38bdf8">●</b> 5</span>
+        <span><b style="color:#facc15">●</b> 7/rozsz.</span>
+      </div>`;
   } else if (state.subtab === 'exercise') {
     bar.innerHTML = `
       <div>
@@ -3532,6 +3566,7 @@ function drawFretboard() {
   const isHarmonicsTab = (state.mainView === 'practice' && state.subtab === 'harmonics');
   const isSearchTab = (state.mainView === 'practice' && state.subtab === 'search');
   const isChordTab = (state.mainView === 'practice' && state.subtab === 'chord');
+  const isArpeggioTab = (state.mainView === 'practice' && state.subtab === 'arpeggio');
   const activeChordVoicing = isChordTab && state.chordVoicingsList && state.chordVoicingsList.length > 0
     ? (state.chordVoicingsList[state.selectedChordVoicingIdx] || state.chordVoicingsList[0])
     : null;
@@ -3683,6 +3718,55 @@ function drawFretboard() {
   state.markedFretCells = new Set();
 
   let searchChordSet = null, searchTensionSet = null, searchAvoidSet = null;
+  let arpNodeMap = null, arpGhostMap = null, arpNextSegMap = null, arpTechMap = null, arpActiveStepObj = null;
+  if (isArpeggioTab && state.arpData) {
+    arpNodeMap = new Map();
+    arpGhostMap = new Map();
+    arpNextSegMap = new Map();
+    arpTechMap = new Map();
+
+    let activeNodes = state.arpData.nodes || [];
+    let activeSteps = state.arpData.steps || [];
+    if (state.arpViewMode === 'transition' && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments.length > 0) {
+      const segs = state.arpData.transition.segments;
+      const segIdx = Math.max(0, Math.min(state.arpActiveSegIdx || 0, segs.length - 1));
+      const curSeg = segs[segIdx];
+      activeNodes = curSeg.nodes || [];
+      activeSteps = curSeg.steps || [];
+      const nextSeg = segs[(segIdx + 1) % segs.length];
+      if (nextSeg && nextSeg !== curSeg) {
+        for (const nn of (nextSeg.nodes || [])) arpNextSegMap.set(`${nn.s}:${nn.f}`, nn);
+      }
+      const allSteps = getActiveArpeggioSteps();
+      if (state.arpPlayStepIdx >= 0 && allSteps[state.arpPlayStepIdx]) {
+        arpActiveStepObj = allSteps[state.arpPlayStepIdx];
+      }
+    } else {
+      if (state.arpShowGhostFullNeck) {
+        for (const gn of (state.arpData.fullNeckNodes || [])) arpGhostMap.set(`${gn.s}:${gn.f}`, gn);
+      }
+      if (state.arpPlayStepIdx >= 0 && activeSteps[state.arpPlayStepIdx]) {
+        arpActiveStepObj = activeSteps[state.arpPlayStepIdx];
+      }
+    }
+
+    for (const n of activeNodes) arpNodeMap.set(`${n.s}:${n.f}`, n);
+    for (const st of activeSteps) {
+      const key = `${st.s}:${st.f}`;
+      if (!arpTechMap.has(key)) arpTechMap.set(key, st);
+    }
+
+    // Subtelna trajektoria kostkowania w trybie Sweep Picking (łączy kolejne nuty w kształcie)
+    if ((state.arpPattern === 4 || state.arpViewMode === 'transition') && activeNodes.length >= 2) {
+      const ordered = activeNodes.slice().sort((a, b) => (a.s - b.s) || (a.f - b.f));
+      const pts = ordered.map(n => {
+        const px = (n.f === 0) ? (leftNutX * 0.48) : (leftNutX + (n.f - 0.5) * fretW);
+        const py = topPad + (nStrings - 1 - n.s) * stringH;
+        return `${px.toFixed(1)},${py.toFixed(1)}`;
+      }).join(' ');
+      svg += `<polyline points="${pts}" fill="none" stroke="rgba(243,146,55,0.45)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,4" pointer-events="none"/>`;
+    }
+  }
   if (isSearchTab && state.searchData) {
     if (state.searchDir === 'chord_to_scale') {
       if (state.selectedSearchScaleIdx >= 0 && state.searchData.matches[state.selectedSearchScaleIdx]) {
@@ -3786,6 +3870,57 @@ function drawFretboard() {
           textColor = '#160f08';
         }
       }
+    } else if (isArpeggioTab && arpNodeMap) {
+      const key = `${s}:${f}`;
+      const aNode = arpNodeMap.get(key);
+      const nextNode = arpNextSegMap ? arpNextSegMap.get(key) : null;
+      const ghostNode = arpGhostMap ? arpGhostMap.get(key) : null;
+      const isCurStep = !!(arpActiveStepObj && arpActiveStepObj.s === s && arpActiveStepObj.f === f);
+
+      if (aNode) {
+        shouldDrawCircle = true;
+        const ivStr = aNode.interval || '';
+        if (isCurStep) {
+          fillAttr = '#22c55e';
+          strokeAttr = '#ffffff';
+          textColor = '#05140b';
+        } else if (aNode.isRoot || ivStr === '1') {
+          fillAttr = 'url(#rootGrad)';
+          strokeAttr = '#fde68a';
+          textColor = '#160f08';
+        } else if (ivStr === '3' || ivStr === '♭3' || ivStr === 'b3') {
+          fillAttr = 'url(#chordRoleGrad)';
+          strokeAttr = '#86efac';
+          textColor = '#08170e';
+        } else if (ivStr === '5' || ivStr === '♭5' || ivStr === '♯5' || ivStr === 'b5' || ivStr === '#5') {
+          fillAttr = '#0284c7';
+          strokeAttr = '#7dd3fc';
+          textColor = '#ffffff';
+        } else {
+          fillAttr = 'url(#tensionRoleGrad)';
+          strokeAttr = '#fef08a';
+          textColor = '#171206';
+        }
+      } else if (nextNode) {
+        // Podgląd pozycji kolejnego akordu w przejściu sweep (przerywany kontur)
+        svg += `<g opacity="0.55" pointer-events="none">
+          <circle cx="${cx}" cy="${cy}" r="${(radius * 0.84).toFixed(1)}" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="${cx}" y="${cy + 3.5}" fill="#7dd3fc" font-family="Segoe UI, sans-serif" font-size="10" font-weight="700" text-anchor="middle">${state.labelType==='intervals' ? nextNode.interval : nextNode.note}</text>
+        </g>`;
+      } else if (ghostNode) {
+        shouldDrawCircle = true;
+        customNodeOpacity = '0.26';
+        if (ghostNode.isRoot) {
+          fillAttr = 'url(#rootGrad)';
+          strokeAttr = '#ffb86c';
+          textColor = '#160f08';
+        }
+      } else if (isDetected) {
+        shouldDrawCircle = true;
+        fillAttr = 'rgba(74, 222, 128, 0.35)';
+        strokeAttr = '#4ade80';
+        textColor = '#f8f5f0';
+      }
     } else if (isSearchTab && searchChordSet) {
       const inChord = searchChordSet.has(pc);
       const inTension = searchTensionSet && searchTensionSet.has(pc);
@@ -3861,16 +3996,34 @@ function drawFretboard() {
 
     let label = cell.note;
     const activeLblType = isSearchTab ? state.searchLabelType : state.labelType;
-    if (activeLblType === 'intervals' && cell.interval) {
+    if (isArpeggioTab && arpNodeMap) {
+      const aNode = arpNodeMap.get(`${s}:${f}`) || (arpGhostMap && arpGhostMap.get(`${s}:${f}`));
+      if (aNode) {
+        label = (activeLblType === 'intervals' && aNode.interval) ? aNode.interval : aNode.note;
+      }
+    } else if (activeLblType === 'intervals' && cell.interval) {
       label = cell.interval;
     }
     if (isTappedVoicingNode) {
       label = 'T:' + label;
     }
 
+    const arpIsCurPlay = isArpeggioTab && arpActiveStepObj && arpActiveStepObj.s === s && arpActiveStepObj.f === f;
     svg += `<g class="fb-node" opacity="${customNodeOpacity}" onmousedown="onFretCellMouseDown(event, ${s}, ${f})" onmouseenter="onFretCellMouseEnter(event, ${s}, ${f})">`;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="1.5"/>`;
+    if (arpIsCurPlay) {
+      svg += `<circle cx="${cx}" cy="${cy}" r="${(radius + 4.5).toFixed(1)}" fill="none" stroke="#4ade80" stroke-width="2.5" opacity="0.9"/>`;
+    }
+    svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${arpIsCurPlay ? '2.5' : '1.5'}"/>`;
     svg += `<text x="${cx}" y="${cy + noteFontSize * 0.34}" fill="${textColor}" font-family="Segoe UI, system-ui, sans-serif" font-size="${isTappedVoicingNode ? Math.max(9.5, noteFontSize - 2) : noteFontSize}" font-weight="700" text-anchor="middle">${label}</text>`;
+    if (isArpeggioTab && arpTechMap && (state.arpPattern === 4 || state.arpViewMode === 'transition')) {
+      const stInfo = arpTechMap.get(`${s}:${f}`);
+      if (stInfo && arpNodeMap && arpNodeMap.has(`${s}:${f}`)) {
+        const symMap = { D: '↓', U: '↑', H: 'H', P: 'P', S: 'S' };
+        const badge = (symMap[stInfo.tech] || stInfo.tech) + (stInfo.roll ? '·R' : '');
+        svg += `<rect x="${cx - 12}" y="${cy - radius - 14}" width="24" height="12" rx="3" fill="#17120e" stroke="${stInfo.roll ? '#facc15' : '#574230'}" stroke-width="0.9"/>`;
+        svg += `<text x="${cx}" y="${cy - radius - 5}" fill="${stInfo.roll ? '#fde047' : '#fb923c'}" font-family="Segoe UI, sans-serif" font-size="9" font-weight="800" text-anchor="middle">${badge}</text>`;
+      }
+    }
     svg += `</g>`;
   }
 
@@ -4246,6 +4399,9 @@ function playCurrentScalePreview() {
 }
 
 function switchMainView(view, btn) {
+  if (typeof stopArpeggioPlayback === 'function') {
+    stopArpeggioPlayback(false);
+  }
   state.mainView = view;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -4273,6 +4429,9 @@ function switchMainView(view, btn) {
 function switchPracticeSubtab(sub, btn) {
   if (typeof stopExercisePlayer === 'function') {
     stopExercisePlayer(false);
+  }
+  if (typeof stopArpeggioPlayback === 'function') {
+    stopArpeggioPlayback(false);
   }
   state.subtab = sub;
   document.querySelectorAll('.subtab-btn').forEach(b => {
@@ -5989,40 +6148,243 @@ async function renderStageAndInspector() {
     drawFretboard();
 
   } else if (state.subtab === 'arpeggio') {
+    // =======================================================================
+    // ZAKŁADKA: ARPEGGIO I SWEEP PICKING (wzorce CAGED/2NPS/3NPS/Sweep + 8 przejść Sweep!)
+    // =======================================================================
     const customParam = state.customStringMidis.join(',');
-    const data = await fetchJson(`/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${state.chordId}&pattern=${state.arpPattern}&posIdx=${state.posIdx}&accMode=${state.accMode}`);
+    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${state.arpPattern}&posIdx=${state.arpPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&viewMode=${encodeURIComponent(state.arpViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${state.arpDiatonicScaleRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
+    const data = await fetchJson(arpUrl);
+    state.arpData = data;
+    if (data.posIdx !== undefined) state.arpPosIdx = data.posIdx;
+    const isTrans = (state.arpViewMode === 'transition');
+    const tr = data.transition || { segments: [] };
+    if (isTrans && tr.segments && state.arpActiveSegIdx >= tr.segments.length) {
+      state.arpActiveSegIdx = 0;
+    }
+
+    const activeSteps = getActiveArpeggioSteps();
+    const tabSvg = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, state.arpPlayStepIdx, isTrans);
+    const hasRollAny = activeSteps.some(st => st.roll);
+    const rootLabels = getRootLabels();
+    const chordOptHtml = (c) => `<option value="${c.id}" ${c.id===state.chordId?'selected':''}>${c.id} (${c.name})</option>`;
+    const groupedChordsHtml = ['Trójdźwięki', 'Dwudźwięki', 'Septymowe', 'Rozszerzone', 'Alterowane'].map(cat => {
+      const items = (state.initData.chords || []).filter(c => c.category === cat);
+      return items.length ? `<optgroup label="${cat}">${items.map(chordOptHtml).join('')}</optgroup>` : '';
+    }).join('');
+
     stage.innerHTML = `
-      <div class="fretboard-card">
-        <div class="section-label">Arpeggio diatoniczne w tonacji (${state.fretboardData.scaleFullName})</div>
-        <div class="chord-cards-grid">
-          ${data.diatonic.map(d => `
-            <div class="chord-box-card" onclick="state.chordId='${d.chordId}';renderStageAndInspector()">
-              <div style="font-size:12px;color:var(--text-muted);">Stopień ${d.roman}</div>
-              <div style="font-size:18px;font-weight:800;color:var(--accent);">${d.symbol}</div>
+      <div class="fretboard-card" style="gap:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-size:17px;font-weight:800;color:var(--text);">
+              ${isTrans ? `⚡ ${tr.name}` : `Arpeggio: ${data.chordSymbol} <span style="color:var(--text-muted);font-weight:600;font-size:13px;">(${data.chordName})</span>`}
             </div>
-          `).join('')}
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+              ${isTrans ? tr.description : 'Kliknij dowolną nutę na TAB-ie lub naciśnij „Odsłuchaj”, aby zobaczyć kierunek kostkowania i animację na gryfie.'}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button id="arpPlayBtn" class="chip-btn ${state.arpPlaying?'active':''}" style="padding:7px 14px;font-weight:700;"
+                    onclick="toggleArpeggioPlayback()">
+              ${state.arpPlaying ? '⏹ Stop' : '▶ Odsłuchaj'}
+            </button>
+            <button class="chip-btn ${state.arpLoop?'active':''}" style="padding:7px 10px;font-size:12px;"
+                    onclick="state.arpLoop=!state.arpLoop;renderStageAndInspector()">🔁 Pętla</button>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;">
+              <button class="chip-btn" style="padding:2px 6px;" onclick="setArpeggioBpm(state.arpBpm - 10)">−10</button>
+              <strong id="arpBpmVal" style="min-width:54px;text-align:center;color:var(--accent);">${state.arpBpm} BPM</strong>
+              <button class="chip-btn" style="padding:2px 6px;" onclick="setArpeggioBpm(state.arpBpm + 10)">+10</button>
+            </div>
+            <button class="chip-btn" style="padding:7px 12px;font-size:12px;border-color:var(--accent);color:var(--accent);"
+                    onclick="sendArpeggioToExerciseTab()" title="Przenieś sekwencję do Edytora Ćwiczeń (ćwiczenie z mikrofonem i eksport GP5/MIDI)">
+              ✏️ Ćwicz w TAB / Eksport GP5
+            </button>
+          </div>
         </div>
+
+        <div id="arpTabSvgWrap" style="background:#14100d;border:1px solid #2b231d;border-radius:10px;padding:12px 14px;overflow-x:auto;">
+          ${tabSvg}
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text-muted);background:rgba(243,146,55,0.06);border:1px solid #3c2c1f;border-radius:8px;padding:9px 12px;">
+          <div>
+            <strong style="color:var(--accent);">💡 Wskazówka techniczna:</strong>
+            ${isTrans ? tr.practiceTip : (hasRollAny
+              ? 'W tym kształcie występuje przetoczenie palca (Roll · R) — lekko przewiń staw palca między sąsiednimi strunami na tym samym progu, żeby dźwięki nie zlewały się ze sobą.'
+              : 'Prowadź kostkę jednym płynnym ruchem opadającym (↓) w górę arpeggio, wykonaj czysty Hammer-on / Pull-off (H / P) na strunie E1 i wróć ruchem w górę (↑).')}
+          </div>
+          <div style="display:flex;gap:10px;white-space:nowrap;">
+            <span><b style="color:#fb923c;">↓</b> w dół</span>
+            <span><b style="color:#38bdf8;">↑</b> w górę</span>
+            <span><b style="color:#4ade80;">H/P</b> legato</span>
+            <span><b style="color:#facc15;">S</b> slide</span>
+            <span><b style="color:#fde047;">R</b> roll</span>
+          </div>
+        </div>
+
+        ${isTrans ? `
+          <div>
+            <div class="section-label">KOLEJNE OGNIWA PRZEJŚCIA (KLIKNIJ, ABY ZOBACZYĆ KSZTAŁT NA GRYFIE; PRZERYWANY KONTUR = NASTĘPNY AKORD)</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:8px;">
+              ${(tr.segments || []).map((seg, idx) => `
+                <div class="chord-box-card ${idx===state.arpActiveSegIdx?'selected':''}" style="align-items:flex-start;text-align:left;padding:10px 12px;gap:4px;"
+                     onclick="selectArpTransitionSegment(${idx})">
+                  <div style="display:flex;justify-content:space-between;width:100%;font-size:11px;color:var(--text-muted);">
+                    <span>${idx + 1}. ${seg.roman}</span>
+                    <span>${seg.stringSpan} str. · pr. ${seg.minFret}–${seg.maxFret}</span>
+                  </div>
+                  <div style="font-size:19px;font-weight:800;color:var(--accent);">${seg.symbol}</div>
+                  <div style="font-size:11px;color:#d6cec2;line-height:1.3;">${seg.hint}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : `
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+              <div class="section-label" style="margin:0;">ARPEGGIO DIATONICZNE W SKALI (${data.scaleFullName}) — KLIKNIJ, ABY ZAŁADOWAĆ</div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button class="chip-btn ${!state.arpDiatonicSevenths?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="state.arpDiatonicSevenths=false;renderStageAndInspector()">Trójdźwięki</button>
+                <button class="chip-btn ${state.arpDiatonicSevenths?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="state.arpDiatonicSevenths=true;renderStageAndInspector()">Septymowe</button>
+              </div>
+            </div>
+            <div class="chord-cards-grid">
+              ${(data.diatonic || []).map(d => {
+                const isCur = (d.rootPc === state.rootPc && d.chordId === state.chordId);
+                return `
+                  <div class="chord-box-card ${isCur?'selected':''}"
+                       onclick="selectDiatonicArpeggio(${d.rootPc}, '${d.chordId}')">
+                    <div style="font-size:12px;color:var(--text-muted);">Stopień ${d.roman}</div>
+                    <div style="font-size:18px;font-weight:800;color:var(--accent);">${d.symbol}</div>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>
+        `}
       </div>`;
+
     insp.innerHTML = `
       <div>
-        <div class="section-label">PRYMA ARPEGGIO</div>
-        ${buildRootButtonsHtml('setRootPc')}
-      </div>
-      <div>
-        <div class="section-label">RODZAJ AKORDU</div>
-        <select onchange="state.chordId=this.value;renderStageAndInspector();">
-          ${state.initData.chords.map(c => `<option value="${c.id}" ${c.id===state.chordId?'selected':''}>${c.id} – ${c.name}</option>`).join('')}
-        </select>
-      </div>
-      <div>
-        <div class="section-label">WZORZEC ARPEGGIO</div>
+        <div class="section-label">TRYB PRACY</div>
         <div class="btn-grid-2">
-          <button class="chip-btn ${state.arpPattern===0?'active':''}" onclick="state.arpPattern=0;renderStageAndInspector()">Cały gryf</button>
-          <button class="chip-btn ${state.arpPattern===1?'active':''}" onclick="state.arpPattern=1;renderStageAndInspector()">CAGED</button>
-          <button class="chip-btn ${state.arpPattern===2?'active':''}" onclick="state.arpPattern=2;renderStageAndInspector()">2NPS</button>
-          <button class="chip-btn ${state.arpPattern===4?'active':''}" onclick="state.arpPattern=4;renderStageAndInspector()">Sweep Picking</button>
+          <button class="chip-btn ${!isTrans?'active':''}"
+                  onclick="stopArpeggioPlayback(false);state.arpViewMode='single';renderStageAndInspector()">Pojedyncze arpeggio</button>
+          <button class="chip-btn ${isTrans?'active':''}"
+                  onclick="stopArpeggioPlayback(false);state.arpViewMode='transition';state.arpActiveSegIdx=0;renderStageAndInspector()">⚡ Przejścia Sweep</button>
         </div>
-      </div>`;
+      </div>
+
+      <div>
+        <div class="section-label">${isTrans ? 'TONACJA PRZEJŚCIA' : 'PRYMA ARPEGGIO'}</div>
+        <div class="btn-grid-6">
+          ${rootLabels.map((lbl, pc) => `
+            <button class="chip-btn ${state.rootPc===pc?'active':''}"
+                    onclick="stopArpeggioPlayback(false);state.rootPc=${pc};state.arpDiatonicScaleRootPc=${pc};state.arpPosIdx=0;renderAll()">${lbl}</button>
+          `).join('')}
+        </div>
+      </div>
+
+      ${isTrans ? `
+        <div>
+          <div class="section-label">LICZBA STRUN SWEEP</div>
+          <div class="btn-grid-3">
+            <button class="chip-btn ${state.arpSweepStrings===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=3;renderStageAndInspector()">3 struny</button>
+            <button class="chip-btn ${state.arpSweepStrings===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=5;renderStageAndInspector()">5 strun</button>
+            <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;renderStageAndInspector()">6 strun</button>
+          </div>
+        </div>
+        ${state.arpTransitionId === 'same_chord_inversions' ? `
+          <div>
+            <div class="section-label">AKORD DLA INWERSJI</div>
+            <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;renderStageAndInspector();">
+              ${groupedChordsHtml}
+            </select>
+          </div>
+        ` : ''}
+        ${state.arpTransitionId === 'diatonic_climb' ? `
+          <div>
+            <div class="section-label">SKALA DO WSPINACZKI</div>
+            <select onchange="stopArpeggioPlayback(false);state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
+              ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
+            </select>
+          </div>
+        ` : ''}
+        <div>
+          <div class="section-label">WYBIERZ PRZEJŚCIE SWEEP PICKING (${(data.transitionPresets || []).length})</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            ${(data.transitionPresets || []).map(p => `
+              <button class="chip-btn ${state.arpTransitionId===p.id?'active':''}" style="text-align:left;padding:8px 10px;display:flex;flex-direction:column;gap:2px;"
+                      onclick="stopArpeggioPlayback(false);state.arpTransitionId='${p.id}';state.arpActiveSegIdx=0;renderStageAndInspector()">
+                <div style="display:flex;justify-content:space-between;width:100%;align-items:center;gap:6px;">
+                  <strong style="font-size:12px;">${p.name}</strong>
+                  <span style="font-size:10px;opacity:0.75;white-space:nowrap;">${p.category}</span>
+                </div>
+                <span style="font-size:11px;opacity:0.8;font-weight:400;line-height:1.25;">${p.description}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      ` : `
+        <div>
+          <div class="section-label">RODZAJ AKORDU (ARPEGGIO)</div>
+          <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;state.arpPosIdx=0;renderStageAndInspector();">
+            ${groupedChordsHtml}
+          </select>
+        </div>
+        <div>
+          <div class="section-label">WZORZEC ARPEGGIO</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <button class="chip-btn ${state.arpPattern===4?'active':''}" style="grid-column:1 / -1;"
+                    onclick="stopArpeggioPlayback(false);state.arpPattern=4;state.arpPosIdx=0;renderStageAndInspector()">⚡ Sweep Picking (klasyczny)</button>
+            <button class="chip-btn ${state.arpPattern===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=1;state.arpPosIdx=0;renderStageAndInspector()">CAGED (5 poz.)</button>
+            <button class="chip-btn ${state.arpPattern===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=2;state.arpPosIdx=0;renderStageAndInspector()">2NPS (2/strunę)</button>
+            <button class="chip-btn ${state.arpPattern===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=3;state.arpPosIdx=0;renderStageAndInspector()">3NPS (legato)</button>
+            <button class="chip-btn ${state.arpPattern===0?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=0;state.arpPosIdx=0;renderStageAndInspector()">Cały gryf</button>
+          </div>
+        </div>
+        ${state.arpPattern === 4 ? `
+          <div>
+            <div class="section-label">LICZBA STRUN SWEEP</div>
+            <div class="btn-grid-3">
+              <button class="chip-btn ${state.arpSweepStrings===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=3;state.arpPosIdx=0;renderStageAndInspector()">3 struny</button>
+              <button class="chip-btn ${state.arpSweepStrings===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=5;state.arpPosIdx=0;renderStageAndInspector()">5 strun</button>
+              <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;state.arpPosIdx=0;renderStageAndInspector()">6 strun</button>
+            </div>
+          </div>
+        ` : ''}
+        <div>
+          <div class="section-label">KIERUNEK ODTWARZANIA</div>
+          <div class="btn-grid-3">
+            <button class="chip-btn ${state.arpDirection===0?'active':''}" onclick="stopArpeggioPlayback(false);state.arpDirection=0;renderStageAndInspector()">↕ Góra-dół</button>
+            <button class="chip-btn ${state.arpDirection===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpDirection=1;renderStageAndInspector()">↓ W górę</button>
+            <button class="chip-btn ${state.arpDirection===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpDirection=2;renderStageAndInspector()">↑ W dół</button>
+          </div>
+        </div>
+        ${(data.positions && data.positions.length > 0) ? `
+          <div>
+            <div class="section-label">POZYCJA NA GRYFIE (${data.positions.length})</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;">
+              ${data.positions.map(pos => `
+                <button class="chip-btn ${state.arpPosIdx===pos.idx?'active':''}" style="padding:5px 8px;font-size:11px;"
+                        onclick="stopArpeggioPlayback(false);state.arpPosIdx=${pos.idx};renderStageAndInspector()">
+                  ${pos.label}${pos.hasRoll ? ' · R' : ''}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+        <div>
+          <div class="section-label">SKALA DLA KART DIATONICZNYCH</div>
+          <select onchange="state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
+            ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
+          </select>
+        </div>
+      `}`;
+
+    renderFretboardToolbarForActiveTab();
+    drawFretboard();
 
   } else if (state.subtab === 'scale_practice') {
     // =======================================================================
@@ -6764,6 +7126,243 @@ function setSearchRootPc(pc) {
   renderAll();
 }
 
+let arpPlaybackTimer = null;
+
+function getActiveArpeggioSteps() {
+  if (!state.arpData) return [];
+  if (state.arpViewMode === 'transition' && state.arpData.transition && state.arpData.transition.segments) {
+    const out = [];
+    state.arpData.transition.segments.forEach((seg, sIdx) => {
+      (seg.steps || []).forEach(st => {
+        out.push(Object.assign({}, st, { seg: sIdx, chordSymbol: seg.symbol, roman: seg.roman }));
+      });
+    });
+    return out;
+  }
+  return state.arpData.steps || [];
+}
+
+function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
+  if (!steps || steps.length === 0) {
+    return `<div style="padding:18px;text-align:center;color:var(--text-muted);">Brak wygenerowanych nut dla tej konfiguracji.</div>`;
+  }
+  const nStrings = 6;
+  const leftPad = 36;
+  const colW = 34;
+  const rightPad = 24;
+  const topY = isTransition ? 46 : 30;
+  const rowGap = 15;
+  const W = Math.max(520, leftPad + steps.length * colW + rightPad);
+  const H = topY + (nStrings - 1) * rowGap + 24;
+  const strNames = ['e', 'B', 'G', 'D', 'A', 'E'];
+  const symMap = { D: '↓', U: '↑', H: 'H', P: 'P', S: 'S' };
+  const symColor = { D: '#fb923c', U: '#38bdf8', H: '#4ade80', P: '#4ade80', S: '#facc15' };
+
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  for (let r = 0; r < nStrings; r++) {
+    const y = topY + r * rowGap;
+    svg += `<text x="12" y="${y + 4}" fill="#8c8277" font-family="monospace" font-size="11" font-weight="700">${strNames[r]}</text>`;
+    svg += `<line x1="${leftPad - 8}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="#3e332a" stroke-width="1.2"/>`;
+  }
+  svg += `<line x1="${leftPad - 8}" y1="${topY}" x2="${leftPad - 8}" y2="${topY + (nStrings - 1) * rowGap}" stroke="#6e5c4d" stroke-width="1.5"/>`;
+
+  let lastSeg = -1;
+  for (let i = 0; i < steps.length; i++) {
+    const st = steps[i];
+    const x = leftPad + i * colW + colW * 0.5;
+    const isAct = (i === activeIdx);
+
+    if (isTransition && st.seg !== lastSeg) {
+      lastSeg = st.seg;
+      if (i > 0) {
+        svg += `<line x1="${x - colW * 0.5}" y1="${topY - 26}" x2="${x - colW * 0.5}" y2="${topY + (nStrings - 1) * rowGap + 6}" stroke="#57412e" stroke-width="1.3" stroke-dasharray="4,3"/>`;
+      }
+      const segObj = segments && segments[st.seg];
+      const hdr = segObj ? `${segObj.symbol} (${segObj.roman})` : '';
+      const hdrColor = (st.seg === state.arpActiveSegIdx) ? '#f39237' : '#d6cec2';
+      svg += `<text x="${x - 6}" y="15" fill="${hdrColor}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800">${hdr}</text>`;
+    }
+
+    // Symbol kostkowania / techniki nad tabulaturą
+    const techSym = symMap[st.tech] || st.tech || '↓';
+    const tCol = symColor[st.tech] || '#fb923c';
+    svg += `<text x="${x}" y="${topY - 10}" fill="${tCol}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800" text-anchor="middle">${techSym}${st.roll ? '·R' : ''}</text>`;
+
+    // Numer progu na odpowiedniej strunie
+    const r = (nStrings - 1) - st.s;
+    const y = topY + r * rowGap;
+    const fretVal = (st.f !== undefined) ? st.f : st.fret;
+    const boxW = String(fretVal).length > 1 ? 22 : 16;
+    const bgFill = isAct ? '#22c55e' : (st.isRoot ? '#4a2b14' : '#14100d');
+    const txtFill = isAct ? '#05140b' : (st.isRoot ? '#fbbf24' : '#f5f2eb');
+    const strokeCol = isAct ? '#bbf7d0' : (st.isRoot ? '#f39237' : 'none');
+
+    svg += `<g style="cursor:pointer" onclick="playSingleArpeggioStep(${i})">`;
+    svg += `<rect x="${x - boxW / 2}" y="${y - 7.5}" width="${boxW}" height="15" rx="3.5" fill="${bgFill}" stroke="${strokeCol}" stroke-width="${strokeCol !== 'none' ? '1.2' : '0'}"/>`;
+    svg += `<text x="${x}" y="${y + 4}" fill="${txtFill}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800" text-anchor="middle">${fretVal}</text>`;
+    svg += `</g>`;
+  }
+
+  svg += `</svg>`;
+  return svg;
+}
+
+function selectDiatonicArpeggio(rootPc, chordId) {
+  stopArpeggioPlayback(false);
+  state.rootPc = rootPc;
+  state.chordId = chordId;
+  state.arpPosIdx = 0;
+  renderAll();
+}
+
+function selectArpTransitionSegment(segIdx) {
+  stopArpeggioPlayback(false);
+  state.arpActiveSegIdx = segIdx;
+  state.arpPlayStepIdx = -1;
+  renderStageAndInspector();
+}
+
+function setArpeggioBpm(bpm) {
+  state.arpBpm = Math.max(40, Math.min(200, bpm));
+  const el = document.getElementById('arpBpmVal');
+  if (el) el.textContent = `${state.arpBpm} BPM`;
+  saveSettings();
+  if (state.arpPlaying) {
+    stopArpeggioPlayback(false);
+    toggleArpeggioPlayback();
+  }
+}
+
+function playSingleArpeggioStep(idx) {
+  const steps = getActiveArpeggioSteps();
+  const st = steps[idx];
+  if (!st) return;
+  state.arpPlayStepIdx = idx;
+  if (state.arpViewMode === 'transition' && st.seg !== undefined) {
+    state.arpActiveSegIdx = st.seg;
+  }
+  state.detectedMidi = st.midi;
+  pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
+  updateGuitarToKeyboardSync();
+  const wrap = document.getElementById('arpTabSvgWrap');
+  if (wrap) {
+    const isTrans = (state.arpViewMode === 'transition');
+    const segs = isTrans && state.arpData && state.arpData.transition ? state.arpData.transition.segments : null;
+    wrap.innerHTML = buildArpeggioTabSvg(steps, segs, idx, isTrans);
+  }
+  renderFretboardToolbarForActiveTab();
+  drawFretboard();
+}
+
+function stopArpeggioPlayback(redraw = true) {
+  if (arpPlaybackTimer) {
+    clearTimeout(arpPlaybackTimer);
+    arpPlaybackTimer = null;
+  }
+  state.arpPlaying = false;
+  state.arpPlayStepIdx = -1;
+  const btn = document.getElementById('arpPlayBtn');
+  if (btn) {
+    btn.textContent = '▶ Odsłuchaj';
+    btn.classList.remove('active');
+  }
+  if (redraw && state.subtab === 'arpeggio') {
+    const wrap = document.getElementById('arpTabSvgWrap');
+    if (wrap) {
+      const steps = getActiveArpeggioSteps();
+      const isTrans = (state.arpViewMode === 'transition');
+      const segs = isTrans && state.arpData && state.arpData.transition ? state.arpData.transition.segments : null;
+      wrap.innerHTML = buildArpeggioTabSvg(steps, segs, -1, isTrans);
+    }
+    drawFretboard();
+  }
+}
+
+function toggleArpeggioPlayback() {
+  if (state.arpPlaying) {
+    stopArpeggioPlayback(true);
+    return;
+  }
+  const steps = getActiveArpeggioSteps();
+  if (!steps.length) return;
+  state.arpPlaying = true;
+  state.arpPlayStepIdx = 0;
+  const btn = document.getElementById('arpPlayBtn');
+  if (btn) {
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('active');
+  }
+
+  const tick = () => {
+    if (!state.arpPlaying || state.subtab !== 'arpeggio') {
+      stopArpeggioPlayback(false);
+      return;
+    }
+    const curSteps = getActiveArpeggioSteps();
+    if (!curSteps.length) {
+      stopArpeggioPlayback(true);
+      return;
+    }
+    if (state.arpPlayStepIdx >= curSteps.length) {
+      if (state.arpLoop) {
+        state.arpPlayStepIdx = 0;
+      } else {
+        stopArpeggioPlayback(true);
+        return;
+      }
+    }
+    const st = curSteps[state.arpPlayStepIdx];
+    const segChanged = (state.arpViewMode === 'transition' && st.seg !== undefined && st.seg !== state.arpActiveSegIdx);
+    if (segChanged) {
+      state.arpActiveSegIdx = st.seg;
+      document.querySelectorAll('#dynamicStagePanel .chord-box-card').forEach((card, ci) => {
+        card.classList.toggle('selected', ci === state.arpActiveSegIdx);
+      });
+      renderFretboardToolbarForActiveTab();
+    }
+    state.detectedMidi = st.midi;
+    pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
+    updateGuitarToKeyboardSync();
+
+    const wrap = document.getElementById('arpTabSvgWrap');
+    if (wrap) {
+      const isTrans = (state.arpViewMode === 'transition');
+      const segs = isTrans && state.arpData && state.arpData.transition ? state.arpData.transition.segments : null;
+      wrap.innerHTML = buildArpeggioTabSvg(curSteps, segs, state.arpPlayStepIdx, isTrans);
+    }
+    drawFretboard();
+
+    state.arpPlayStepIdx++;
+    // Szesnastki / triole wg ustawionego BPM (np. 90 BPM -> 166 ms na nutę)
+    const stepMs = Math.max(70, Math.round(60000 / (state.arpBpm * 4)));
+    arpPlaybackTimer = setTimeout(tick, stepMs);
+  };
+
+  tick();
+}
+
+function sendArpeggioToExerciseTab() {
+  stopArpeggioPlayback(false);
+  const steps = getActiveArpeggioSteps();
+  if (!steps.length) return;
+  const techMap = { H: 'Hammer-on', P: 'Pull-off', S: 'Slide' };
+  state.recordedEvents = steps.map(st => ({
+    s: st.s,
+    f: st.f,
+    midi: st.midi,
+    note: st.note,
+    dur: 2, // Szesnastka
+    rest: false,
+    tech: techMap[st.tech] || '—'
+  }));
+  state.tempoBpm = state.arpBpm;
+  state.exerciseTitle = (state.arpViewMode === 'transition' && state.arpData && state.arpData.transition)
+    ? state.arpData.transition.name
+    : `Arpeggio ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
+  state.exercisePlayerActive = false;
+  switchPracticeSubtab('exercise');
+}
+
 function saveSettings() {
   try {
     const payload = {
@@ -6783,6 +7382,13 @@ function saveSettings() {
       chordScaleRootPc: state.chordScaleRootPc,
       chordScaleId: state.chordScaleId,
       chordShowScaleOnFretboard: state.chordShowScaleOnFretboard,
+      arpViewMode: state.arpViewMode,
+      arpPattern: state.arpPattern,
+      arpSweepStrings: state.arpSweepStrings,
+      arpDirection: state.arpDirection,
+      arpTransitionId: state.arpTransitionId,
+      arpShowGhostFullNeck: state.arpShowGhostFullNeck,
+      arpBpm: state.arpBpm,
       tuningId: state.tuningId,
       customStringMidis: state.customStringMidis,
       a4ReferenceHz: state.a4ReferenceHz,

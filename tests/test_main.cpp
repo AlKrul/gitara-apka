@@ -432,13 +432,51 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
     Fretboard fb{findTuning("standard"), 24};
     Chord cMaj7{Note{Letter::C, Accidental::Natural}, findChordDefinition("maj7")};
 
-    // 1. Zakładka Arpeggio (FullNeck, CAGED, 2NPS, Sweep + diatoniczne arpeggio w tonacji)
+    // 1. Zakładka Arpeggio (FullNeck, CAGED, 2NPS, 3NPS, Sweep 3/5/6-str. + 8 przejść Sweep + diatoniczne)
     auto fullArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::FullNeck);
     auto cagedArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::CAGED, 0);
+    auto twoNpsArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::TwoNPS, 0);
+    auto threeNpsArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::ThreeNPS, 0);
     auto sweepArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::Sweep, 0);
     CHECK(fullArp.size() > cagedArp.size());
     CHECK(!cagedArp.empty());
+    CHECK(!twoNpsArp.empty());
+    CHECK(!threeNpsArp.empty());
     CHECK(!sweepArp.empty());
+
+    // Sweep shapes 3-, 5- i 6-strunowe dla Am, Cmaj, G#dim7, Cmaj7
+    for (const char* cid : {"minor", "major", "dim7", "maj7", "7"}) {
+        Chord testCh{Note{Letter::A, Accidental::Natural}, findChordDefinition(cid)};
+        for (int span : {3, 5, 6}) {
+            auto shapes = generateSweepShapes(fb, testCh, span, 0);
+            CHECK(!shapes.empty());
+            for (const auto& sh : shapes) {
+                CHECK(!sh.nodes.empty());
+                CHECK(!sh.steps.empty());
+                CHECK(sh.maxFret >= sh.minFret);
+            }
+        }
+    }
+
+    // Wszystkie 8 presetów przejść Sweep Picking w tonacji A i C (3- i 5-strunowe)
+    const auto& trPresets = allSweepTransitionPresets();
+    CHECK(trPresets.size() == 8);
+    Scale aMinScale{Note{Letter::A, Accidental::Natural}, findScaleDefinition("natural_minor")};
+    Chord aMinChord{Note{Letter::A, Accidental::Natural}, findChordDefinition("minor")};
+    for (const auto& p : trPresets) {
+        auto tr3 = generateSweepTransition(fb, p.id, 9, 3, 0, &aMinChord, &aMinScale);
+        auto tr5 = generateSweepTransition(fb, p.id, 0, 5, 0, &cMaj7, nullptr);
+        CHECK(tr3.segments.size() >= 3);
+        CHECK(tr5.segments.size() >= 3);
+        for (const auto& seg : tr3.segments) {
+            CHECK(!seg.nodes.empty());
+            CHECK(!seg.steps.empty());
+        }
+        for (const auto& seg : tr5.segments) {
+            CHECK(!seg.nodes.empty());
+            CHECK(!seg.steps.empty());
+        }
+    }
 
     Scale cMajScale{Note{Letter::C, Accidental::Natural}, findScaleDefinition("major")};
     auto diatonicArps = generateDiatonicArpeggios(cMajScale, true);
