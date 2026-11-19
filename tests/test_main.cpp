@@ -517,7 +517,7 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
     CHECK(diatonicArps[6].romanNumeral == "viim7♭5");
     CHECK(diatonicArps[6].chord.symbol(false) == "Bm7♭5");
 
-    // 2. Warsztat: generowanie ćwiczeń sekwencyjnych (Grupy po 3, Grupy po 4, Skoki tercjowe)
+    // 2. Warsztat: generowanie ćwiczeń sekwencyjnych (Grupy po 3/4/6, Paul Gilbert, Triady, Septymy, Pedal, 3 oktawy, Diagonal, Jedna struna)
     WorkshopExerciseConfig exCfg{};
     exCfg.scale = cMajScale;
     exCfg.positionSystem = PositionSystem::TNPS;
@@ -525,6 +525,54 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
     auto genEx = generateScaleExercise(fb, exCfg);
     CHECK(genEx.steps.size() == (18 - 3) * 4); // 15 grup czwórkowych z 18 dźwięków 3NPS = 60 kroków
     CHECK(!genEx.song.tracks.empty());
+
+    // 3 oktawy + tryb DiagonalShift (przesuwany po przekątnej gryfu) + start od toniki
+    {
+        WorkshopExerciseConfig diag3{};
+        diag3.scale = Scale{Note{Letter::A, Accidental::Natural}, findScaleDefinition("natural_minor")};
+        diag3.traversalMode = ScaleTraversalMode::DiagonalShift;
+        diag3.octaves = 3;
+        diag3.startOnRoot = true;
+        diag3.direction = ExerciseDirection::Ascending;
+        diag3.pattern = ExercisePattern::Ascending;
+        auto exDiag = generateScaleExercise(fb, diag3);
+        CHECK(exDiag.steps.size() >= 15);
+        CHECK(exDiag.steps.front().expectedMidiNote % 12 == 9); // Start od A (tonika)
+        int spanSemitones = exDiag.steps.back().expectedMidiNote - exDiag.steps.front().expectedMidiNote;
+        CHECK(spanSemitones >= 24); // Co najmniej 2+ oktawy w górę (do 3 oktaw)
+    }
+
+    // Tryb SingleString (poziomo na jednej strunie 0..24 progi)
+    {
+        WorkshopExerciseConfig singleCfg{};
+        singleCfg.scale = cMajScale;
+        singleCfg.traversalMode = ScaleTraversalMode::SingleString;
+        singleCfg.startStringIndex = 0; // E6
+        singleCfg.minFret = 0;
+        singleCfg.maxFret = 24;
+        singleCfg.octaves = 2;
+        singleCfg.direction = ExerciseDirection::Ascending;
+        singleCfg.pattern = ExercisePattern::Ascending;
+        auto exSingle = generateScaleExercise(fb, singleCfg);
+        CHECK(exSingle.steps.size() >= 10);
+        for (const auto& st : exSingle.steps) {
+            CHECK(st.targetPosition.stringIndex == 0);
+        }
+    }
+
+    // Wszystkie nowe wzorce treningowe skal (GroupsOf6 .. StringSkipping)
+    for (int p = static_cast<int>(ExercisePattern::GroupsOf6);
+         p <= static_cast<int>(ExercisePattern::StringSkipping); ++p) {
+        WorkshopExerciseConfig patCfg{};
+        patCfg.scale = cMajScale;
+        patCfg.positionSystem = PositionSystem::TNPS;
+        patCfg.octaves = 2;
+        patCfg.direction = ExerciseDirection::Ascending;
+        patCfg.pattern = static_cast<ExercisePattern>(p);
+        auto exPat = generateScaleExercise(fb, patCfg);
+        CHECK(!exPat.steps.empty());
+        CHECK(!exPat.song.tracks.empty());
+    }
 
     // 3. Kształcenie Słuchu: pytania, odpowiedź przyciskiem, odpowiedź na gitarze i „Zaskocz mnie”
     EarTrainer ear;

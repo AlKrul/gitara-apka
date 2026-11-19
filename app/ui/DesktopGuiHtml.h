@@ -940,6 +940,83 @@ select, input[type="number"] {
   color: var(--text);
   border-radius: 6px;
 }
+/* 2-kolumnowa siatka kart nut w edytorze Ćwiczenie (TAB) — 2x więcej widocznych nut na ekranie! */
+.ex-notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 295px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+@media (max-width: 1180px) {
+  .ex-notes-grid { grid-template-columns: 1fr; }
+}
+.ex-note-card {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: nowrap;
+  background: #1a1511;
+  border: 1px solid #2b231d;
+  border-radius: 8px;
+  padding: 5px 7px;
+  font-size: 11.5px;
+  min-width: 0;
+}
+.ex-note-card.ex-active-row {
+  border-color: var(--accent);
+  background: rgba(243, 146, 55, 0.11);
+}
+.ex-note-card select,
+.ex-note-card input {
+  padding: 3px 4px;
+  font-size: 11px;
+  background: #130f0c;
+  border: 1px solid #2e2620;
+  color: var(--text);
+  border-radius: 5px;
+  width: auto;
+  min-width: 0;
+}
+.mic-gear-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid #382f27;
+  background: #1a1511;
+  color: #b8aea3;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  transition: 0.12s;
+}
+.mic-gear-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(243, 146, 55, 0.12);
+}
+.settings-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #4a392a;
+  background: rgba(243, 146, 55, 0.10);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.12s;
+}
+.settings-back-btn:hover {
+  background: rgba(243, 146, 55, 0.20);
+  border-color: var(--accent);
+}
 
 /* Przełącznik skalowania interfejsu (Auto / Full HD / 2K) */
 .ui-scale-switcher {
@@ -1232,24 +1309,16 @@ body.ui-mode-fhd .sp-card {
 
     <!-- Dolna sekcja lewego paska: Audio + Stroik i Ustawienia na samym dole po lewej -->
     <div class="audio-status-box">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-weight:700;">Urządzenia Audio</span>
-        <button class="chip-btn" style="padding:2px 6px;font-size:10px;" onclick="refreshAudioDevices(true)">🔄 Wykryj</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:6px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span id="micDot" class="live-dot"></span>
+          <span style="font-weight:700;font-size:12px;">Mikrofon</span>
+        </div>
+        <button class="mic-gear-btn" onclick="goToAudioSettings()" title="Ustawienia audio i mikrofonu">⚙</button>
       </div>
-      <div style="margin-bottom:6px;">
-        <span id="micDot" class="live-dot"></span>
-        <span id="micStatusText">Wejście wył.</span>
-      </div>
-      <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">Wejście (Mikrofon / Interfejs):</div>
-      <select id="audioInputSelect" style="margin-bottom:6px;font-size:11px;padding:4px 6px;" onchange="onAudioInputChanged(this.value)">
-        <option value="default">Domyślne wejście systemowe</option>
-      </select>
-      <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px;">Odtwarzanie (Głośniki / Słuchawki):</div>
-      <select id="audioOutputSelect" style="margin-bottom:8px;font-size:11px;padding:4px 6px;" onchange="onAudioOutputChanged(this.value)">
-        <option value="default">Domyślne urządzenie odtwarzania</option>
-      </select>
-      <button id="toggleMicBtn" class="action-btn" style="width:100%;padding:7px;font-size:12px;" onclick="toggleLiveAudio()">
-        🎤 Włącz mikrofon
+      <div id="micStatusText" style="font-size:10.5px;color:var(--text-muted);margin-bottom:7px;">Wejście wył.</div>
+      <button id="toggleMicBtn" class="action-btn" style="width:100%;padding:5px 8px;font-size:11.5px;" onclick="toggleLiveAudio()">
+        🎤 Włącz
       </button>
     </div>
 
@@ -1270,6 +1339,7 @@ body.ui-mode-fhd .sp-card {
         <button class="subtab-btn" data-subtab="harmonics" onclick="switchPracticeSubtab('harmonics', this)">Flażolety</button>
         <button class="subtab-btn" data-subtab="search" onclick="switchPracticeSubtab('search', this)">Szukaj</button>
         <button class="subtab-btn" data-subtab="arpeggio" onclick="switchPracticeSubtab('arpeggio', this)">Arpeggio</button>
+        <button class="subtab-btn" data-subtab="sweep" onclick="switchPracticeSubtab('sweep', this)">⚡ Sweep Picking</button>
         <button class="subtab-btn" data-subtab="exercise" onclick="switchPracticeSubtab('exercise', this)">✏️ Ćwiczenie (TAB)</button>
       </div>
       <div id="viewHeaderTitle" style="display:none;font-size:20px;font-weight:800;">Tuner</div>
@@ -1434,6 +1504,9 @@ const state = {
   chordShowScaleOnFretboard: false, // Domyślnie na gryfie w Odkrywaniu Akordów widać sam kliknięty akord (bez skali w tle)
   chordVoicingsList: [],
   selectedChordVoicingIdx: 0,
+  chordDiatonicSevenths: false, // Koło kwintowe: trójdźwięki (false) / akordy septymowe (true)
+  chordShowCircle: true, // Pokaż panel koła kwintowego i akordów w skali
+  diatonicData: null,
   posSystem: 0, // 0=Brak, 1=3NPS, 2=4NPS, 3=CAGED
   posIdx: 0,
   labelType: 'notes', // 'notes' | 'intervals' | 'tensions' | 'none'
@@ -1504,6 +1577,8 @@ const state = {
   changesChordDiagrams: true,
   changesBackingBand: true,
   changesMetronomeClick: true,
+  changesDrums: true, // Perkusja w zespole podkładowym
+  changesDrumStyle: 'auto', // 'auto' | 'rock' | 'pop' | 'blues' | 'swing' | 'funk' | 'half_time'
   changesCycleKeys: false,
   changesMeasures: null, // Inicjalizowane z aktywnego standardu
   changesIsPlaying: false,
@@ -1588,10 +1663,12 @@ const state = {
   leftHandedFretboard: false,
   todayPracticedMinutes: 6,
   streakDays: 3,
-  // Zakładka Arpeggio i Sweep Picking
-  arpViewMode: 'single', // 'single' | 'transition'
+  // Zakładka Arpeggio (czyste arpeggia) i osobna zakładka ⚡ Sweep Picking
+  arpViewMode: 'single', // 'single' | 'transition' (używane wewnętrznie w Sweep)
+  sweepViewMode: 'transition', // 'transition' (Przejścia Sweep) | 'single' (Pojedyncze kształty Sweep 3/5/6 str.)
   arpPattern: 6, // 0=Cały gryf, 1=CAGED, 2=2NPS, 3=3NPS, 4=Sweep Picking, 5=Inwersje, 6=Od prymy (1-2 okt.)
   arpPosIdx: 0,
+  sweepPosIdx: 0,
   arpSweepStrings: 3, // 3 | 5 | 6
   arpDirection: 0, // 0=W górę i w dół, 1=W górę, 2=W dół
   arpSeqStyle: 0, // 0=Prosto (1-3-5), 1=Grupy po 3, 2=Skoki (1-5-3)
@@ -1603,12 +1680,14 @@ const state = {
   arpDiatonicScaleId: 'major',
   arpDiatonicScaleRootPc: 0,
   arpBpm: 90,
-  arpLoop: true,
+  arpLoop: false,
+  sweepLoop: false, // W Sweep Picking pętla domyślnie WYŁĄCZONA!
   arpPlaying: false,
   arpPlayStepIdx: -1,
   arpData: null,
+  settingsReturnView: null, // { mainView, subtab } — do przycisku ← Wróć w Ustawieniach
   tabCreationEnabled: true,
-  exerciseShowStaff: false, // Pięciolinia (nuty): domyślnie wyłączona (rozwijana paskiem), domyślnie sama tabulatura (TAB)
+  exerciseShowStaff: false, // Pięciolinia (nuty): domyślnie wyłączona, domyślnie sama tabulatura (TAB)
   exerciseStaffPrefV2: false,
   exerciseTabWrapRows: true, // Domyślnie zawijane wiersze jak tekst (bez poziomego paska przewijania)
   exerciseBarsPerRow: 0, // 0 = Auto (zawijaj gdy takt się nie mieści), lub 2 / 4 / 6 / 8 taktów w wierszu
@@ -1626,18 +1705,25 @@ const state = {
   exercisePlayerMode: 'listen', // 'listen' | 'play'
   exercisePlayerPaused: false,
   exercisePlayerStepIdx: 0,
-  // Stan zakładki Praktyka skal (Zrzut 3)
+  // Stan zakładki Praktyka skal
   scalePracticeMode: 'scale', // 'scale' | 'arpeggio' | 'arpeggio_pattern'
   spPosSystem: 0, // 0=Brak, 1=3NPS, 2=4NPS, 3=CAGED
+  spPosIdx: 0, // Numer pozycji (#1..#7 dla 3NPS, #1..#5 dla CAGED/4NPS)
+  spTraversal: 0, // 0=Standard, 1=DiagonalShift (3 oktawy), 2=SingleString (1 struna poziomo)
   spStartString: -1, // -1=Dowolna, 0..5=struny
   spDirection: 0, // 0=Rosnąco, 1=Malejąco, 2=Rosnąco->Malejąco, 3=Malejąco->Rosnąco
-  spOctaves: 1, // 1 | 2
-  spPattern: 0, // 0, 3, 4, 5, 6, 7, 8, 9
+  spOctaves: 2, // 1 | 2 | 3 oktawy
+  spPattern: 0, // 0..18 (wszystkie sekwencje, interwały, trójdźwięki, septymowe, pedal point, string skipping)
+  spStartOnRoot: true, // Rozpocznij bieg od toniki (prymy) skali
+  spFretZone: 'all', // 'all' (0-24) | 'low' (0-7) | 'mid' (5-14) | 'high' (12-24)
+  spNoteDur: 1, // 0=Ćwierćnuta, 1=Ósemka, 2=Szesnastka
+  spTuplet: false, // true = Triole
+  spBpm: 100, // Tempo ćwiczenia skalowego
   spUseHeadphones: true,
   spMetronome: true,
   spRefNote: false,
   spBgChord: false,
-  spAddToSessionOpen: true,
+  spAddToSessionOpen: false,
   midiBaseOctave: 4,
   recordedEvents: [],
   maskedCells: new Set(),
@@ -1886,13 +1972,14 @@ function updateGuitarToKeyboardSync() {
     }
   }
 
-  // 2b. W zakładce Arpeggio podświetlamy na klawiszach wyłącznie dokładne dźwięki aktualnego kształtu / kroku ćwiczenia
-  if (state.mainView === 'practice' && state.subtab === 'arpeggio' && state.arpData) {
+  // 2b. W zakładkach Arpeggio oraz Sweep Picking podświetlamy na klawiszach wyłącznie dokładne dźwięki aktualnego kształtu / kroku
+  if (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'sweep') && state.arpData) {
     let arpNodes = state.arpData.nodes || [];
-    if (state.arpViewMode === 'transition' && state.arpData.transition && state.arpData.transition.segments) {
+    const isSweepTrans = (state.subtab === 'sweep' && state.sweepViewMode === 'transition');
+    if (isSweepTrans && state.arpData.transition && state.arpData.transition.segments) {
       const seg = state.arpData.transition.segments[state.arpActiveSegIdx || 0];
       arpNodes = seg ? (seg.nodes || []) : [];
-    } else if (state.arpPattern === 0 && (state.arpPlaying || state.arpPlayStepIdx >= 0)) {
+    } else if (state.subtab === 'arpeggio' && state.arpPattern === 0 && (state.arpPlaying || state.arpPlayStepIdx >= 0)) {
       arpNodes = getActiveArpeggioSteps();
     }
     arpNodes.forEach(n => {
@@ -3499,22 +3586,81 @@ async function onAudioOutputChanged(deviceId) {
   }
 }
 
-async function toggleLiveAudio() {
+function getViewDisplayName(mainView, subtab) {
+  if (mainView === 'practice') {
+    const map = {
+      scale: 'Skala',
+      scale_practice: 'Praktyka skal',
+      chord: 'Akord · Odkrywanie',
+      harmonics: 'Flażolety',
+      search: 'Szukaj',
+      arpeggio: 'Arpeggio',
+      sweep: 'Sweep Picking',
+      exercise: 'Ćwiczenie (TAB)'
+    };
+    return map[subtab] || 'Praktyka';
+  }
+  const mainMap = {
+    ear: 'Kształcenie słuchu',
+    changes: 'Zmiany',
+    workshop: 'Warsztat',
+    tuner: 'Stroik (Tuner)'
+  };
+  return mainMap[mainView] || 'Poprzedni widok';
+}
+
+function goToAudioSettings() {
+  if (state.mainView !== 'settings') {
+    state.settingsReturnView = { mainView: state.mainView, subtab: state.subtab };
+  }
+  state.settingsTab = 'ustawienia';
+  const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.textContent.includes('Ustawienia'));
+  switchMainView('settings', btn);
+}
+
+function returnFromSettings() {
+  const ret = state.settingsReturnView || { mainView: 'practice', subtab: state.subtab || 'scale' };
+  state.settingsReturnView = null;
+  const viewKey = ret.mainView || 'practice';
+  const navBtn = Array.from(document.querySelectorAll('.nav-btn')).find(b => {
+    const oc = b.getAttribute('onclick') || '';
+    return oc.includes(`'${viewKey}'`);
+  });
+  if (viewKey === 'practice' && ret.subtab) {
+    state.subtab = ret.subtab;
+    document.querySelectorAll('#practiceSubtabs .subtab-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-subtab') === ret.subtab);
+    });
+  }
+  switchMainView(viewKey, navBtn);
+}
+
+function syncMicButtonsUi(isOn) {
   const dot = document.getElementById('micDot');
   const txt = document.getElementById('micStatusText');
-  const btn = document.getElementById('toggleMicBtn');
+  const sideBtn = document.getElementById('toggleMicBtn');
+  const setBtn = document.getElementById('settingsToggleMicBtn');
+  if (dot) dot.classList.toggle('on', !!isOn);
+  if (txt) txt.textContent = isOn ? 'Nasłuch aktywny' : 'Wejście wył.';
+  if (sideBtn) {
+    sideBtn.textContent = isOn ? '🔇 Wyłącz' : '🎤 Włącz';
+    sideBtn.style.background = isOn ? 'var(--red)' : 'var(--accent)';
+    sideBtn.style.color = isOn ? '#ffffff' : '#120e0a';
+  }
+  if (setBtn) {
+    setBtn.textContent = isOn ? '🔇 Wyłącz mikrofon' : '🎤 Włącz mikrofon';
+    setBtn.style.background = isOn ? 'var(--red)' : 'var(--accent)';
+    setBtn.style.color = isOn ? '#ffffff' : '#120e0a';
+  }
+}
+
+async function toggleLiveAudio() {
   if (micStream) {
     if (micPollTimer) { clearInterval(micPollTimer); micPollTimer = null; }
     if (audioLoopId) { cancelAnimationFrame(audioLoopId); audioLoopId = null; }
     micStream.getTracks().forEach(t => t.stop());
     micStream = null;
-    dot.classList.remove('on');
-    txt.textContent = 'Mikrofon wył.';
-    if (btn) {
-      btn.textContent = '🎤 Włącz mikrofon';
-      btn.style.background = 'var(--accent)';
-      btn.style.color = '#120e0a';
-    }
+    syncMicButtonsUi(false);
     state.detectedMidi = null;
     state.detectedMidis = [];
     document.getElementById('liveNoteBadge').textContent = '—';
@@ -3560,13 +3706,7 @@ async function toggleLiveAudio() {
     micHp1.connect(micHp2);
     micHp2.connect(micLowpass);
     micLowpass.connect(analyserNode);
-    dot.classList.add('on');
-    txt.textContent = 'Mikrofon wł. (nasłuch)';
-    if (btn) {
-      btn.textContent = '🔇 Wyłącz mikrofon';
-      btn.style.background = 'var(--red)';
-      btn.style.color = '#ffffff';
-    }
+    syncMicButtonsUi(true);
 
     const rawBuf = new Float32Array(analyserNode.fftSize);
     const analysisBuf = decimate2 ? new Float32Array(4096) : rawBuf;
@@ -3803,7 +3943,7 @@ function applyUiScale(redraw = true) {
     requestAnimationFrame(() => {
       drawFretboard();
       if (state.mainView === 'tuner') renderTunerCanvas();
-      if (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'exercise')) {
+      if (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'sweep' || state.subtab === 'exercise')) {
         renderStageAndInspector();
       }
     });
@@ -3864,7 +4004,7 @@ function toggleRightInspectorPanel() {
   requestAnimationFrame(() => {
     drawFretboard();
     if (state.mainView === 'tuner') renderTunerCanvas();
-    if (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'exercise')) {
+    if (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'sweep' || state.subtab === 'exercise')) {
       renderStageAndInspector();
     }
   });
@@ -4126,10 +4266,14 @@ function renderFretboardToolbarForActiveTab() {
         <span><b style="color:#eab308">●</b> Napięcie</span>
         <span><b style="color:#ef4444">●</b> Do unikania</span>
       </div>`;
-  } else if (state.subtab === 'arpeggio') {
-    const arpTitle = (state.arpViewMode === 'transition' && state.arpData && state.arpData.transition)
-      ? `⚡ Przejście Sweep: ${state.arpData.transition.name}`
-      : `Gryf Arpeggio: ${(state.arpData && state.arpData.chordSymbol) ? state.arpData.chordSymbol : state.chordId}`;
+  } else if (state.subtab === 'arpeggio' || state.subtab === 'sweep') {
+    const isSweepTab = (state.subtab === 'sweep');
+    const isSweepTrans = isSweepTab && (state.sweepViewMode === 'transition');
+    const arpTitle = (isSweepTrans && state.arpData && state.arpData.transition)
+      ? `⚡ Sweep Picking: ${state.arpData.transition.name}`
+      : (isSweepTab
+          ? `⚡ Sweep Picking (${state.arpSweepStrings} str.): ${(state.arpData && state.arpData.chordSymbol) ? state.arpData.chordSymbol : state.chordId}`
+          : `Gryf Arpeggio: ${(state.arpData && state.arpData.chordSymbol) ? state.arpData.chordSymbol : state.chordId}`);
     const patNames = [
       'Mapa całego gryfu',
       'CAGED (5 kszt.)',
@@ -4139,9 +4283,11 @@ function renderFretboardToolbarForActiveTab() {
       'Inwersje (zestaw strun)',
       `Od prymy (${state.arpOctaves} okt.)`
     ];
-    const subDesc = (state.arpViewMode === 'transition' && state.arpData && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments[state.arpActiveSegIdx])
+    const subDesc = (isSweepTrans && state.arpData && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments[state.arpActiveSegIdx])
       ? `Aktywny akord: ${state.arpData.transition.segments[state.arpActiveSegIdx].symbol} (${state.arpData.transition.segments[state.arpActiveSegIdx].roman})`
-      : `Wzorzec: ${patNames[state.arpPattern] || 'Arpeggio'}`;
+      : (isSweepTab
+          ? `Pojedynczy kształt Sweep (${state.arpSweepStrings} str.)`
+          : `Wzorzec: ${patNames[state.arpPattern] || 'Arpeggio'}`);
     bar.innerHTML = `
       <div>
         <strong style="color:var(--text);font-size:14px;">${arpTitle}</strong>
@@ -4235,7 +4381,7 @@ function setFretboardLabelType(lblType) {
   saveSettings();
   renderFretboardToolbarForActiveTab();
   drawFretboard();
-  if (state.subtab === 'arpeggio') {
+  if (state.subtab === 'arpeggio' || state.subtab === 'sweep') {
     refreshArpTabSvgOnly();
   } else if (state.subtab === 'scale') {
     renderStageAndInspector();
@@ -4254,7 +4400,8 @@ function drawFretboard() {
   const isHarmonicsTab = (state.mainView === 'practice' && state.subtab === 'harmonics');
   const isSearchTab = (state.mainView === 'practice' && state.subtab === 'search');
   const isChordTab = (state.mainView === 'practice' && state.subtab === 'chord');
-  const isArpeggioTab = (state.mainView === 'practice' && state.subtab === 'arpeggio');
+  const isSweepTab = (state.mainView === 'practice' && state.subtab === 'sweep');
+  const isArpeggioTab = (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'sweep'));
   const activeChordVoicing = isChordTab && state.chordVoicingsList && state.chordVoicingsList.length > 0
     ? (state.chordVoicingsList[state.selectedChordVoicingIdx] || state.chordVoicingsList[0])
     : null;
@@ -4417,8 +4564,9 @@ function drawFretboard() {
 
     let activeNodes = state.arpData.nodes || [];
     let activeSteps = state.arpData.steps || [];
+    const isSweepTrans = isSweepTab && (state.sweepViewMode === 'transition');
     if (state.arpData.rootPc !== undefined) arpActiveRootPc = state.arpData.rootPc;
-    if (state.arpViewMode === 'transition' && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments.length > 0) {
+    if (isSweepTrans && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments.length > 0) {
       const segs = state.arpData.transition.segments;
       const segIdx = Math.max(0, Math.min(state.arpActiveSegIdx || 0, segs.length - 1));
       const curSeg = segs[segIdx];
@@ -4436,7 +4584,7 @@ function drawFretboard() {
       }
     } else {
       // Jeśli wybrano Cały gryf, w trakcie odtwarzania/ćwiczenia pokazuj WYŁĄCZNIE dźwięki granej sekwencji!
-      if (state.arpPattern === 0 && (state.arpPlaying || state.arpPlayStepIdx >= 0) && activeSteps.length > 0) {
+      if (!isSweepTab && state.arpPattern === 0 && (state.arpPlaying || state.arpPlayStepIdx >= 0) && activeSteps.length > 0) {
         const playedKeys = new Set(activeSteps.map(st => `${st.s}:${st.f}`));
         activeNodes = activeNodes.filter(n => playedKeys.has(`${n.s}:${n.f}`));
       }
@@ -4451,8 +4599,8 @@ function drawFretboard() {
       if (!arpTechMap.has(key)) arpTechMap.set(key, st);
     }
 
-    // Subtelna trajektoria kostkowania w trybie Sweep, Od prymy oraz Inwersje (łączy kolejne nuty w kształcie)
-    if ((state.arpPattern === 4 || state.arpPattern === 5 || state.arpPattern === 6 || state.arpViewMode === 'transition') && activeNodes.length >= 2) {
+    // Subtelna trajektoria kostkowania w Sweep Picking, Od prymy oraz Inwersjach (łączy kolejne nuty w kształcie)
+    if ((isSweepTab || state.arpPattern === 5 || state.arpPattern === 6) && activeNodes.length >= 2) {
       const ordered = activeNodes.slice().sort((a, b) => (a.midi - b.midi) || (a.s - b.s));
       const pts = ordered.map(n => {
         const px = (n.f === 0) ? (leftNutX * 0.48) : (leftNutX + (n.f - 0.5) * fretW);
@@ -4725,7 +4873,7 @@ function drawFretboard() {
     }
     svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${arpIsCurPlay ? '2.5' : '1.5'}"/>`;
     svg += `<text x="${cx}" y="${cy + noteFontSize * 0.34}" fill="${textColor}" font-family="Segoe UI, system-ui, sans-serif" font-size="${isTappedVoicingNode ? Math.max(9.5, noteFontSize - 2) : noteFontSize}" font-weight="700" text-anchor="middle">${label}</text>`;
-    if (isArpeggioTab && arpTechMap && (state.arpPattern === 4 || state.arpViewMode === 'transition')) {
+    if (isSweepTab && arpTechMap) {
       const stInfo = arpTechMap.get(`${s}:${f}`);
       if (stInfo && arpNodeMap && arpNodeMap.has(`${s}:${f}`)) {
         const symMap = { D: '↓', U: '↑', H: 'H', P: 'P', S: 'S' };
@@ -5112,6 +5260,11 @@ function switchMainView(view, btn) {
   if (typeof stopArpeggioPlayback === 'function') {
     stopArpeggioPlayback(false);
   }
+  if (view === 'settings' && state.mainView !== 'settings') {
+    state.settingsReturnView = { mainView: state.mainView, subtab: state.subtab };
+  } else if (view !== 'settings') {
+    state.settingsReturnView = null;
+  }
   state.mainView = view;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -5173,6 +5326,124 @@ function buildRootButtonsHtml(onClickFnName) {
     labels.map((lbl, pc) =>
       `<button class="chip-btn ${state.rootPc === pc ? 'active' : ''}" onclick="${onClickFnName}(${pc})">${lbl}</button>`
     ).join('') + `</div>`;
+}
+
+function selectCircleKey(majorPc, isMinor) {
+  state.chordFilterByScale = true;
+  state.chordScaleId = isMinor ? 'natural_minor' : 'major';
+  state.chordScaleRootPc = isMinor ? ((majorPc + 9) % 12) : majorPc;
+  state.rootPc = state.chordScaleRootPc;
+  state.chordGroupFilter = 'all';
+  state.chordScaleExtraTypeFilter = false;
+  state.selectedChordVoicingIdx = 0;
+  renderAll();
+}
+
+function selectDiatonicChord(rootPc, chordId) {
+  state.rootPc = rootPc;
+  state.chordId = chordId;
+  state.allChordTypes = false;
+  state.chordFilterByScale = false;
+  state.selectedChordVoicingIdx = 0;
+  renderAll();
+}
+
+function sendProgressionToChanges(degrees) {
+  const chords = (state.diatonicData && state.diatonicData.chords) || [];
+  if (chords.length < 7) return;
+  const keyRoot = state.chordScaleRootPc;
+  state.changesMeasures = degrees.map(dIdx => {
+    const c = chords[dIdx % chords.length];
+    return {
+      volta: 0,
+      beats: [{ offsetSemi: (((c.rootPc - keyRoot) % 12) + 12) % 12, chordId: c.chordId, roman: c.roman }, null, null, null]
+    };
+  });
+  state.changesKeyRootPc = keyRoot;
+  state.changesIsMinor = (state.chordScaleId === 'natural_minor' || state.chordScaleId === 'minor');
+  state.changesBpm = 100;
+  state.changesFeel = 'Prosto';
+  state.changesScreen = 'editor';
+  const nav = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.textContent.includes('Zmiany'));
+  switchMainView('changes', nav);
+}
+
+function buildCircleOfFifthsPanel() {
+  if (!state.chordShowCircle) return '';
+  if (!state.diatonicData || !state.diatonicData.chords) return '';
+  const labels = getRootLabels();
+  const majors = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5];
+  const cx = 130, cy = 130, R = 100, nodeR = 25;
+  const isMinorScale = (state.chordScaleId === 'natural_minor' || state.chordScaleId === 'minor');
+
+  let nodes = '';
+  majors.forEach((pc, i) => {
+    const ang = (-90 + i * 30) * Math.PI / 180;
+    const x = (cx + R * Math.cos(ang)).toFixed(1);
+    const y = (cy + R * Math.sin(ang)).toFixed(1);
+    const minorPc = (pc + 9) % 12;
+    const majorActive = !isMinorScale && state.chordScaleRootPc === pc;
+    const minorActive = isMinorScale && state.chordScaleRootPc === minorPc;
+    nodes += `
+      <g style="cursor:pointer">
+        <circle cx="${x}" cy="${y}" r="${nodeR}" fill="${majorActive ? '#f39237' : '#171310'}" stroke="${majorActive ? '#fde68a' : '#332b24'}" stroke-width="1.5" onclick="selectCircleKey(${pc}, false)"/>
+        <text x="${x}" y="${(+y + 2)}" fill="${majorActive ? '#14100d' : '#f5f2eb'}" font-size="15" font-weight="800" text-anchor="middle" onclick="selectCircleKey(${pc}, false)">${labels[pc]}</text>
+        <circle cx="${x}" cy="${(+y + 26)}" r="11" fill="${minorActive ? '#4ade80' : '#14100d'}" stroke="${minorActive ? '#4ade80' : '#2e2620'}" stroke-width="1.2" onclick="selectCircleKey(${pc}, true)"/>
+        <text x="${x}" y="${(+y + 29)}" fill="${minorActive ? '#14100d' : '#a8a29b'}" font-size="10" font-weight="700" text-anchor="middle" onclick="selectCircleKey(${pc}, true)">${labels[minorPc]}m</text>
+      </g>`;
+  });
+
+  const centerName = labels[state.chordScaleRootPc] + (isMinorScale ? 'm' : '');
+  const diatonic = state.diatonicData.chords;
+
+  const diatonicChips = diatonic.map(c => `
+    <button class="chip-btn" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;min-width:54px;"
+            onclick="selectDiatonicChord(${c.rootPc}, '${c.chordId}')" title="Załaduj chwyty akordu ${c.symbol}">
+      <span style="font-size:12px;font-weight:800;">${c.roman}</span>
+      <span style="font-size:10px;color:var(--text-muted);">${c.symbol}</span>
+    </button>`).join('');
+
+  const progressions = [
+    { name: 'I–IV–V', deg: [0, 3, 4] },
+    { name: 'I–V–vi–IV', deg: [0, 4, 5, 3] },
+    { name: 'ii–V–I', deg: [1, 4, 0] },
+    { name: 'I–vi–IV–V', deg: [0, 5, 3, 4] },
+    { name: 'vi–IV–I–V', deg: [5, 3, 0, 4] },
+    { name: 'i–iv–v', deg: [0, 3, 4] }
+  ];
+  const progChips = progressions.map(p => {
+    const syms = p.deg.map(d => (diatonic[d] ? diatonic[d].symbol : '')).join('  ');
+    return `<button class="chip-btn" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 10px;" onclick="sendProgressionToChanges([${p.deg.join(',')}])" title="Wyślij „${p.name}” do zakładki Zmiany">
+      <span style="font-size:12px;font-weight:800;">${p.name}</span>
+      <span style="font-size:10px;color:var(--text-muted);">${syms}</span>
+    </button>`;
+  }).join('');
+
+  return `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;gap:18px;align-items:stretch;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
+        <div class="section-label" style="margin:0;">KOŁO KWINTOWE</div>
+        <svg width="260" height="260" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="130" cy="130" r="100" fill="none" stroke="#332b24" stroke-width="1.2"/>
+          ${nodes}
+          <text x="130" y="128" fill="#f5f2eb" font-size="17" font-weight="800" text-anchor="middle">${centerName}</text>
+          <text x="130" y="146" fill="#8a8178" font-size="10" text-anchor="middle">${state.diatonicData.scaleFullName || ''}</text>
+        </svg>
+        <button class="chip-btn ${state.chordDiatonicSevenths ? 'active' : ''}" style="padding:4px 10px;font-size:11px;" onclick="state.chordDiatonicSevenths=!state.chordDiatonicSevenths;renderAll()">
+          ${state.chordDiatonicSevenths ? 'Akordy septymowe' : 'Trójdźwięki'}
+        </button>
+      </div>
+      <div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:12px;justify-content:center;">
+        <div>
+          <div class="section-label" style="margin:0 0 6px;">AKORDY W SKALI — kliknij, aby załadować chwyty</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">${diatonicChips}</div>
+        </div>
+        <div>
+          <div class="section-label" style="margin:0 0 6px;">SUGESTIE PROGRESJI — wyślij do „Zmiany”</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">${progChips}</div>
+        </div>
+      </div>
+    </div>`;
 }
 
 function setRootPc(pc) { state.rootPc = pc; state.selectedScaleNotePc = pc; saveSettings(); renderAll(); }
@@ -6131,11 +6402,18 @@ async function renderStageAndInspector() {
       ? baseAlteredList.concat(extraAlteredList)
       : baseAlteredList;
 
+    const retView = state.settingsReturnView;
+    const retLabel = retView ? getViewDisplayName(retView.mainView, retView.subtab) : 'Praktyka';
     const headerTabs = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <div>
-          <h2 style="font-size:22px;font-weight:800;">${state.settingsTab === 'ustawienia' ? 'Ustawienia' : 'Postępy'}</h2>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Zmiany zapisują się od razu.</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <button class="settings-back-btn" onclick="returnFromSettings()" title="Wróć do poprzedniego widoku">
+            ← Wróć${retView ? `: ${retLabel}` : ''}
+          </button>
+          <div>
+            <h2 style="font-size:22px;font-weight:800;">${state.settingsTab === 'ustawienia' ? 'Ustawienia' : 'Postępy'}</h2>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Zmiany zapisują się od razu.</div>
+          </div>
         </div>
         <div class="subtabs">
           <button class="subtab-btn ${state.settingsTab==='postepy'?'active':''}"
@@ -6349,6 +6627,34 @@ async function renderStageAndInspector() {
             </div>
           </div>
         </div>
+
+        <h3 style="font-size:17px;font-weight:800;border-bottom:1px solid var(--border);padding-bottom:8px;">Urządzenia audio i mikrofon</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+              <div class="section-label">Wejście (mikrofon / interfejs)</div>
+              <select id="audioInputSelect" onchange="onAudioInputChanged(this.value)">
+                <option value="default">Domyślne wejście systemowe</option>
+              </select>
+            </div>
+            <div>
+              <div class="section-label">Odtwarzanie (głośniki / słuchawki)</div>
+              <select id="audioOutputSelect" onchange="onAudioOutputChanged(this.value)">
+                <option value="default">Domyślne urządzenie odtwarzania</option>
+              </select>
+            </div>
+            <button class="chip-btn" style="width:fit-content;padding:6px 14px;" onclick="refreshAudioDevices(true)">🔄 Wykryj urządzenia</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;justify-content:center;">
+            <div style="font-size:14px;font-weight:700;">Mikrofon (nasłuch na żywo)</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.45;">
+              Włącz, aby aplikacja wykrywała dźwięki gitary w czasie rzeczywistym (stroik, ćwiczenia, ocena gry).
+            </div>
+            <button id="settingsToggleMicBtn" class="action-btn" style="width:100%;padding:11px;font-size:13px;background:${micStream ? 'var(--red)' : 'var(--accent)'};color:${micStream ? '#ffffff' : '#120e0a'};" onclick="toggleLiveAudio()">
+              ${micStream ? '🔇 Wyłącz mikrofon' : '🎤 Włącz mikrofon'}
+            </button>
+          </div>
+        </div>
       </div>`;
 
     insp.innerHTML = `
@@ -6371,6 +6677,7 @@ async function renderStageAndInspector() {
         <input type="number" value="${state.a4ReferenceHz}" min="430" max="450" step="0.5"
                onchange="state.a4ReferenceHz=parseFloat(this.value);saveSettings()">
       </div>`;
+    populateAudioSelectElements();
     return;
   }
 
@@ -6545,11 +6852,17 @@ async function renderStageAndInspector() {
       state.selectedChordVoicingIdx = 0;
     }
 
+    state.diatonicData = await fetchJson(`/api/diatonic?rootPc=${state.chordScaleRootPc}&scaleId=${state.chordScaleId}&sevenths=${state.chordDiatonicSevenths ? 1 : 0}&accMode=${state.accMode}`);
+
     const matchingRootsSet = new Set(data.matchingRootPcs || [0,1,2,3,4,5,6,7,8,9,10,11]);
     const matchingChordsSet = new Set(state.chordLastMatchingIds);
     const rootLabels = getRootLabels();
 
     stage.innerHTML = `
+      ${buildCircleOfFifthsPanel()}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:${state.chordShowCircle ? '12px' : '0'} 0 4px;">
+        <span class="section-label" style="margin:0;">CHWYTY (${state.chordVoicingsList.length})</span>
+      </div>
       <div class="chord-cards-grid">
         ${state.chordVoicingsList.map((v, idx) => {
           const svg = buildChordSvgDiagram(v.frets, v.tapped);
@@ -6599,6 +6912,13 @@ async function renderStageAndInspector() {
       : availableChords.map(chordOptHtml).join('');
 
     insp.innerHTML = `
+      <div>
+        <div class="section-label">KOŁO KWINTOWE I AKORDY SKALI</div>
+        <div class="btn-grid-2">
+          <button class="chip-btn ${state.chordShowCircle?'active':''}" onclick="state.chordShowCircle=true;renderStageAndInspector()">Pokaż</button>
+          <button class="chip-btn ${!state.chordShowCircle?'active':''}" onclick="state.chordShowCircle=false;renderStageAndInspector()">Ukryj</button>
+        </div>
+      </div>
       <div>
         <div class="section-label">OSTROŚĆ</div>
         <div class="btn-grid-2">
@@ -6872,19 +7192,29 @@ async function renderStageAndInspector() {
     }
     drawFretboard();
 
-  } else if (state.subtab === 'arpeggio') {
+  } else if (state.subtab === 'arpeggio' || state.subtab === 'sweep') {
     // =======================================================================
-    // ZAKŁADKA: ARPEGGIO I SWEEP PICKING (Od prymy, CAGED, Inwersje, 2NPS, Sweep + 8 przejść Sweep!)
+    // ROZDZIELONE ZAKŁADKI:
+    // 1) ARPEGGIO (czyste arpeggia: Od prymy, CAGED, Inwersje, 2NPS, 3NPS, Mapa gryfu)
+    // 2) ⚡ SWEEP PICKING (8 przejść Sweep + pojedyncze kształty Sweep 3/5/6 str., pętla domyślnie WYŁ.)
     // =======================================================================
+    const isSweepTab = (state.subtab === 'sweep');
+    const isTrans = isSweepTab && (state.sweepViewMode === 'transition');
+    if (!isSweepTab && state.arpPattern === 4) state.arpPattern = 6;
+    const reqPattern = isSweepTab ? 4 : state.arpPattern;
+    const reqPosIdx = isSweepTab ? (state.sweepPosIdx || 0) : (state.arpPosIdx || 0);
+    const reqViewMode = isTrans ? 'transition' : 'single';
     const customParam = state.customStringMidis.join(',');
-    const effDiatRootPc = (state.arpViewMode === 'transition' && state.arpTransitionId === 'diatonic_climb')
+    const effDiatRootPc = (isTrans && state.arpTransitionId === 'diatonic_climb')
       ? state.rootPc
       : state.arpDiatonicScaleRootPc;
-    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${state.arpPattern}&posIdx=${state.arpPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=${encodeURIComponent(state.arpViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
+    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${reqPattern}&posIdx=${reqPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=${encodeURIComponent(reqViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
     const data = await fetchJson(arpUrl);
     state.arpData = data;
-    if (data.posIdx !== undefined) state.arpPosIdx = data.posIdx;
-    const isTrans = (state.arpViewMode === 'transition');
+    if (data.posIdx !== undefined) {
+      if (isSweepTab) state.sweepPosIdx = data.posIdx;
+      else state.arpPosIdx = data.posIdx;
+    }
     const tr = data.transition || { segments: [] };
     if (isTrans && tr.segments && state.arpActiveSegIdx >= tr.segments.length) {
       state.arpActiveSegIdx = 0;
@@ -6894,6 +7224,7 @@ async function renderStageAndInspector() {
     const tabSvg = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, state.arpPlayStepIdx, isTrans);
     const hasRollAny = activeSteps.some(st => st.roll);
     const rootLabels = getRootLabels();
+    const curLoopOn = isSweepTab ? !!state.sweepLoop : !!state.arpLoop;
     const quickArpTypes = [
       { id: 'major', lbl: 'maj' }, { id: 'minor', lbl: 'm' }, { id: 'dim', lbl: 'dim' },
       { id: 'aug', lbl: 'aug' }, { id: 'maj7', lbl: 'maj7' }, { id: '7', lbl: '7' },
@@ -6922,23 +7253,27 @@ async function renderStageAndInspector() {
       ? ['Struny D–G–B–e', 'Struny A–D–G–B', 'Struny E–A–D–G']
       : ['Struny G–B–e', 'Struny D–G–B', 'Struny A–D–G'];
 
+    const stageHeading = isTrans
+      ? `⚡ ${tr.name}`
+      : (isSweepTab
+          ? `⚡ Sweep Picking (${state.arpSweepStrings} str.): ${data.chordSymbol} <span style="color:var(--text-muted);font-weight:600;font-size:13px;">(${data.chordName})</span>`
+          : `Arpeggio: ${data.chordSymbol} <span style="color:var(--text-muted);font-weight:600;font-size:13px;">(${data.chordName})</span>`);
+
     stage.innerHTML = `
       <div class="fretboard-card" style="gap:14px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div>
-            <div style="font-size:17px;font-weight:800;color:var(--text);">
-              ${isTrans ? `⚡ ${tr.name}` : `Arpeggio: ${data.chordSymbol} <span style="color:var(--text-muted);font-weight:600;font-size:13px;">(${data.chordName})</span>`}
-            </div>
+            <div style="font-size:17px;font-weight:800;color:var(--text);">${stageHeading}</div>
             ${formulaHtml || `<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${tr.description}</div>`}
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            ${!isTrans ? `<button class="chip-btn" style="padding:7px 11px;font-size:12px;" onclick="playArpeggioChordPreview()" title="Posłuchaj akordu bazowego dla tego arpeggio">🎸 Akord</button>` : ''}
+            ${!isTrans ? `<button class="chip-btn" style="padding:7px 11px;font-size:12px;" onclick="playArpeggioChordPreview()" title="Posłuchaj akordu bazowego">🎸 Akord</button>` : ''}
             <button id="arpPlayBtn" class="chip-btn ${state.arpPlaying?'active':''}" style="padding:7px 14px;font-weight:700;"
                     onclick="toggleArpeggioPlayback()">
               ${state.arpPlaying ? '⏹ Stop' : '▶ Odsłuchaj'}
             </button>
-            <button class="chip-btn ${state.arpLoop?'active':''}" style="padding:7px 10px;font-size:12px;"
-                    onclick="state.arpLoop=!state.arpLoop;renderStageAndInspector()">🔁 Pętla</button>
+            <button class="chip-btn ${curLoopOn?'active':''}" style="padding:7px 10px;font-size:12px;"
+                    onclick="toggleArpOrSweepLoop()">🔁 Pętla: ${curLoopOn ? 'Wł.' : 'Wył.'}</button>
             <div style="display:flex;align-items:center;gap:6px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;">
               <button class="chip-btn" style="padding:2px 6px;" onclick="setArpeggioBpm(state.arpBpm - 10)">−10</button>
               <strong id="arpBpmVal" style="min-width:54px;text-align:center;color:var(--accent);">${state.arpBpm} BPM</strong>
@@ -6959,12 +7294,14 @@ async function renderStageAndInspector() {
           <div>
             <strong style="color:var(--accent);">💡 Wskazówka:</strong>
             ${isTrans ? tr.practiceTip
-              : (state.arpPattern === 6 ? 'Czyste arpeggio od prymy do oktawy — idealny start! Najpierw kliknij „🎸 Akord”, żeby usłyszeć harmonię, potem zagraj składniki po kolei.'
-                : (state.arpPattern === 5 ? 'Poziome przewroty (inwersje) na jednym zestawie strun: kliknij „Wszystkie po kolei”, aby przejść płynnie przez wszystkie przewroty w górę gryfu.'
-                  : (state.arpPattern === 1 ? 'System CAGED łączy kształt akordu z arpeggio w jednej pozycji lewej dłoni (bez zdublowanych dźwięków unisono).'
-                    : (hasRollAny
-                      ? 'W tym kształcie występuje przetoczenie palca (Roll · R) — lekko przewiń staw palca między sąsiednimi strunami na tym samym progu.'
-                      : 'Tabulatura automatycznie przewija się z zapasem do przodu — kliknij dowolny próg na TAB-ie, aby odsłuchać pojedynczy dźwięk.'))))}
+              : (isSweepTab
+                  ? (hasRollAny
+                      ? 'W tym kształcie sweep występuje przetoczenie palca (Roll · R) — lekko przewiń staw palca między sąsiednimi strunami na tym samym progu.'
+                      : 'Prowadź kostkę jednym ciągłym ruchem w dół (↓) i w górę (↑) bez osobnego szarpania strun; tłum lewą i prawą dłonią, aby dźwięki nie wybrzmiewały jednocześnie.')
+                  : (state.arpPattern === 6 ? 'Czyste arpeggio od prymy do oktawy — idealny start! Najpierw kliknij „🎸 Akord”, żeby usłyszeć harmonię, potem zagraj składniki po kolei.'
+                    : (state.arpPattern === 5 ? 'Poziome przewroty (inwersje) na jednym zestawie strun: kliknij „Wszystkie po kolei”, aby przejść płynnie przez wszystkie przewroty w górę gryfu.'
+                      : (state.arpPattern === 1 ? 'System CAGED łączy kształt akordu z arpeggio w jednej pozycji lewej dłoni (bez zdublowanych dźwięków unisono).'
+                        : 'Tabulatura automatycznie przewija się z zapasem do przodu — kliknij dowolny próg na TAB-ie, aby odsłuchać pojedynczy dźwięk.'))))}
           </div>
           <div style="display:flex;gap:10px;white-space:nowrap;">
             <span><b style="color:#fb923c;">↓</b> w dół</span>
@@ -7020,7 +7357,7 @@ async function renderStageAndInspector() {
         ` : `
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-              <div class="section-label" style="margin:0;">ARPEGGIO DIATONICZNE W SKALI (${data.scaleFullName}) — KLIKNIJ, ABY ZAŁADOWAĆ</div>
+              <div class="section-label" style="margin:0;">${isSweepTab ? 'AKORDY DIATONICZNE DO SWEEP' : 'ARPEGGIO DIATONICZNE'} W SKALI (${data.scaleFullName}) — KLIKNIJ, ABY ZAŁADOWAĆ</div>
               <div style="display:flex;gap:6px;align-items:center;">
                 <button class="chip-btn ${!state.arpDiatonicSevenths?'active':''}" style="padding:3px 9px;font-size:11px;"
                         onclick="state.arpDiatonicSevenths=false;renderStageAndInspector()">Trójdźwięki</button>
@@ -7043,76 +7380,135 @@ async function renderStageAndInspector() {
         `}
       </div>`;
 
-    insp.innerHTML = `
-      <div>
-        <div class="section-label">TRYB PRACY</div>
-        <div class="btn-grid-2">
-          <button class="chip-btn ${!isTrans?'active':''}"
-                  onclick="stopArpeggioPlayback(false);state.arpViewMode='single';renderStageAndInspector()">Pojedyncze arpeggio</button>
-          <button class="chip-btn ${isTrans?'active':''}"
-                  onclick="stopArpeggioPlayback(false);state.arpViewMode='transition';state.arpActiveSegIdx=0;renderStageAndInspector()">⚡ Przejścia Sweep</button>
+    if (isSweepTab) {
+      insp.innerHTML = `
+        <div>
+          <div class="section-label">TRYB SWEEP PICKING</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${isTrans?'active':''}"
+                    onclick="stopArpeggioPlayback(false);state.sweepViewMode='transition';state.arpActiveSegIdx=0;saveSettings();renderStageAndInspector()">⚡ Przejścia Sweep</button>
+            <button class="chip-btn ${!isTrans?'active':''}"
+                    onclick="stopArpeggioPlayback(false);state.sweepViewMode='single';saveSettings();renderStageAndInspector()">🎸 Pojedynczy kształt</button>
+          </div>
         </div>
-      </div>
 
-      <div>
-        <div class="section-label">${isTrans ? 'TONACJA PRZEJŚCIA' : 'PRYMA ARPEGGIO'}</div>
-        <div class="btn-grid-6">
-          ${rootLabels.map((lbl, pc) => `
-            <button class="chip-btn ${state.rootPc===pc?'active':''}"
-                    onclick="stopArpeggioPlayback(false);state.rootPc=${pc};state.arpDiatonicScaleRootPc=${pc};state.arpPosIdx=0;renderAll()">${lbl}</button>
-          `).join('')}
-        </div>
-      </div>
-
-      ${isTrans ? `
         <div>
-          <div class="section-label">LICZBA STRUN SWEEP</div>
-          <div class="btn-grid-3">
-            <button class="chip-btn ${state.arpSweepStrings===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=3;renderStageAndInspector()">3 struny</button>
-            <button class="chip-btn ${state.arpSweepStrings===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=5;renderStageAndInspector()">5 strun</button>
-            <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;renderStageAndInspector()">6 strun</button>
-          </div>
-        </div>
-        <div>
-          <div class="section-label">SKALA DLA SWEEP PICKING</div>
-          <select onchange="stopArpeggioPlayback(false);state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
-            ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
-          </select>
-          <div class="btn-grid-2" style="margin-top:6px;">
-            <button class="chip-btn ${!state.arpDiatonicSevenths?'active':''}" style="padding:5px 6px;font-size:11px;"
-                    onclick="stopArpeggioPlayback(false);state.arpDiatonicSevenths=false;renderStageAndInspector()">Trójdźwięki</button>
-            <button class="chip-btn ${state.arpDiatonicSevenths?'active':''}" style="padding:5px 6px;font-size:11px;"
-                    onclick="stopArpeggioPlayback(false);state.arpDiatonicSevenths=true;renderStageAndInspector()">Septymowe</button>
-          </div>
-          <button class="chip-btn ${state.arpTransitionId==='diatonic_climb'?'active':''}" style="width:100%;margin-top:6px;padding:6px 8px;font-size:11.5px;"
-                  onclick="launchDiatonicScaleSweep()">
-            ⚡ Wspinaczka po wybranej skali
-          </button>
-        </div>
-        ${state.arpTransitionId === 'same_chord_inversions' ? `
-          <div>
-            <div class="section-label">AKORD DLA INWERSJI</div>
-            <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;renderStageAndInspector();">
-              ${groupedChordsHtml}
-            </select>
-          </div>
-        ` : ''}
-        <div>
-          <div class="section-label">GOTOWE PROGRESJE SWEEP PICKING (${(data.transitionPresets || []).length})</div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            ${(data.transitionPresets || []).map(p => `
-              <button class="chip-btn ${state.arpTransitionId===p.id?'active':''}" style="text-align:left;padding:8px 10px;display:flex;flex-direction:column;gap:2px;"
-                      onclick="stopArpeggioPlayback(false);state.arpTransitionId='${p.id}';state.arpActiveSegIdx=0;renderStageAndInspector()">
-                <div style="display:flex;justify-content:space-between;width:100%;align-items:center;gap:6px;">
-                  <strong style="font-size:12px;">${p.name}</strong>
-                  <span style="font-size:10px;opacity:0.75;white-space:nowrap;">${p.category}</span>
-                </div>
-                <span style="font-size:11px;opacity:0.8;font-weight:400;line-height:1.25;">${p.description}</span>
-              </button>
+          <div class="section-label">${isTrans ? 'TONACJA PRZEJŚCIA' : 'PRYMA KSZTAŁTU SWEEP'}</div>
+          <div class="btn-grid-6">
+            ${rootLabels.map((lbl, pc) => `
+              <button class="chip-btn ${state.rootPc===pc?'active':''}"
+                      onclick="stopArpeggioPlayback(false);state.rootPc=${pc};state.arpDiatonicScaleRootPc=${pc};state.sweepPosIdx=0;renderAll()">${lbl}</button>
             `).join('')}
           </div>
         </div>
-      ` : `
+
+        <div>
+          <div class="section-label">LICZBA STRUN SWEEP</div>
+          <div class="btn-grid-3">
+            <button class="chip-btn ${state.arpSweepStrings===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=3;state.sweepPosIdx=0;renderStageAndInspector()">3 struny</button>
+            <button class="chip-btn ${state.arpSweepStrings===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=5;state.sweepPosIdx=0;renderStageAndInspector()">5 strun</button>
+            <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;state.sweepPosIdx=0;renderStageAndInspector()">6 strun</button>
+          </div>
+        </div>
+
+        ${isTrans ? `
+          <div>
+            <div class="section-label">SKALA DLA SWEEP PICKING</div>
+            <select onchange="stopArpeggioPlayback(false);state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
+              ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
+            </select>
+            <div class="btn-grid-2" style="margin-top:6px;">
+              <button class="chip-btn ${!state.arpDiatonicSevenths?'active':''}" style="padding:5px 6px;font-size:11px;"
+                      onclick="stopArpeggioPlayback(false);state.arpDiatonicSevenths=false;renderStageAndInspector()">Trójdźwięki</button>
+              <button class="chip-btn ${state.arpDiatonicSevenths?'active':''}" style="padding:5px 6px;font-size:11px;"
+                      onclick="stopArpeggioPlayback(false);state.arpDiatonicSevenths=true;renderStageAndInspector()">Septymowe</button>
+            </div>
+            <button class="chip-btn ${state.arpTransitionId==='diatonic_climb'?'active':''}" style="width:100%;margin-top:6px;padding:6px 8px;font-size:11.5px;"
+                    onclick="launchDiatonicScaleSweep()">
+              ⚡ Wspinaczka po wybranej skali
+            </button>
+          </div>
+          ${state.arpTransitionId === 'same_chord_inversions' ? `
+            <div>
+              <div class="section-label">AKORD DLA INWERSJI</div>
+              <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;renderStageAndInspector();">
+                ${groupedChordsHtml}
+              </select>
+            </div>
+          ` : ''}
+          <div>
+            <div class="section-label">GOTOWE PROGRESJE SWEEP PICKING (${(data.transitionPresets || []).length})</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              ${(data.transitionPresets || []).map(p => `
+                <button class="chip-btn ${state.arpTransitionId===p.id?'active':''}" style="text-align:left;padding:8px 10px;display:flex;flex-direction:column;gap:2px;"
+                        onclick="stopArpeggioPlayback(false);state.arpTransitionId='${p.id}';state.arpActiveSegIdx=0;renderStageAndInspector()">
+                  <div style="display:flex;justify-content:space-between;width:100%;align-items:center;gap:6px;">
+                    <strong style="font-size:12px;">${p.name}</strong>
+                    <span style="font-size:10px;opacity:0.75;white-space:nowrap;">${p.category}</span>
+                  </div>
+                  <span style="font-size:11px;opacity:0.8;font-weight:400;line-height:1.25;">${p.description}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        ` : `
+          <div>
+            <div class="section-label">TYP AKORDU SWEEP</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;">
+              ${quickArpTypes.map(qt => `
+                <button class="chip-btn ${state.chordId===qt.id?'active':''}" style="padding:5px 4px;font-size:11.5px;"
+                        onclick="stopArpeggioPlayback(false);state.chordId='${qt.id}';state.sweepPosIdx=0;renderStageAndInspector()">${qt.lbl}</button>
+              `).join('')}
+            </div>
+            <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;state.sweepPosIdx=0;renderStageAndInspector();">
+              ${groupedChordsHtml}
+            </select>
+          </div>
+          ${(data.positions && data.positions.length > 0) ? `
+            <div>
+              <div class="section-label">POZYCJA KSZTAŁTU SWEEP (${data.positions.length})</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                ${data.positions.map(pos => `
+                  <button class="chip-btn ${state.sweepPosIdx===pos.idx?'active':''}" style="padding:5px 8px;font-size:11px;"
+                          onclick="stopArpeggioPlayback(false);state.sweepPosIdx=${pos.idx};renderStageAndInspector()">
+                    ${pos.label}${pos.hasRoll ? ' · R' : ''}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          <div>
+            <div class="section-label">SEKWENCJA I KIERUNEK</div>
+            <div class="btn-grid-3" style="margin-bottom:6px;">
+              <button class="chip-btn ${state.arpSeqStyle===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=0;renderStageAndInspector()">Prosto</button>
+              <button class="chip-btn ${state.arpSeqStyle===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=1;renderStageAndInspector()">Grupy po 3</button>
+              <button class="chip-btn ${state.arpSeqStyle===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=2;renderStageAndInspector()">Skoki 1–5</button>
+            </div>
+            <div class="btn-grid-3">
+              <button class="chip-btn ${state.arpDirection===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=0;renderStageAndInspector()">↕ Góra-dół</button>
+              <button class="chip-btn ${state.arpDirection===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=1;renderStageAndInspector()">↓ W górę</button>
+              <button class="chip-btn ${state.arpDirection===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=2;renderStageAndInspector()">↑ W dół</button>
+            </div>
+          </div>
+          <div>
+            <div class="section-label">SKALA DLA KART DIATONICZNYCH</div>
+            <select onchange="state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
+              ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
+            </select>
+          </div>
+        `}`;
+    } else {
+      insp.innerHTML = `
+        <div>
+          <div class="section-label">PRYMA ARPEGGIO</div>
+          <div class="btn-grid-6">
+            ${rootLabels.map((lbl, pc) => `
+              <button class="chip-btn ${state.rootPc===pc?'active':''}"
+                      onclick="stopArpeggioPlayback(false);state.rootPc=${pc};state.arpDiatonicScaleRootPc=${pc};state.arpPosIdx=0;renderAll()">${lbl}</button>
+            `).join('')}
+          </div>
+        </div>
+
         <div>
           <div class="section-label">TYP ARPEGGIO (SZYBKI WYBÓR)</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;">
@@ -7132,8 +7528,8 @@ async function renderStageAndInspector() {
             <button class="chip-btn ${state.arpPattern===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=6;state.arpPosIdx=0;renderStageAndInspector()">🎯 Od prymy</button>
             <button class="chip-btn ${state.arpPattern===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=1;state.arpPosIdx=0;renderStageAndInspector()">📦 CAGED (5 kszt.)</button>
             <button class="chip-btn ${state.arpPattern===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=5;state.arpPosIdx=0;renderStageAndInspector()">↔ Inwersje</button>
-            <button class="chip-btn ${state.arpPattern===4?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=4;state.arpPosIdx=0;renderStageAndInspector()">⚡ Sweep Picking</button>
             <button class="chip-btn ${state.arpPattern===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=2;state.arpPosIdx=0;renderStageAndInspector()">2NPS (2/str.)</button>
+            <button class="chip-btn ${state.arpPattern===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=3;state.arpPosIdx=0;renderStageAndInspector()">3NPS (legato)</button>
             <button class="chip-btn ${state.arpPattern===0?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=0;state.arpPosIdx=0;renderStageAndInspector()">Mapa gryfu</button>
           </div>
         </div>
@@ -7156,17 +7552,6 @@ async function renderStageAndInspector() {
                 <button class="chip-btn ${state.arpStringSet===idx?'active':''}" style="padding:5px 8px;font-size:11.5px;"
                         onclick="stopArpeggioPlayback(false);state.arpStringSet=${idx};state.arpPosIdx=0;renderStageAndInspector()">${lbl}</button>
               `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        ${state.arpPattern === 4 ? `
-          <div>
-            <div class="section-label">LICZBA STRUN SWEEP</div>
-            <div class="btn-grid-3">
-              <button class="chip-btn ${state.arpSweepStrings===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=3;state.arpPosIdx=0;renderStageAndInspector()">3 struny</button>
-              <button class="chip-btn ${state.arpSweepStrings===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=5;state.arpPosIdx=0;renderStageAndInspector()">5 strun</button>
-              <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;state.arpPosIdx=0;renderStageAndInspector()">6 strun</button>
             </div>
           </div>
         ` : ''}
@@ -7204,37 +7589,78 @@ async function renderStageAndInspector() {
           <select onchange="state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
             ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
           </select>
-        </div>
-      `}`;
+        </div>`;
+    }
 
     renderFretboardToolbarForActiveTab();
     drawFretboard();
 
   } else if (state.subtab === 'scale_practice') {
     // =======================================================================
-    // ZAKŁADKA: PRAKTYKA SKAL I ARPEGGIÓW (Pełny, wyśrodkowany układ studyjny)
+    // ZAKŁADKA: PRAKTYKA SKAL I ARPEGGIÓW (1–3 oktawy, 16 przebiegów, Diagonal/1 str./3NPS/4NPS/CAGED, rytm i BPM)
     // =======================================================================
     const baseNoteLabels = getRootLabels();
     const scaleObj = (state.initData.scales || []).find(s => s.id === state.scaleId) || { id: 'major', name: 'Durowa' };
     const chordObj = (state.initData.chords || []).find(c => c.id === state.chordId) || { id: 'minor', name: 'Molowy' };
     const degList = (state.fretboardData && state.fretboardData.scaleDegrees) ? state.fretboardData.scaleDegrees : [];
     const degNumsStr = degList.map(d => d.interval || String(d.deg)).join(' ');
-    const patternOptions = [
-      { code: 0, name: 'Cała skala', desc: 'Graj kolejno każdy dźwięk w skali: 1, 2, 3, 4, 5...' },
-      { code: 3, name: 'Grupy po 3', desc: 'Trójki dźwiękowe w górę i w dół skali: 1-2-3, 2-3-4...' },
-      { code: 4, name: 'Grupy po 4', desc: 'Cztery kolejne dźwięki w grupie: 1-2-3-4, 2-3-4-5...' },
-      { code: 5, name: 'Skoki tercjowe', desc: 'Melodia skokami co tercję: 1-3, 2-4, 3-5...' },
-      { code: 6, name: 'Skoki kwartowe', desc: 'Nowoczesne skoki co kwartę: 1-4, 2-5, 3-6...' },
-      { code: 7, name: 'Skoki kwintowe', desc: 'Otwarte brzmienie kwintowe: 1-5, 2-6, 3-7...' },
-      { code: 8, name: 'Skoki sekstowe', desc: 'Szerokie interwały sekstowe: 1-6, 2-7, 3-8...' },
-      { code: 9, name: 'Skoki oktawowe', desc: 'Oktawy wzdłuż skali: 1-8, 2-9...' }
+    const patternGroups = [
+      {
+        label: 'Liniowe i sekwencje melodyczne',
+        items: [
+          { code: 0,  name: 'Cała skala (liniowo)',         desc: 'Ciągły bieg po kolei: 1-2-3-4-5-6-7...' },
+          { code: 3,  name: 'Sekwencja 3-nutowa (1-2-3)',   desc: 'Klasyczne trójki wzdłuż skali: 1-2-3, 2-3-4, 3-4-5...' },
+          { code: 4,  name: 'Sekwencja 4-nutowa (1-2-3-4)', desc: 'Cztery kolejne dźwięki: 1-2-3-4, 2-3-4-5, 3-4-5-6...' },
+          { code: 10, name: 'Sekstole / grupy po 6 (shred)',desc: 'Płynne biegi 6-nutowe (legato / alternate): 1-2-3-4-5-6, 2-3-4-5-6-7...' },
+          { code: 11, name: 'Krok w tył (1-2-3-2)',         desc: 'Niezależność palców i precyzja: 1-2-3-2, 2-3-4-3...' },
+          { code: 12, name: 'Zwrot shred (1-2-3-1)',        desc: 'Klasyczny wzór kostkowania naprzemiennego (Paul Gilbert): 1-2-3-1, 2-3-4-2...' }
+        ]
+      },
+      {
+        label: 'Interwały diatoniczne',
+        items: [
+          { code: 5,  name: 'Tercje diatoniczne (1-3, 2-4)',       desc: 'Melodia skokami co tercję: 1-3, 2-4, 3-5, 4-6...' },
+          { code: 13, name: 'Tercje naprzemienne (zig-zag)',       desc: 'Złamane tercje (1-3, 4-2, 3-5, 6-4...) — świetne na frazowanie.' },
+          { code: 6,  name: 'Kwarty diatoniczne (1-4, 2-5)',       desc: 'Nowoczesne, otwarte skoki co kwartę: 1-4, 2-5, 3-6...' },
+          { code: 7,  name: 'Kwinty diatoniczne (1-5, 2-6)',       desc: 'Szerokie, rockowo-fusionowe skoki kwintowe: 1-5, 2-6, 3-7...' },
+          { code: 8,  name: 'Seksty diatoniczne (1-6, 2-7)',       desc: 'Śpiewne szerokie interwały sekstowe: 1-6, 2-7...' },
+          { code: 9,  name: 'Skoki oktawowe (1-8, 2-9)',           desc: 'Kontrola odległości oktawy wzdłuż skali: 1-8, 2-9...' }
+        ]
+      },
+      {
+        label: 'Harmonia w skali i technika gitarowa',
+        items: [
+          { code: 14, name: 'Trójdźwięki po skali (1-3-5, 2-4-6)',     desc: 'Harmonizowane trójdźwięki diatoniczne w ramach skali — podstawa improwizacji!' },
+          { code: 15, name: 'Trójdźwięki naprzemienne (1-3-5, 6-4-2)', desc: 'Co drugi trójdźwięk grany w dół — klasyk jazz/fusion/rock.' },
+          { code: 16, name: 'Czterodźwięki septymowe (1-3-5-7)',       desc: 'Arpeggia 7-kowe z każdego stopnia skali: 1-3-5-7, 2-4-6-8...' },
+          { code: 17, name: 'Nuta pedałowa na prymie (1-2-1-3-1-4)',   desc: 'Pedal point zakotwiczony na tonice — styl neoklasyczny / rock / metal.' },
+          { code: 18, name: 'Przeskok struny (String Skipping)',       desc: 'Przeplatanie niesąsiednich strun (0→2, 1→3, 2→4, 3→5) — precyzja prawej ręki.' }
+        ]
+      }
     ];
-    const activePat = patternOptions.find(p => p.code === state.spPattern) || patternOptions[0];
+    const allPatterns = patternGroups.flatMap(g => g.items);
+    const activePat = allPatterns.find(p => p.code === state.spPattern) || allPatterns[0];
     const dirNames = ['Rosnąco ↑', 'Malejąco ↓', 'Rosnąco → Malejąco', 'Malejąco → Rosnąco'];
     const posNames = ['Cały gryf', '3NPS', '4NPS', 'CAGED'];
+    const travNames = ['Standard (pozycja)', '↗ Diagonalnie (3 okt.)', '↔ 1 struna (poziomo)'];
+    const cagedLabels = ['C', 'A', 'G', 'E', 'D'];
     const stringLabels = (state.customStringMidis && state.customStringMidis.length === 6)
       ? state.customStringMidis.map(m => baseNoteLabels[((m % 12) + 12) % 12])
       : ['E', 'A', 'D', 'G', 'B', 'E'];
+    const fretZones = [
+      { id: 'all',  lbl: 'Cały (0–24)', min: 0,  max: 24 },
+      { id: 'low',  lbl: 'Niska (0–7)', min: 0,  max: 7 },
+      { id: 'mid',  lbl: 'Środek (5–14)', min: 5, max: 14 },
+      { id: 'high', lbl: 'Wysoka (12–24)', min: 12, max: 24 }
+    ];
+    const activeZone = fretZones.find(z => z.id === state.spFretZone) || fretZones[0];
+    const rhythmOpts = [
+      { id: 'q',   dur: 0, tup: false, lbl: '♩ Ćwierć' },
+      { id: 'e',   dur: 1, tup: false, lbl: '♪ Ósemki' },
+      { id: 't',   dur: 1, tup: true,  lbl: '♪³ Triole' },
+      { id: 's',   dur: 2, tup: false, lbl: '♬ Szesnastki' }
+    ];
+    const activeRhythm = rhythmOpts.find(r => r.dur === (state.spNoteDur ?? 1) && r.tup === !!state.spTuplet) || rhythmOpts[1];
     const scaleDescMap = {
       major: 'Jasna i rozwiązana: punkt odniesienia dla reszty.',
       natural_minor: 'Naturalnie melancholijna i śpiewna barwa molowa.',
@@ -7253,15 +7679,25 @@ async function renderStageAndInspector() {
     const summaryHeadline = isScaleMode
       ? `${rootNoteLbl} ${scaleObj.name.toLowerCase()}`
       : `${state.scalePracticeMode === 'arpeggio' ? 'Arpeggio' : 'Wzór arpeggia'}: ${rootNoteLbl}${chordObj.id === 'major' ? 'maj' : (chordObj.id === 'minor' ? 'm' : chordObj.id)}`;
-    const activeStartStrLbl = state.spStartString < 0 ? 'Dowolna' : `Struna ${6 - state.spStartString} (${stringLabels[state.spStartString]})`;
+    const activeStartStrLbl = state.spStartString < 0
+      ? (state.spTraversal === 2 ? `Domyślna (1 · ${stringLabels[5]})` : 'Dowolna')
+      : `Struna ${6 - state.spStartString} (${stringLabels[state.spStartString]})`;
+    const activeSystemLbl = state.spTraversal === 1
+      ? '↗ Diagonalnie po gryfie'
+      : (state.spTraversal === 2
+          ? '↔ 1 struna (poziomo)'
+          : (state.spPosSystem > 0
+              ? `${posNames[state.spPosSystem]} #${(state.spPosIdx || 0) + 1}${state.spPosSystem === 3 ? ` (${cagedLabels[(state.spPosIdx || 0) % 5]})` : ''}`
+              : 'Cały gryf'));
+    const posCountForSys = (state.spPosSystem === 1) ? 7 : 5;
 
     stage.innerHTML = `
       <div class="sp-shell">
         <div class="sp-header">
           <div>
-            <h2 style="font-size:21px;font-weight:800;margin:0;color:var(--text);">Praktyka skal i arpeggiów</h2>
+            <h2 style="font-size:21px;font-weight:800;margin:0;color:var(--text);">Praktyka skal i przebiegów</h2>
             <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">
-              Skonfiguruj ćwiczenie i uruchom interaktywną grę z mikrofonem lub odsłuch na żywo.
+              1–3 oktawy, biegi diagonalne i poziome, sekwencje, trójdźwięki, pedal point i string skipping — gotowe do gry z mikrofonem lub odsłuchu.
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -7327,31 +7763,84 @@ async function renderStageAndInspector() {
               </div>
             </div>
 
-            <!-- Karta 2: Jak grać -->
+            <!-- Karta 2: Nawigacja po gryfie i przebieg -->
             <div class="sp-card">
               <div class="sp-card-head">
-                <h3>2. Jak grać</h3>
-                <span style="font-size:11.5px;color:var(--text-muted);">Układ na gryfie, kierunek i wzorzec</span>
+                <h3>2. Układ na gryfie i przebieg (sekwencja)</h3>
+                <span style="font-size:11.5px;color:var(--text-muted);">System, 1–3 oktawy, kierunek i wzorzec</span>
               </div>
+
               <div class="sp-two-col">
                 <div>
-                  <div class="section-label">POZYCJA NA GRYFIE</div>
-                  <div class="ear-seg-row">
-                    ${posNames.map((nm, pIdx) => `
-                      <button class="ear-seg-btn ${state.spPosSystem===pIdx?'active':''}" style="padding:9px 8px;white-space:nowrap;"
-                              onclick="state.spPosSystem=${pIdx};state.posSystem=${pIdx};renderAll()">${pIdx === 0 ? 'Brak' : nm}</button>
+                  <div class="section-label">PROWADZENIE PO GRYFIE</div>
+                  <div class="ear-seg-row" style="margin-bottom:10px;">
+                    ${travNames.map((tNm, tIdx) => `
+                      <button class="ear-seg-btn ${(state.spTraversal || 0)===tIdx?'active':''}" style="padding:8px 6px;font-size:11.5px;white-space:nowrap;"
+                              onclick="state.spTraversal=${tIdx};${tIdx===1?'state.spOctaves=3;':''}saveSettings();renderStageAndInspector()">${tNm}</button>
                     `).join('')}
                   </div>
+
+                  ${(state.spTraversal || 0) === 0 ? `
+                    <div class="section-label">SYSTEM POZYCJI</div>
+                    <div class="ear-seg-row">
+                      ${posNames.map((nm, pIdx) => `
+                        <button class="ear-seg-btn ${state.spPosSystem===pIdx?'active':''}" style="padding:8px 6px;white-space:nowrap;"
+                                onclick="state.spPosSystem=${pIdx};state.posSystem=${pIdx};state.spPosIdx=0;saveSettings();renderAll()">${pIdx === 0 ? 'Cały gryf' : nm}</button>
+                      `).join('')}
+                    </div>
+                    ${state.spPosSystem > 0 ? `
+                      <div style="margin-top:8px;">
+                        <div class="section-label">NUMER POZYCJI (${posNames[state.spPosSystem]})</div>
+                        <div style="display:grid;grid-template-columns:repeat(${posCountForSys},1fr);gap:5px;">
+                          ${Array.from({length: posCountForSys}, (_, idx) => `
+                            <button class="chip-btn ${(state.spPosIdx || 0)===idx?'active':''}" style="padding:6px 2px;font-size:11.5px;"
+                                    onclick="state.spPosIdx=${idx};state.posIdx=${idx};saveSettings();renderAll()">
+                              ${state.spPosSystem === 3 ? cagedLabels[idx] : `#${idx+1}`}
+                            </button>
+                          `).join('')}
+                        </div>
+                      </div>
+                    ` : ''}
+                  ` : `
+                    <div style="font-size:11.5px;color:var(--text-muted);background:#130f0c;border:1px solid #26201b;border-radius:8px;padding:9px 11px;line-height:1.4;">
+                      ${state.spTraversal === 1
+                        ? '↗ <b>Przebieg diagonalny:</b> płynne przechodzenie w górę gryfu (3–4 dźwięki na strunę z shiftem pozycji) aż do wysokich progów — idealne do 3-oktawowych biegów!'
+                        : '↔ <b>Jedna struna (poziomo):</b> granie skali wzdłuż wybranej struny od progu 0 do 24 — najlepsze ćwiczenie do opanowania gryfu poziomo.'}
+                    </div>
+                  `}
                 </div>
-                <div>
-                  <div class="section-label">STRUNA STARTOWA</div>
-                  <div class="ear-seg-row">
-                    <button class="ear-seg-btn ${state.spStartString===-1?'active':''}" style="padding:9px 8px;white-space:nowrap;"
-                            onclick="state.spStartString=-1;renderStageAndInspector()">Dowolna</button>
-                    ${stringLabels.map((sLbl, sIdx) => `
-                      <button class="ear-seg-btn ${state.spStartString===sIdx?'active':''}" style="padding:9px 6px;white-space:nowrap;"
-                              onclick="state.spStartString=${sIdx};renderStageAndInspector()">${sLbl}</button>
-                    `).join('')}
+
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                  <div>
+                    <div class="section-label">${state.spTraversal === 2 ? 'STRUNA DO BIEGU POZIOMEGO' : 'STRUNA STARTOWA'}</div>
+                    <div class="ear-seg-row">
+                      <button class="ear-seg-btn ${state.spStartString===-1?'active':''}" style="padding:8px 6px;font-size:11.5px;white-space:nowrap;"
+                              onclick="state.spStartString=-1;saveSettings();renderStageAndInspector()">Dowolna</button>
+                      ${stringLabels.map((sLbl, sIdx) => `
+                        <button class="ear-seg-btn ${state.spStartString===sIdx?'active':''}" style="padding:8px 5px;font-size:11.5px;white-space:nowrap;"
+                                onclick="state.spStartString=${sIdx};saveSettings();renderStageAndInspector()">${sLbl}</button>
+                      `).join('')}
+                    </div>
+                  </div>
+                  <div>
+                    <div class="section-label">ZAKRES OKTAW</div>
+                    <div class="ear-seg-row">
+                      <button class="ear-seg-btn ${state.spOctaves===1?'active':''}"
+                              onclick="state.spOctaves=1;saveSettings();renderStageAndInspector()">1 oktawa</button>
+                      <button class="ear-seg-btn ${state.spOctaves===2?'active':''}"
+                              onclick="state.spOctaves=2;saveSettings();renderStageAndInspector()">2 oktawy</button>
+                      <button class="ear-seg-btn ${state.spOctaves===3?'active':''}"
+                              onclick="state.spOctaves=3;saveSettings();renderStageAndInspector()">3 oktawy</button>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="section-label">STREFA PROGÓW</div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+                      ${fretZones.map(z => `
+                        <button class="chip-btn ${(state.spFretZone || 'all')===z.id?'active':''}" style="padding:6px 4px;font-size:11px;white-space:nowrap;"
+                                onclick="state.spFretZone='${z.id}';saveSettings();renderStageAndInspector()">${z.lbl}</button>
+                      `).join('')}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -7362,39 +7851,59 @@ async function renderStageAndInspector() {
                   <div class="sp-dir-grid">
                     ${dirNames.map((dNm, dIdx) => `
                       <button class="sp-dir-btn ${state.spDirection===dIdx?'active':''}"
-                              onclick="state.spDirection=${dIdx};renderStageAndInspector()">${dNm}</button>
+                              onclick="state.spDirection=${dIdx};saveSettings();renderStageAndInspector()">${dNm}</button>
                     `).join('')}
                   </div>
                 </div>
+
                 <div style="display:flex;flex-direction:column;gap:12px;">
                   <div>
-                    <div class="section-label">OKTAWY</div>
-                    <div class="ear-seg-row">
-                      <button class="ear-seg-btn ${state.spOctaves===1?'active':''}"
-                              onclick="state.spOctaves=1;renderStageAndInspector()">1 oktawa</button>
-                      <button class="ear-seg-btn ${state.spOctaves===2?'active':''}"
-                              onclick="state.spOctaves=2;renderStageAndInspector()">2 oktawy</button>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="section-label">ETYKIETY NA GRYFIE</div>
-                    <div class="ear-seg-row">
-                      <button class="ear-seg-btn ${state.labelType==='notes'?'active':''}"
-                              onclick="state.labelType='notes';saveSettings();renderStageAndInspector()">Nuty</button>
-                      <button class="ear-seg-btn ${state.labelType==='intervals'?'active':''}"
-                              onclick="state.labelType='intervals';saveSettings();renderStageAndInspector()">Interwały</button>
-                    </div>
+                    <div class="section-label">PRZEBIEG / WZORZEC MELODYCZNY (${allPatterns.length} OPCJI)</div>
+                    <select onchange="state.spPattern=parseInt(this.value,10);saveSettings();renderStageAndInspector()">
+                      ${patternGroups.map(g => `
+                        <optgroup label="${g.label}">
+                          ${g.items.map(p => `<option value="${p.code}" ${p.code===state.spPattern?'selected':''}>${p.name}</option>`).join('')}
+                        </optgroup>
+                      `).join('')}
+                    </select>
+                    <div style="font-size:11.5px;color:var(--text-muted);margin-top:5px;line-height:1.35;">${activePat.desc}</div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <div class="section-label">WZORZEC MELODYCZNY</div>
-                <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-                  <select onchange="state.spPattern=parseInt(this.value,10);renderStageAndInspector()" style="max-width:320px;">
-                    ${patternOptions.map(p => `<option value="${p.code}" ${p.code===state.spPattern?'selected':''}>${p.name}</option>`).join('')}
-                  </select>
-                  <span style="font-size:12px;color:var(--text-muted);">${activePat.desc}</span>
+              <div class="sp-two-col">
+                <div>
+                  <div class="section-label">PODZIAŁ RYTMICZNY I TEMPO</div>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <div class="ear-seg-row" style="flex:1;min-width:210px;">
+                      ${rhythmOpts.map(r => `
+                        <button class="ear-seg-btn ${activeRhythm.id===r.id?'active':''}" style="padding:7px 6px;font-size:11.5px;white-space:nowrap;"
+                                onclick="state.spNoteDur=${r.dur};state.spTuplet=${r.tup};saveSettings();renderStageAndInspector()">${r.lbl}</button>
+                      `).join('')}
+                    </div>
+                    <div style="display:flex;align-items:center;gap:4px;background:#130f0c;border:1px solid #2b241e;border-radius:8px;padding:3px 6px;">
+                      <button class="chip-btn" style="padding:3px 7px;" onclick="state.spBpm=Math.max(40,(state.spBpm||100)-5);saveSettings();renderStageAndInspector()">−</button>
+                      <strong style="min-width:56px;text-align:center;font-size:12px;color:var(--accent);">${state.spBpm || 100} BPM</strong>
+                      <button class="chip-btn" style="padding:3px 7px;" onclick="state.spBpm=Math.min(240,(state.spBpm||100)+5);saveSettings();renderStageAndInspector()">+</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end;">
+                  <div>
+                    <div class="section-label">ETYKIETY NA GRYFIE</div>
+                    <div class="ear-seg-row">
+                      <button class="ear-seg-btn ${state.labelType==='notes'?'active':''}" style="padding:7px 8px;"
+                              onclick="state.labelType='notes';saveSettings();renderStageAndInspector()">Nuty</button>
+                      <button class="ear-seg-btn ${state.labelType==='intervals'?'active':''}" style="padding:7px 8px;"
+                              onclick="state.labelType='intervals';saveSettings();renderStageAndInspector()">Interwały</button>
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:#130f0c;border:1px solid #26201b;border-radius:8px;padding:8px 10px;">
+                    <span class="section-label" style="margin:0;">START OD TONIKI</span>
+                    <button class="ear-toggle-switch ${state.spStartOnRoot!==false?'on':''}"
+                            onclick="state.spStartOnRoot=!(state.spStartOnRoot!==false);saveSettings();renderStageAndInspector()"></button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -7447,8 +7956,8 @@ async function renderStageAndInspector() {
 
             <div class="sp-summary-pills">
               <div class="sp-summary-pill">
-                <span>Pozycja</span>
-                <strong>${posNames[state.spPosSystem] || 'Cały gryf'}</strong>
+                <span>Układ / Pozycja</span>
+                <strong>${activeSystemLbl}</strong>
               </div>
               <div class="sp-summary-pill">
                 <span>Struna startowa</span>
@@ -7459,16 +7968,16 @@ async function renderStageAndInspector() {
                 <strong>${dirNames[state.spDirection] || 'Rosnąco ↑'}</strong>
               </div>
               <div class="sp-summary-pill">
-                <span>Zakres</span>
-                <strong>${state.spOctaves} ${state.spOctaves === 1 ? 'oktawa' : 'oktawy'}</strong>
+                <span>Zakres / Strefa</span>
+                <strong>${state.spOctaves} ${state.spOctaves === 1 ? 'okt.' : 'okt.'} · ${activeZone.min}–${activeZone.max}</strong>
               </div>
               <div class="sp-summary-pill">
-                <span>Wzorzec</span>
+                <span>Przebieg</span>
                 <strong>${activePat.name}</strong>
               </div>
               <div class="sp-summary-pill">
-                <span>Etykiety</span>
-                <strong>${state.labelType === 'intervals' ? 'Interwały' : 'Nuty'}</strong>
+                <span>Rytm i Tempo</span>
+                <strong>${activeRhythm.lbl} · ${state.spBpm || 100} BPM</strong>
               </div>
             </div>
 
@@ -7476,6 +7985,10 @@ async function renderStageAndInspector() {
                     onclick="launchScalePractice('play')">▶ Graj (z mikrofonem)</button>
             <button class="action-btn secondary" style="width:100%;padding:11px;font-size:14px;"
                     onclick="launchScalePractice('listen')">🔊 Posłuchaj</button>
+            <button class="chip-btn" style="width:100%;padding:9px 12px;font-size:12.5px;border-color:var(--accent);color:var(--accent);"
+                    onclick="launchScalePractice('edit')" title="Otwórz wygenerowaną sekwencję w edytorze TAB / GP5">
+              ✏️ Otwórz jako TAB / GP5
+            </button>
 
             <button class="chip-btn" style="width:100%;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;"
                     onclick="state.spAddToSessionOpen=!state.spAddToSessionOpen;renderStageAndInspector()">
@@ -7545,11 +8058,14 @@ async function renderStageAndInspector() {
               </h2>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <button class="chip-btn ${state.exerciseShowStaff?'active':''}" style="padding:6px 10px;font-size:12px;"
-                      onclick="toggleExerciseStaff()"
-                      title="Rozwiń lub zwiń pięciolinię (nuty) nad tabulaturą">
-                🎼 Nuty: ${state.exerciseShowStaff ? 'Wł.' : 'Wył.'}
-              </button>
+              <div class="ear-seg-row" style="width:auto;">
+                <button type="button" class="ear-seg-btn ${(!state.exerciseShowStaff && state.tabCreationEnabled)?'active':''}" style="padding:5px 9px;font-size:11.5px;white-space:nowrap;"
+                        onclick="setExerciseScoreViewMode('tab')">🎸 Tylko TAB</button>
+                <button type="button" class="ear-seg-btn ${(state.exerciseShowStaff && state.tabCreationEnabled)?'active':''}" style="padding:5px 9px;font-size:11.5px;white-space:nowrap;"
+                        onclick="setExerciseScoreViewMode('both')">🎼 Nuty + TAB</button>
+                <button type="button" class="ear-seg-btn ${(state.exerciseShowStaff && !state.tabCreationEnabled)?'active':''}" style="padding:5px 9px;font-size:11.5px;white-space:nowrap;"
+                        onclick="setExerciseScoreViewMode('staff')">🎼 Tylko Nuty</button>
+              </div>
               ${buildExerciseBarsPerRowControlHtml(true)}
               <button class="chip-btn ${state.spMetronome?'active':''}" style="padding:6px 10px;font-size:12px;"
                       onclick="toggleExerciseMetronome()" title="Włącz / wyłącz metronom w tempie ćwiczenia">
@@ -7718,71 +8234,51 @@ async function renderStageAndInspector() {
           </div>
         </div>
 
-        <!-- Pełna interaktywna tabela nut (Struna / Próg / Nuta / Czas trwania / Typ / Technika / ↑ ↓ ×) -->
+        <!-- Kompaktowa 2-kolumnowa lista nut (2 nuty w jednym rzędzie — wolniejsze przewijanie!) -->
         ${hasNotes ? `
-          <div style="background:#15110e;border:1px solid var(--border);border-radius:10px;padding:8px 10px;overflow-x:auto;">
-            <table class="ex-notes-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Struna</th>
-                  <th>Próg</th>
-                  <th>Nuta</th>
-                  <th>Czas trwania</th>
-                  <th>Typ</th>
-                  <th>Technika</th>
-                  <th style="text-align:right;">Akcje</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${state.recordedEvents.map((ev, idx) => ({ ev, idx })).reverse().map(({ ev, idx }) => {
-                  const isRest = !!ev.rest;
-                  const strNum = isRest ? 6 : (6 - (ev.s !== undefined ? ev.s : 0));
-                  const fretNum = isRest ? 0 : (ev.f !== undefined ? ev.f : 0);
-                  const noteNm = isRest ? '𝄽' : (ev.note || (ev.midi > 0 ? rootLabels[((ev.midi % 12) + 12) % 12] : '—'));
-                  const curTech = ev.tech || '-';
-                  return `
-                    <tr class="${idx === state.recordedEvents.length - 1 ? 'ex-active-row' : ''}">
-                      <td style="color:var(--text-muted);font-family:monospace;">${idx + 1}</td>
-                      <td>
-                        <select style="width:56px;" ${isRest?'disabled':''}
-                                onchange="updateExerciseRow(${idx}, 'strNum', parseInt(this.value,10))">
-                          ${[1,2,3,4,5,6].map(sn => `<option value="${sn}" ${sn===strNum?'selected':''}>${sn}</option>`).join('')}
-                        </select>
-                      </td>
-                      <td>
-                        <input type="number" min="0" max="24" value="${fretNum}" style="width:56px;" ${isRest?'disabled':''}
-                               onchange="updateExerciseRow(${idx}, 'fret', parseInt(this.value,10))">
-                      </td>
-                      <td style="font-weight:800;color:${isRest?'var(--text-muted)':'var(--accent)'};min-width:34px;">${noteNm}</td>
-                      <td>
-                        <select onchange="updateExerciseRow(${idx}, 'dur', parseInt(this.value,10))">
-                          ${durOptions.map(d => `<option value="${d.code}" ${ev.dur===d.code?'selected':''}>${d.label.replace(/\s*\(.*\)/,'')}</option>`).join('')}
-                        </select>
-                      </td>
-                      <td>
-                        <select onchange="updateExerciseRow(${idx}, 'rest', parseInt(this.value,10))">
-                          <option value="0" ${!isRest?'selected':''}>Nuta</option>
-                          <option value="1" ${isRest?'selected':''}>Pauza</option>
-                        </select>
-                      </td>
-                      <td>
-                        <select ${isRest?'disabled':''} onchange="updateExerciseRow(${idx}, 'tech', this.value)">
-                          ${techOptions.map(t => `<option value="${t.code}" ${curTech===t.code?'selected':''}>${t.label}</option>`).join('')}
-                        </select>
-                      </td>
-                      <td style="text-align:right;white-space:nowrap;">
-                        <button class="chip-btn" style="padding:3px 7px;" ${idx >= state.recordedEvents.length - 1 ? 'disabled' : ''}
-                                onclick="moveExerciseEvent(${idx}, 1)" title="Przesuń wyżej">↑</button>
-                        <button class="chip-btn" style="padding:3px 7px;" ${idx <= 0 ? 'disabled' : ''}
-                                onclick="moveExerciseEvent(${idx}, -1)" title="Przesuń niżej">↓</button>
-                        <button class="chip-btn" style="padding:3px 7px;color:#ef4444;"
-                                onclick="deleteExerciseEvent(${idx})" title="Usuń dźwięk">×</button>
-                      </td>
-                    </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
+          <div style="background:#15110e;border:1px solid var(--border);border-radius:10px;padding:8px 10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:var(--text-muted);">
+              <span><b>LISTA NUT W ĆWICZENIU (${state.recordedEvents.length})</b> · najnowsze na górze (2 kolumny)</span>
+              <span>Str. / Próg / Czas / Typ / Technika</span>
+            </div>
+            <div class="ex-notes-grid">
+              ${state.recordedEvents.map((ev, idx) => ({ ev, idx })).reverse().map(({ ev, idx }) => {
+                const isRest = !!ev.rest;
+                const strNum = isRest ? 6 : (6 - (ev.s !== undefined ? ev.s : 0));
+                const fretNum = isRest ? 0 : (ev.f !== undefined ? ev.f : 0);
+                const noteNm = isRest ? '𝄽' : (ev.note || (ev.midi > 0 ? rootLabels[((ev.midi % 12) + 12) % 12] : '—'));
+                const curTech = ev.tech || '-';
+                return `
+                  <div class="ex-note-card ${idx === state.recordedEvents.length - 1 ? 'ex-active-row' : ''}">
+                    <span style="color:var(--text-muted);font-family:monospace;min-width:22px;">#${idx + 1}</span>
+                    <strong style="color:${isRest?'var(--text-muted)':'var(--accent)'};min-width:26px;text-align:center;">${noteNm}</strong>
+                    <select title="Struna" style="width:42px;" ${isRest?'disabled':''}
+                            onchange="updateExerciseRow(${idx}, 'strNum', parseInt(this.value,10))">
+                      ${[1,2,3,4,5,6].map(sn => `<option value="${sn}" ${sn===strNum?'selected':''}>S${sn}</option>`).join('')}
+                    </select>
+                    <input type="number" title="Próg" min="0" max="24" value="${fretNum}" style="width:42px;" ${isRest?'disabled':''}
+                           onchange="updateExerciseRow(${idx}, 'fret', parseInt(this.value,10))">
+                    <select title="Czas trwania" style="flex:1;min-width:58px;" onchange="updateExerciseRow(${idx}, 'dur', parseInt(this.value,10))">
+                      ${durOptions.map(d => `<option value="${d.code}" ${ev.dur===d.code?'selected':''}>${d.label.replace(/\s*\(.*\)/,'')}</option>`).join('')}
+                    </select>
+                    <select title="Typ" style="width:58px;" onchange="updateExerciseRow(${idx}, 'rest', parseInt(this.value,10))">
+                      <option value="0" ${!isRest?'selected':''}>Nuta</option>
+                      <option value="1" ${isRest?'selected':''}>Pauza</option>
+                    </select>
+                    <select title="Technika" style="width:60px;" ${isRest?'disabled':''} onchange="updateExerciseRow(${idx}, 'tech', this.value)">
+                      ${techOptions.map(t => `<option value="${t.code}" ${curTech===t.code?'selected':''}>${t.label}</option>`).join('')}
+                    </select>
+                    <span style="display:flex;gap:2px;margin-left:auto;flex-shrink:0;">
+                      <button class="chip-btn" style="padding:2px 5px;font-size:10.5px;" ${idx >= state.recordedEvents.length - 1 ? 'disabled' : ''}
+                              onclick="moveExerciseEvent(${idx}, 1)" title="Przesuń wyżej">↑</button>
+                      <button class="chip-btn" style="padding:2px 5px;font-size:10.5px;" ${idx <= 0 ? 'disabled' : ''}
+                              onclick="moveExerciseEvent(${idx}, -1)" title="Przesuń niżej">↓</button>
+                      <button class="chip-btn" style="padding:2px 5px;font-size:10.5px;color:#ef4444;"
+                              onclick="deleteExerciseEvent(${idx})" title="Usuń dźwięk">×</button>
+                    </span>
+                  </div>`;
+              }).join('')}
+            </div>
           </div>
           <div>
             <button class="chip-btn" style="padding:10px 18px;font-weight:700;" onclick="saveExerciseToWorkshop()">
@@ -7814,31 +8310,14 @@ async function renderStageAndInspector() {
       <div style="font-size:16px;font-weight:800;margin-top:4px;">Ustawienia ćwiczenia</div>
 
       <div>
-        <div class="section-label">TONACJA</div>
-        <div class="btn-grid-2">
-          <button class="chip-btn active">${tabPreview.detectedKey}</button>
-          <button class="chip-btn" onclick="detectAndApplyKey('${tabPreview.detectedKey}')">Wykryj z nut</button>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div>
-          <div class="section-label">PIĘCIOLINIA (NUTY)</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exerciseShowStaff?'active':''}"
-                    onclick="setExerciseShowStaff(true)">Wł.</button>
-            <button class="chip-btn ${!state.exerciseShowStaff?'active':''}"
-                    onclick="setExerciseShowStaff(false)">Wył.</button>
-          </div>
-        </div>
-        <div>
-          <div class="section-label">TAB</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.tabCreationEnabled?'active':''}"
-                    onclick="state.tabCreationEnabled=true;saveSettings();renderStageAndInspector()">Wł.</button>
-            <button class="chip-btn ${!state.tabCreationEnabled?'active':''}"
-                    onclick="state.tabCreationEnabled=false;setExerciseShowStaff(true)">Wył.</button>
-          </div>
+        <div class="section-label">WIDOK ZAPISU (NUTY / TAB)</div>
+        <div class="ear-seg-row">
+          <button class="ear-seg-btn ${(!state.exerciseShowStaff && state.tabCreationEnabled)?'active':''}" style="padding:8px 6px;font-size:11.5px;white-space:nowrap;"
+                  onclick="setExerciseScoreViewMode('tab')">🎸 Tylko TAB</button>
+          <button class="ear-seg-btn ${(state.exerciseShowStaff && state.tabCreationEnabled)?'active':''}" style="padding:8px 6px;font-size:11.5px;white-space:nowrap;"
+                  onclick="setExerciseScoreViewMode('both')">🎼 Nuty + TAB</button>
+          <button class="ear-seg-btn ${(state.exerciseShowStaff && !state.tabCreationEnabled)?'active':''}" style="padding:8px 6px;font-size:11.5px;white-space:nowrap;"
+                  onclick="setExerciseScoreViewMode('staff')">🎼 Tylko Nuty</button>
         </div>
       </div>
 
@@ -8082,9 +8561,23 @@ function scrollTabContainerToX(wrap, noteX, smooth = true) {
   }
 }
 
+function isSweepTransitionActive() {
+  return (state.subtab === 'sweep' && state.sweepViewMode === 'transition');
+}
+
+function toggleArpOrSweepLoop() {
+  if (state.subtab === 'sweep') {
+    state.sweepLoop = !state.sweepLoop;
+  } else {
+    state.arpLoop = !state.arpLoop;
+  }
+  saveSettings();
+  renderStageAndInspector();
+}
+
 function getActiveArpeggioSteps() {
   if (!state.arpData) return [];
-  if (state.arpViewMode === 'transition' && state.arpData.transition && state.arpData.transition.segments) {
+  if (isSweepTransitionActive() && state.arpData.transition && state.arpData.transition.segments) {
     const out = [];
     state.arpData.transition.segments.forEach((seg, sIdx) => {
       (seg.steps || []).forEach(st => {
@@ -8100,7 +8593,7 @@ function refreshArpTabSvgOnly() {
   const wrap = document.getElementById('arpTabSvgWrap');
   if (!wrap || !state.arpData) return;
   const prevScroll = wrap.scrollLeft || 0;
-  const isTrans = (state.arpViewMode === 'transition');
+  const isTrans = isSweepTransitionActive();
   const tr = state.arpData.transition || { segments: [] };
   const activeSteps = getActiveArpeggioSteps();
   wrap.innerHTML = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, state.arpPlayStepIdx, isTrans);
@@ -8206,7 +8699,7 @@ function updateArpTabHighlightAndScroll(activeIdx, smooth = true) {
     }
   });
 
-  if (state.arpViewMode === 'transition') {
+  if (isSweepTransitionActive()) {
     svg.querySelectorAll('text[data-seg-hdr]').forEach(t => {
       const seg = parseInt(t.getAttribute('data-seg-hdr'), 10);
       t.setAttribute('fill', seg === state.arpActiveSegIdx ? '#f39237' : '#d6cec2');
@@ -8248,9 +8741,10 @@ function selectDiatonicSweepChord(rootPc, chordId) {
   stopArpeggioPlayback(false);
   state.rootPc = rootPc;
   state.chordId = chordId;
+  state.sweepViewMode = 'transition';
   state.arpTransitionId = 'same_chord_inversions';
   state.arpActiveSegIdx = 0;
-  state.arpPosIdx = 0;
+  state.sweepPosIdx = 0;
   renderAll();
 }
 
@@ -8259,6 +8753,7 @@ function launchDiatonicScaleSweep() {
   if (state.arpDiatonicScaleRootPc !== undefined && state.arpDiatonicScaleRootPc !== null) {
     state.rootPc = state.arpDiatonicScaleRootPc;
   }
+  state.sweepViewMode = 'transition';
   state.arpTransitionId = 'diatonic_climb';
   state.arpActiveSegIdx = 0;
   renderAll();
@@ -8287,7 +8782,7 @@ function playSingleArpeggioStep(idx) {
   const st = steps[idx];
   if (!st) return;
   state.arpPlayStepIdx = idx;
-  if (state.arpViewMode === 'transition' && st.seg !== undefined) {
+  if (isSweepTransitionActive() && st.seg !== undefined) {
     state.arpActiveSegIdx = st.seg;
   }
   pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
@@ -8308,7 +8803,7 @@ function stopArpeggioPlayback(redraw = true) {
     btn.textContent = '▶ Odsłuchaj';
     btn.classList.remove('active');
   }
-  if (redraw && state.subtab === 'arpeggio') {
+  if (redraw && (state.subtab === 'arpeggio' || state.subtab === 'sweep')) {
     updateArpTabHighlightAndScroll(-1, false);
     drawFretboard();
   }
@@ -8330,7 +8825,7 @@ function toggleArpeggioPlayback() {
   }
 
   const tick = () => {
-    if (!state.arpPlaying || state.subtab !== 'arpeggio') {
+    if (!state.arpPlaying || (state.subtab !== 'arpeggio' && state.subtab !== 'sweep')) {
       stopArpeggioPlayback(false);
       return;
     }
@@ -8339,8 +8834,9 @@ function toggleArpeggioPlayback() {
       stopArpeggioPlayback(true);
       return;
     }
+    const loopEnabled = (state.subtab === 'sweep') ? !!state.sweepLoop : !!state.arpLoop;
     if (state.arpPlayStepIdx >= curSteps.length) {
-      if (state.arpLoop) {
+      if (loopEnabled) {
         state.arpPlayStepIdx = 0;
       } else {
         stopArpeggioPlayback(true);
@@ -8348,7 +8844,7 @@ function toggleArpeggioPlayback() {
       }
     }
     const st = curSteps[state.arpPlayStepIdx];
-    const segChanged = (state.arpViewMode === 'transition' && st.seg !== undefined && st.seg !== state.arpActiveSegIdx);
+    const segChanged = (isSweepTransitionActive() && st.seg !== undefined && st.seg !== state.arpActiveSegIdx);
     if (segChanged) {
       state.arpActiveSegIdx = st.seg;
       document.querySelectorAll('#dynamicStagePanel .chord-box-card').forEach((card, ci) => {
@@ -8384,9 +8880,9 @@ function sendArpeggioToExerciseTab() {
     tech: techMap[st.tech] || '—'
   }));
   state.tempoBpm = state.arpBpm;
-  state.exerciseTitle = (state.arpViewMode === 'transition' && state.arpData && state.arpData.transition)
+  state.exerciseTitle = (isSweepTransitionActive() && state.arpData && state.arpData.transition)
     ? state.arpData.transition.name
-    : `Arpeggio ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
+    : `${state.subtab === 'sweep' ? 'Sweep Picking' : 'Arpeggio'} ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
   state.exercisePlayerActive = false;
   switchPracticeSubtab('exercise');
 }
@@ -8411,7 +8907,9 @@ function saveSettings() {
       chordScaleId: state.chordScaleId,
       chordShowScaleOnFretboard: state.chordShowScaleOnFretboard,
       arpViewMode: state.arpViewMode,
+      sweepViewMode: state.sweepViewMode,
       arpPattern: state.arpPattern,
+      sweepPosIdx: state.sweepPosIdx,
       arpSweepStrings: state.arpSweepStrings,
       arpDirection: state.arpDirection,
       arpSeqStyle: state.arpSeqStyle,
@@ -8421,6 +8919,8 @@ function saveSettings() {
       arpDiatonicScaleId: state.arpDiatonicScaleId,
       arpDiatonicScaleRootPc: state.arpDiatonicScaleRootPc,
       arpBpm: state.arpBpm,
+      arpLoop: !!state.arpLoop,
+      sweepLoop: !!state.sweepLoop,
       tuningId: state.tuningId,
       customStringMidis: state.customStringMidis,
       a4ReferenceHz: state.a4ReferenceHz,
@@ -8463,6 +8963,8 @@ function saveSettings() {
       changesLoop: state.changesLoop,
       changesBackingBand: state.changesBackingBand,
       changesMetronomeClick: state.changesMetronomeClick,
+      changesDrums: state.changesDrums,
+      changesDrumStyle: state.changesDrumStyle,
       changesCycleKeys: state.changesCycleKeys,
       tempoBpm: state.tempoBpm,
       timeSigNum: state.timeSigNum,
@@ -8479,10 +8981,17 @@ function saveSettings() {
       exerciseMaxFret: state.exerciseMaxFret,
       scalePracticeMode: state.scalePracticeMode,
       spPosSystem: state.spPosSystem,
+      spPosIdx: state.spPosIdx,
+      spTraversal: state.spTraversal,
       spStartString: state.spStartString,
       spDirection: state.spDirection,
       spOctaves: state.spOctaves,
       spPattern: state.spPattern,
+      spStartOnRoot: state.spStartOnRoot,
+      spFretZone: state.spFretZone,
+      spNoteDur: state.spNoteDur,
+      spTuplet: !!state.spTuplet,
+      spBpm: state.spBpm,
       spUseHeadphones: state.spUseHeadphones,
       spMetronome: state.spMetronome,
       spRefNote: state.spRefNote,
@@ -8518,6 +9027,22 @@ async function loadSettings() {
   }
 }
 
+function setExerciseScoreViewMode(mode) {
+  state.exerciseStaffPrefV2 = true;
+  if (mode === 'tab') {
+    state.exerciseShowStaff = false;
+    state.tabCreationEnabled = true;
+  } else if (mode === 'staff') {
+    state.exerciseShowStaff = true;
+    state.tabCreationEnabled = false;
+  } else {
+    state.exerciseShowStaff = true;
+    state.tabCreationEnabled = true;
+  }
+  saveSettings();
+  renderStageAndInspector();
+}
+
 function setExerciseShowStaff(show) {
   state.exerciseShowStaff = !!show;
   state.exerciseStaffPrefV2 = true;
@@ -8533,16 +9058,24 @@ function toggleExerciseStaff() {
 }
 
 function buildExerciseStaffBarHtml() {
-  const open = !!state.exerciseShowStaff;
+  const mode = (!state.exerciseShowStaff && state.tabCreationEnabled)
+    ? 'tab'
+    : ((state.exerciseShowStaff && !state.tabCreationEnabled) ? 'staff' : 'both');
   return `
-    <button type="button" class="ex-staff-toggle-bar ${open ? 'open' : ''}" onclick="toggleExerciseStaff()"
-            title="${open ? 'Kliknij, aby zwinąć pięciolinię (nuty) i zostawić samą tabulaturę' : 'Kliknij, aby rozwinąć pięciolinię (nuty) nad tabulaturą'}">
+    <div class="ex-staff-toggle-bar ${mode !== 'tab' ? 'open' : ''}" style="cursor:default;">
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span>🎼 Zapis nutowy (pięciolinia)</span>
-        <span class="ex-staff-hint">${open ? 'Widoczne nuty + tabulatura (TAB)' : 'Domyślnie ukryte — wyświetlana jest sama tabulatura (TAB)'}</span>
+        <span>Widok zapisu:</span>
+        <span class="ex-staff-hint">${mode === 'tab' ? 'Sama tabulatura (TAB)' : (mode === 'both' ? 'Pięciolinia (nuty) + Tabulatura (TAB)' : 'Sama pięciolinia (nuty)')}</span>
       </span>
-      <span class="ex-staff-pill">${open ? '▾ Zwiń nuty' : '▸ Rozwiń nuty'}</span>
-    </button>`;
+      <div class="ear-seg-row" style="width:auto;flex-shrink:0;">
+        <button type="button" class="ear-seg-btn ${mode==='tab'?'active':''}" style="padding:5px 11px;font-size:11.5px;white-space:nowrap;"
+                onclick="setExerciseScoreViewMode('tab')">🎸 Tylko TAB</button>
+        <button type="button" class="ear-seg-btn ${mode==='both'?'active':''}" style="padding:5px 11px;font-size:11.5px;white-space:nowrap;"
+                onclick="setExerciseScoreViewMode('both')">🎼 Nuty + TAB</button>
+        <button type="button" class="ear-seg-btn ${mode==='staff'?'active':''}" style="padding:5px 11px;font-size:11.5px;white-space:nowrap;"
+                onclick="setExerciseScoreViewMode('staff')">🎼 Tylko Nuty</button>
+      </div>
+    </div>`;
 }
 
 function setExerciseBarsPerRow(n) {
@@ -8810,10 +9343,118 @@ function playMetronomeTickAudio(isDownbeat) {
   osc.stop(now + 0.05);
 }
 
+// ===== Synteza perkusji (kick, snare, hi-hat) dla zespołu podkładowego =====
+function buildDrumNoiseBuffer(ctx, seconds) {
+  const sr = ctx.sampleRate;
+  const len = Math.max(1, Math.floor(sr * seconds));
+  const buf = ctx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function playDrumHit(kind, velocity = 1.0) {
+  const ctx = ensureAudioCtx();
+  const now = ctx.currentTime;
+  const out = getMasterAudioOut();
+
+  if (kind === 'kick') {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+    g.gain.setValueAtTime(0.9 * velocity, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+    osc.connect(g); g.connect(out);
+    osc.start(now); osc.stop(now + 0.34);
+  } else if (kind === 'snare') {
+    const src = ctx.createBufferSource();
+    src.buffer = buildDrumNoiseBuffer(ctx, 0.25);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 1900; bp.Q.value = 0.9;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.55 * velocity, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    const tone = ctx.createOscillator();
+    const tg = ctx.createGain();
+    tone.type = 'triangle'; tone.frequency.setValueAtTime(190, now);
+    tg.gain.setValueAtTime(0.5 * velocity, now);
+    tg.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    src.connect(bp); bp.connect(g); g.connect(out);
+    tone.connect(tg); tg.connect(out);
+    src.start(now); tone.start(now); tone.stop(now + 0.18);
+  } else if (kind === 'hihat_closed') {
+    const src = ctx.createBufferSource();
+    src.buffer = buildDrumNoiseBuffer(ctx, 0.08);
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 7200;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.28 * velocity, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    src.connect(hp); hp.connect(g); g.connect(out);
+    src.start(now);
+  } else if (kind === 'hihat_open') {
+    const src = ctx.createBufferSource();
+    src.buffer = buildDrumNoiseBuffer(ctx, 0.3);
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 6200;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.3 * velocity, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+    src.connect(hp); hp.connect(g); g.connect(out);
+    src.start(now);
+  } else if (kind === 'crash') {
+    const src = ctx.createBufferSource();
+    src.buffer = buildDrumNoiseBuffer(ctx, 0.6);
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 4200;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.35 * velocity, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    src.connect(hp); hp.connect(g); g.connect(out);
+    src.start(now);
+  }
+}
+
+function changesBeatMs() {
+  return Math.max(180, Math.round(60000 / Math.max(40, state.changesBpm)));
+}
+
+// Odtwarza perkusję dla pojedynczej miary (0..3) taktu, zgodnie z wybranym rytmem.
+function playChangesDrumStep(beatIdx) {
+  if (!state.changesDrums) return;
+  const raw = (state.changesDrumStyle === 'auto') ? state.changesFeel : state.changesDrumStyle;
+  const style = String(raw || 'rock').toLowerCase();
+  const isSwing = (style === 'blues' || style === 'swing' || style === 'swing jazz');
+  const beatMs = changesBeatMs();
+  const offDelay = isSwing ? beatMs * 0.66 : beatMs * 0.5;
+
+  if (style === 'half_time') {
+    if (beatIdx === 0) playDrumHit('kick', 1.0);
+    if (beatIdx === 2) playDrumHit('snare', 1.0);
+  } else if (style === 'funk') {
+    if (beatIdx === 0 || beatIdx === 2) playDrumHit('kick', 0.95);
+    if (beatIdx === 1 || beatIdx === 3) playDrumHit('snare', 0.9);
+    if (beatIdx === 3) playDrumHit('hihat_open', 0.6);
+  } else {
+    // rock / pop / blues / swing / prosto — kick na 1 i 3, werbel na 2 i 4
+    if (beatIdx === 0 || beatIdx === 2) playDrumHit('kick', 0.95);
+    if (beatIdx === 1 || beatIdx === 3) playDrumHit('snare', 0.9);
+  }
+
+  playDrumHit('hihat_closed', (beatIdx === 0) ? 0.85 : 0.6);
+  setTimeout(() => {
+    if (state.changesIsPlaying && !state.changesIsPaused) playDrumHit('hihat_closed', 0.5);
+  }, offDelay);
+}
+
 function playChangesBackingStepAudio(resolvedChord, beatIdx) {
   if (!resolvedChord) return;
   const ctx = ensureAudioCtx();
   const now = ctx.currentTime;
+
+  playChangesDrumStep(beatIdx);
 
   if (state.changesMetronomeClick) {
     playMetronomeTickAudio(beatIdx === 0);
@@ -9046,8 +9687,9 @@ function startChangesLivePractice() {
     const resolved = resolveChangesSlot(slot);
     if (state.changesBackingBand) {
       playChangesBackingStepAudio(resolved, state.changesActiveBeatIdx);
-    } else if (state.changesMetronomeClick) {
-      playMetronomeTickAudio(state.changesActiveBeatIdx === 0);
+    } else {
+      if (state.changesDrums) playChangesDrumStep(state.changesActiveBeatIdx);
+      if (state.changesMetronomeClick) playMetronomeTickAudio(state.changesActiveBeatIdx === 0);
     }
     renderStageAndInspector();
 
@@ -9620,6 +10262,24 @@ function renderChangesView(stage, insp) {
           ${['Bas elektryczny','Kontrabas','Syntezator basowy','Wył.'].map(b => `<option value="${b}" ${state.changesBass===b?'selected':''}>${b}</option>`).join('')}
         </select>
       </div>
+
+      <div>
+        <div class="section-label">PERKUSJA</div>
+        <div class="btn-grid-2">
+          <button class="chip-btn ${!state.changesDrums?'active':''}"
+                  onclick="state.changesDrums=false;renderStageAndInspector()">Wył.</button>
+          <button class="chip-btn ${state.changesDrums?'active':''}"
+                  onclick="state.changesDrums=true;renderStageAndInspector()">Wł.</button>
+        </div>
+      </div>
+
+      ${state.changesDrums ? `
+      <div>
+        <div class="section-label">RYTM PERKUSJI</div>
+        <select onchange="state.changesDrumStyle=this.value;renderStageAndInspector()">
+          ${[['auto','Auto (z Feel)'],['rock','Rock'],['pop','Pop'],['blues','Blues / Shuffle'],['swing','Swing Jazz'],['funk','Funk'],['half_time','Half-time']].map(([v,l]) => `<option value="${v}" ${state.changesDrumStyle===v?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>` : ''}
 
       <div>
         <div class="section-label">NATĘŻENIE SWINGU</div>
@@ -10750,7 +11410,8 @@ function playExerciseStepAudio(ev, idx) {
   if (!ev) return;
   if (state.spBgChord && idx % Math.max(1, state.timeSigNum) === 0) {
     const rootM = 48 + (state.rootPc || 0);
-    const sc = (state.fretboardData && state.fretboardData.scaleDegrees) || [0, 4, 7];
+    const rawDegs = (state.fretboardData && state.fretboardData.scaleDegrees) || [];
+    const sc = rawDegs.map(d => (typeof d === 'number' ? d : (d && typeof d.semitones === 'number' ? d.semitones : null))).filter(x => x !== null);
     const triad = [rootM, rootM + (sc[2] !== undefined ? sc[2] : 4), rootM + (sc[4] !== undefined ? sc[4] : 7)];
     triad.forEach(m => pluckGuitarFrequency(midiToFreq(m), 0.22));
   }
@@ -11006,12 +11667,25 @@ async function buildArpeggioEventsForScalePractice() {
 
 async function launchScalePractice(mode) {
   state.posSystem = state.spPosSystem;
+  state.posIdx = state.spPosIdx || 0;
+  state.tempoBpm = state.spBpm || 100;
   saveSettings();
   let events = [];
 
+  const fretZones = {
+    all:  { min: 0,  max: 24 },
+    low:  { min: 0,  max: 7  },
+    mid:  { min: 5,  max: 14 },
+    high: { min: 12, max: 24 }
+  };
+  const z = fretZones[state.spFretZone || 'all'] || fretZones.all;
+  const effDur = (state.spNoteDur !== undefined) ? state.spNoteDur : 1;
+  const effTup = state.spTuplet ? 3 : 0;
+
   if (state.scalePracticeMode === 'scale') {
     const customParam = state.customStringMidis.join(',');
-    const url = `/api/workshop_events?rootPc=${state.rootPc}&scaleId=${encodeURIComponent(state.scaleId)}&posSystem=${state.spPosSystem}&startString=${state.spStartString}&direction=${state.spDirection}&octaves=${state.spOctaves}&pattern=${state.spPattern}&tuning=${encodeURIComponent(state.tuningId)}&customMidis=${customParam}`;
+    const baseQuery = `rootPc=${state.rootPc}&scaleId=${encodeURIComponent(state.scaleId)}&posSystem=${state.spPosSystem}&posIdx=${state.spPosIdx || 0}&traversal=${state.spTraversal || 0}&direction=${state.spDirection}&octaves=${state.spOctaves}&pattern=${state.spPattern}&startOnRoot=${state.spStartOnRoot !== false ? 1 : 0}&minFret=${z.min}&maxFret=${z.max}&bpm=${state.spBpm || 100}&dur=${effDur}&tuplet=${state.spTuplet ? 1 : 0}&accMode=${state.accMode}&tuning=${encodeURIComponent(state.tuningId)}&customMidis=${customParam}`;
+    const url = `/api/workshop_events?${baseQuery}&startString=${state.spStartString}`;
     const res = await fetchJson(url);
     events = (res && res.events ? res.events : []).map(ev => ({
       s: ev.s,
@@ -11019,16 +11693,16 @@ async function launchScalePractice(mode) {
       midi: ev.midi,
       note: ev.note,
       freq: ev.freq,
-      dur: 1,
-      tuplet: 0,
+      dur: effDur,
+      tuplet: effTup,
       rest: 0,
       tech: '-'
     }));
-    if (events.length === 0 && state.spStartString >= 0) {
-      const fallbackUrl = `/api/workshop_events?rootPc=${state.rootPc}&scaleId=${encodeURIComponent(state.scaleId)}&posSystem=${state.spPosSystem}&startString=-1&direction=${state.spDirection}&octaves=${state.spOctaves}&pattern=${state.spPattern}&tuning=${encodeURIComponent(state.tuningId)}&customMidis=${customParam}`;
+    if (events.length === 0 && (state.spStartString >= 0 || z.min > 0 || z.max < 24)) {
+      const fallbackUrl = `/api/workshop_events?rootPc=${state.rootPc}&scaleId=${encodeURIComponent(state.scaleId)}&posSystem=${state.spPosSystem}&posIdx=${state.spPosIdx || 0}&traversal=${state.spTraversal || 0}&startString=-1&direction=${state.spDirection}&octaves=${state.spOctaves}&pattern=${state.spPattern}&startOnRoot=${state.spStartOnRoot !== false ? 1 : 0}&minFret=0&maxFret=24&bpm=${state.spBpm || 100}&dur=${effDur}&tuplet=${state.spTuplet ? 1 : 0}&accMode=${state.accMode}&tuning=${encodeURIComponent(state.tuningId)}&customMidis=${customParam}`;
       const resFb = await fetchJson(fallbackUrl);
       events = (resFb && resFb.events ? resFb.events : []).map(ev => ({
-        s: ev.s, f: ev.f, midi: ev.midi, note: ev.note, freq: ev.freq, dur: 1, tuplet: 0, rest: 0, tech: '-'
+        s: ev.s, f: ev.f, midi: ev.midi, note: ev.note, freq: ev.freq, dur: effDur, tuplet: effTup, rest: 0, tech: '-'
       }));
     }
   } else {
@@ -11039,7 +11713,7 @@ async function launchScalePractice(mode) {
     events = state.fretboardData.cells
       .filter(c => c.inScale && !c.masked)
       .slice(0, 12)
-      .map(c => ({ s: c.s, f: c.f, midi: c.midi, note: c.note, freq: c.freq, dur: 1, tuplet: 0, rest: 0, tech: '-' }));
+      .map(c => ({ s: c.s, f: c.f, midi: c.midi, note: c.note, freq: c.freq, dur: effDur, tuplet: effTup, rest: 0, tech: '-' }));
   }
   if (events.length === 0) return;
 
@@ -11049,7 +11723,12 @@ async function launchScalePractice(mode) {
   document.querySelectorAll('#practiceSubtabs .subtab-btn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('data-subtab') === 'exercise');
   });
-  await startExercisePlayer(mode || 'play');
+  if (mode === 'edit') {
+    state.exercisePlayerActive = false;
+    await renderAll();
+  } else {
+    await startExercisePlayer(mode || 'play');
+  }
 }
 
 function addScalePracticeToSession(sessionIdx) {
@@ -11058,13 +11737,17 @@ function addScalePracticeToSession(sessionIdx) {
   const posNames = ['Cały gryf', '3NPS', '4NPS', 'CAGED'];
   const patNames = {
     0: 'Cała skala', 3: 'Grupy po 3', 4: 'Grupy po 4',
-    5: 'Tercje', 6: 'Kwarty', 7: 'Kwinty', 8: 'Seksty', 9: 'Oktawy'
+    5: 'Tercje', 6: 'Kwarty', 7: 'Kwinty', 8: 'Seksty', 9: 'Oktawy',
+    10: 'Sekstole (6)', 11: 'Krok w tył', 12: 'Zwrot shred',
+    13: 'Tercje zig-zag', 14: 'Trójdźwięki', 15: 'Trójdźwięki naprzem.',
+    16: 'Septymowe', 17: 'Pedal point', 18: 'String Skipping'
   };
+  const modeTag = state.spTraversal === 1 ? 'Diagonal' : (state.spTraversal === 2 ? '1 struna' : (posNames[state.spPosSystem] || 'Cały gryf'));
   const newEx = {
     id: 'ex_sp_' + Date.now(),
-    title: `${rootLabels[state.rootPc]} ${scObj.name} · ${posNames[state.spPosSystem] || 'CAGED'} · ${patNames[state.spPattern] || 'Cała skala'}`,
+    title: `${rootLabels[state.rootPc]} ${scObj.name} · ${modeTag} (${state.spOctaves} okt.) · ${patNames[state.spPattern] || 'Cała skala'}`,
     category: 'Scale Practice',
-    level: state.spOctaves === 2 ? 'Średniozaawansowany' : 'Początkujący',
+    level: state.spOctaves >= 3 ? 'Zaawansowany' : (state.spOctaves === 2 ? 'Średniozaawansowany' : 'Początkujący'),
     rootPc: state.rootPc,
     scaleId: state.scaleId,
     posSystem: state.spPosSystem,
@@ -11167,18 +11850,6 @@ function undoLastExerciseEvent() {
 
 function playComposedExercise() {
   startExercisePlayer('listen');
-}
-
-function detectAndApplyKey(detectedKeyStr) {
-  if (!detectedKeyStr) return;
-  const parts = detectedKeyStr.split(' ');
-  const sharpLabels = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-  const flatLabels = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-  let pc = sharpLabels.indexOf(parts[0]);
-  if (pc < 0) pc = flatLabels.indexOf(parts[0]);
-  if (pc >= 0) state.rootPc = pc;
-  state.scaleId = (detectedKeyStr.toLowerCase().includes('mol')) ? 'natural_minor' : 'major';
-  renderAll();
 }
 
 function shiftMidiOctave(delta) {

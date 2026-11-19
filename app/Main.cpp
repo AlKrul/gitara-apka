@@ -634,6 +634,40 @@ std::string handleSearchApi(std::string_view query) {
     return oss.str();
 }
 
+std::string handleDiatonicApi(std::string_view query) {
+    int rootPc = getQueryInt(query, "rootPc", 0);
+    std::string scaleId = getQueryParam(query, "scaleId", "major");
+    bool sevenths = getQueryInt(query, "sevenths", 0) != 0;
+    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 2));
+
+    const auto* sDef = findScaleDefinition(scaleId);
+    if (!sDef) sDef = findScaleDefinition("major");
+    Scale sc{Note::fromPitchClass(rootPc, mode), sDef};
+
+    auto diatonic = generateDiatonicArpeggios(sc, sevenths, mode);
+
+    std::ostringstream oss;
+    oss << "{\"scaleFullName\":\"" << jsonEscape(sc.fullName(false)) << "\",\"chords\":[";
+    for (std::size_t i = 0; i < diatonic.size(); ++i) {
+        if (i > 0) oss << ",";
+        const auto& d = diatonic[i];
+        auto notes = d.chord.notes(mode);
+        std::ostringstream pcs;
+        for (std::size_t n = 0; n < notes.size(); ++n) {
+            if (n > 0) pcs << ",";
+            pcs << notes[n].pitchClass();
+        }
+        oss << "{\"degree\":" << d.degreeNumber
+            << ",\"roman\":\"" << jsonEscape(d.romanNumeral) << "\""
+            << ",\"symbol\":\"" << jsonEscape(d.chord.symbol(false, mode)) << "\""
+            << ",\"rootPc\":" << d.chord.root.pitchClass()
+            << ",\"chordId\":\"" << jsonEscape(d.chord.definition->id) << "\""
+            << ",\"pcs\":[" << pcs.str() << "]}";
+    }
+    oss << "]}";
+    return oss.str();
+}
+
 std::string handleArpeggioApi(std::string_view query) {
     int rootPc = getQueryInt(query, "rootPc", 0);
     std::string chordId = getQueryParam(query, "chordId", "minor");
@@ -972,33 +1006,65 @@ std::string handleWorkshopEventsApi(std::string_view query) {
     int rootPc = getQueryInt(query, "rootPc", 0);
     std::string scaleId = getQueryParam(query, "scaleId", "major");
     int posSystem = getQueryInt(query, "posSystem", 1);
+    int posIdx = getQueryInt(query, "posIdx", 0);
     int startStr = getQueryInt(query, "startString", -1);
     int dir = getQueryInt(query, "direction", 0);
     int octaves = getQueryInt(query, "octaves", 2);
     int pattern = getQueryInt(query, "pattern", 0);
+    int traversal = getQueryInt(query, "traversal", 0);
+    bool startOnRoot = getQueryInt(query, "startOnRoot", 0) != 0;
+    int minFret = getQueryInt(query, "minFret", 0);
+    int maxFret = getQueryInt(query, "maxFret", 24);
+    int bpm = getQueryInt(query, "bpm", 120);
+    int dur = getQueryInt(query, "dur", 1);
+    bool tuplet = getQueryInt(query, "tuplet", 0) != 0;
+    AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 2));
     if (query.find("group=") != std::string_view::npos) {
         int group = getQueryInt(query, "group", 3);
         pattern = (group == 4) ? 4 : 3;
     }
 
     Fretboard fb{resolveRequestedTuning(query), 24};
+    const auto* scDef = findScaleDefinition(scaleId);
+    if (!scDef) scDef = findScaleDefinition("major");
     WorkshopExerciseConfig cfg{};
-    cfg.scale = Scale{Note::fromPitchClass(rootPc, AccidentalMode::Sharps), findScaleDefinition(scaleId)};
+    cfg.scale = Scale{Note::fromPitchClass(rootPc, mode), scDef};
     cfg.positionSystem = static_cast<PositionSystem>(std::clamp(posSystem, 0, 3));
+    cfg.positionIndex = std::max(0, posIdx);
     cfg.startStringIndex = startStr;
     cfg.direction = static_cast<ExerciseDirection>(std::clamp(dir, 0, 3));
-    cfg.octaves = (octaves == 1) ? 1 : 2;
-    cfg.pattern = static_cast<ExercisePattern>(std::clamp(pattern, 0, 9));
+    cfg.octaves = std::clamp(octaves, 1, 3);
+    cfg.pattern = static_cast<ExercisePattern>(std::clamp(pattern, 0, 18));
+    cfg.traversalMode = static_cast<ScaleTraversalMode>(std::clamp(traversal, 0, 2));
+    cfg.startOnRoot = startOnRoot;
+    cfg.minFret = std::clamp(minFret, 0, 24);
+    cfg.maxFret = std::clamp(maxFret, cfg.minFret, 24);
+    cfg.tempoBpm = std::clamp(bpm, 30, 260);
+    cfg.tuplet = tuplet;
+    if (dur == 0) cfg.noteDuration = DurationValue::Quarter;
+    else if (dur == 2) cfg.noteDuration = DurationValue::Sixteenth;
+    else cfg.noteDuration = DurationValue::Eighth;
 
     auto gen = generateScaleExercise(fb, cfg);
 
+    int outMinFret = 99, outMaxFret = 0;
+    std::size_t limit = std::min<std::size_t>(256, gen.steps.size());
+    for (std::size_t i = 0; i < limit; ++i) {
+        outMinFret = std::min(outMinFret, gen.steps[i].targetPosition.fret);
+        outMaxFret = std::max(outMaxFret, gen.steps[i].targetPosition.fret);
+    }
+    if (outMinFret > outMaxFret) outMinFret = 0;
+
     std::ostringstream oss;
-    oss << "{\"title\":\"" << jsonEscape(gen.song.title) << "\",\"events\":[";
-    std::size_t limit = std::min<std::size_t>(64, gen.steps.size());
+    oss << "{\"title\":\"" << jsonEscape(gen.song.title) << "\""
+        << ",\"stepCount\":" << limit
+        << ",\"minFret\":" << outMinFret
+        << ",\"maxFret\":" << outMaxFret
+        << ",\"events\":[";
     for (std::size_t i = 0; i < limit; ++i) {
         if (i > 0) oss << ",";
         const auto& st = gen.steps[i];
-        auto p = fb.pitchAt(st.targetPosition.stringIndex, st.targetPosition.fret, AccidentalMode::Sharps);
+        auto p = fb.pitchAt(st.targetPosition.stringIndex, st.targetPosition.fret, mode);
         oss << "{\"s\":" << st.targetPosition.stringIndex
             << ",\"f\":" << st.targetPosition.fret
             << ",\"midi\":" << st.expectedMidiNote
@@ -1216,6 +1282,9 @@ int main(int argc, char** argv) {
             sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
         } else if (path == "/api/search") {
             std::string body = handleSearchApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/diatonic") {
+            std::string body = handleDiatonicApi(query);
             sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
         } else if (path == "/api/arpeggio") {
             std::string body = handleArpeggioApi(query);
