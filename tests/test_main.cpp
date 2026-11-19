@@ -432,17 +432,47 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
     Fretboard fb{findTuning("standard"), 24};
     Chord cMaj7{Note{Letter::C, Accidental::Natural}, findChordDefinition("maj7")};
 
-    // 1. Zakładka Arpeggio (FullNeck, CAGED, 2NPS, 3NPS, Sweep 3/5/6-str. + 8 przejść Sweep + diatoniczne)
+    // 1. Zakładka Arpeggio (FullNeck, CAGED bez unisonów, 2NPS, 3NPS, Sweep 3/5/6-str., Inwersje, Od prymy + 8 przejść Sweep + diatoniczne)
     auto fullArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::FullNeck);
     auto cagedArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::CAGED, 0);
     auto twoNpsArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::TwoNPS, 0);
     auto threeNpsArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::ThreeNPS, 0);
     auto sweepArp = generateArpeggio(fb, cMaj7, ArpeggioPattern::Sweep, 0);
+    auto rootOct1 = generateRootOctaveArpeggio(fb, cMaj7, 0, 1);
+    auto rootOct2 = generateRootOctaveArpeggio(fb, cMaj7, 0, 2);
     CHECK(fullArp.size() > cagedArp.size());
     CHECK(!cagedArp.empty());
     CHECK(!twoNpsArp.empty());
     CHECK(!threeNpsArp.empty());
     CHECK(!sweepArp.empty());
+    CHECK(rootOct1.size() >= 4);
+    CHECK(rootOct2.size() > rootOct1.size());
+    CHECK(rootOct1.front().isRoot);
+    CHECK(rootOct1.back().isRoot);
+
+    // Weryfikacja braku zdublowanych unisonów MIDI w CAGED (wszystkie 5 kształtów)
+    for (int box = 0; box < 5; ++box) {
+        auto boxNodes = generateArpeggio(fb, cMaj7, ArpeggioPattern::CAGED, box);
+        CHECK(!boxNodes.empty());
+        for (std::size_t i = 1; i < boxNodes.size(); ++i) {
+            int mPrev = fb.midiAt(boxNodes[i - 1].position.stringIndex, boxNodes[i - 1].position.fret);
+            int mCur = fb.midiAt(boxNodes[i].position.stringIndex, boxNodes[i].position.fret);
+            CHECK(mCur > mPrev);
+        }
+    }
+
+    // Inwersje poziome na wszystkich 3 zestawach strun (trójdźwięk i czterodźwięk) + sekwencje (Prosto, Grupy po 3, Skoki)
+    Chord aMinTriad{Note{Letter::A, Accidental::Natural}, findChordDefinition("minor")};
+    for (int ss = 0; ss < 3; ++ss) {
+        auto invTriad = generateArpeggioInversions(fb, aMinTriad, ss);
+        auto inv7 = generateArpeggioInversions(fb, cMaj7, ss);
+        CHECK(invTriad.size() >= 3);
+        CHECK(inv7.size() >= 3);
+    }
+    for (int seq = 0; seq <= 2; ++seq) {
+        auto st = buildArpeggioSequenceSteps(fb, rootOct2, ArpeggioPattern::RootOctave, 0, AccidentalMode::Sharps, seq);
+        CHECK(!st.empty());
+    }
 
     // Sweep shapes 3-, 5- i 6-strunowe dla Am, Cmaj, G#dim7, Cmaj7
     for (const char* cid : {"minor", "major", "dim7", "maj7", "7"}) {

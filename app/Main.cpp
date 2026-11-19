@@ -339,7 +339,7 @@ std::string handleFretboardApi(std::string_view query) {
             auto pitch = fb.pitchAt(s, f, mode, &scale);
             std::string ivStr;
             if (auto iv = scale.intervalForPitchClass(midi % 12)) {
-                ivStr = iv->symbol(false);
+                ivStr = iv->symbol(true);
             }
             bool isRoot = ((midi % 12) == scale.root.pitchClass());
             oss << "{\"s\":" << s
@@ -635,10 +635,13 @@ std::string handleSearchApi(std::string_view query) {
 std::string handleArpeggioApi(std::string_view query) {
     int rootPc = getQueryInt(query, "rootPc", 0);
     std::string chordId = getQueryParam(query, "chordId", "minor");
-    int patternInt = getQueryInt(query, "pattern", 4);
+    int patternInt = getQueryInt(query, "pattern", 6);
     int posIdx = getQueryInt(query, "posIdx", 0);
     int sweepStrings = getQueryInt(query, "sweepStrings", 3);
     int direction = getQueryInt(query, "direction", 0);
+    int seqStyle = getQueryInt(query, "seqStyle", 0);
+    int stringSet = getQueryInt(query, "stringSet", 0);
+    int octaves = getQueryInt(query, "octaves", 2);
     std::string viewMode = getQueryParam(query, "viewMode", "single"); // "single" | "transition"
     std::string transitionId = getQueryParam(query, "transitionId", "neoclassical_minor");
     int scaleRootPc = getQueryInt(query, "scaleRootPc", rootPc);
@@ -681,7 +684,7 @@ std::string handleArpeggioApi(std::string_view query) {
             << ",\"seg\":" << st.segmentIndex << "}";
     };
 
-    ArpeggioPattern pat = static_cast<ArpeggioPattern>(std::clamp(patternInt, 0, 4));
+    ArpeggioPattern pat = static_cast<ArpeggioPattern>(std::clamp(patternInt, 0, 6));
     std::vector<ArpeggioPositionNode> activeNodes;
     std::vector<ArpeggioStep> activeSteps;
     struct PosMeta { int idx; std::string label; int minFret; int maxFret; bool hasRoll; };
@@ -697,10 +700,49 @@ std::string handleArpeggioApi(std::string_view query) {
                 positions.push_back({sh.positionIndex, sh.label, sh.minFret, sh.maxFret, sh.hasFingerRoll});
             }
             activeNodes = shapes[static_cast<std::size_t>(resolvedPosIdx)].nodes;
-            activeSteps = shapes[static_cast<std::size_t>(resolvedPosIdx)].steps;
+            activeSteps = (seqStyle == 0)
+                ? shapes[static_cast<std::size_t>(resolvedPosIdx)].steps
+                : buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+        }
+    } else if (pat == ArpeggioPattern::RootOctave) {
+        constexpr std::array<const char*, 4> octNames = {"Od str. E6 (niska)", "Od str. A5", "Od str. D4", "Od str. E6 (wysoka)"};
+        resolvedPosIdx = ((posIdx % 4) + 4) % 4;
+        for (int i = 0; i < 4; ++i) {
+            auto ns = generateRootOctaveArpeggio(fb, ch, i, octaves, mode, nullptr);
+            int mn = 99, mx = 0;
+            for (const auto& n : ns) { mn = std::min(mn, n.position.fret); mx = std::max(mx, n.position.fret); }
+            if (mn > mx) mn = 0;
+            positions.push_back({i, std::string(octNames[static_cast<std::size_t>(i)]) + " · pr. " + std::to_string(mn) + "–" + std::to_string(mx), mn, mx, false});
+            if (i == resolvedPosIdx) activeNodes = std::move(ns);
+        }
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+    } else if (pat == ArpeggioPattern::Inversions) {
+        auto invs = generateArpeggioInversions(fb, ch, stringSet, mode, nullptr);
+        if (!invs.empty()) {
+            positions.push_back({-1, "Wszystkie po kolei (w górę gryfu)", invs.front().minFret, invs.back().maxFret, false});
+            for (const auto& inv : invs) {
+                positions.push_back({inv.inversionIndex, inv.label, inv.minFret, inv.maxFret, false});
+            }
+            if (posIdx < 0) {
+                resolvedPosIdx = -1;
+                std::size_t maxInv = std::min<std::size_t>(invs.size(), 5);
+                for (std::size_t i = 0; i < maxInv; ++i) {
+                    for (const auto& n : invs[i].nodes) activeNodes.push_back(n);
+                    auto segSteps = buildArpeggioSequenceSteps(fb, invs[i].nodes, pat, direction == 2 ? 2 : 1, mode, seqStyle);
+                    for (auto& st : segSteps) {
+                        st.segmentIndex = static_cast<int>(i);
+                        activeSteps.push_back(std::move(st));
+                    }
+                }
+            } else {
+                resolvedPosIdx = ((posIdx % static_cast<int>(invs.size())) + static_cast<int>(invs.size())) %
+                                 static_cast<int>(invs.size());
+                activeNodes = invs[static_cast<std::size_t>(resolvedPosIdx)].nodes;
+                activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+            }
         }
     } else if (pat == ArpeggioPattern::CAGED) {
-        constexpr std::array<const char*, 5> cagedNames = {"Kształt E", "Kształt D", "Kształt C", "Kształt A", "Kształt G"};
+        constexpr std::array<const char*, 5> cagedNames = {"Kształt C", "Kształt A", "Kształt G", "Kształt E", "Kształt D"};
         resolvedPosIdx = ((posIdx % 5) + 5) % 5;
         for (int i = 0; i < 5; ++i) {
             auto ns = generateArpeggio(fb, ch, ArpeggioPattern::CAGED, i, mode, nullptr);
@@ -710,7 +752,7 @@ std::string handleArpeggioApi(std::string_view query) {
             positions.push_back({i, std::string(cagedNames[static_cast<std::size_t>(i)]) + " (pr. " + std::to_string(mn) + "–" + std::to_string(mx) + ")", mn, mx, false});
             if (i == resolvedPosIdx) activeNodes = std::move(ns);
         }
-        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode);
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
     } else if (pat == ArpeggioPattern::TwoNPS || pat == ArpeggioPattern::ThreeNPS) {
         int countPos = std::max<int>(3, static_cast<int>(ch.notes(mode).size()));
         resolvedPosIdx = ((posIdx % countPos) + countPos) % countPos;
@@ -722,11 +764,11 @@ std::string handleArpeggioApi(std::string_view query) {
             positions.push_back({i, "Poz. " + std::to_string(i + 1) + " (pr. " + std::to_string(mn) + "–" + std::to_string(mx) + ")", mn, mx, false});
             if (i == resolvedPosIdx) activeNodes = std::move(ns);
         }
-        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode);
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
     } else {
         resolvedPosIdx = 0;
         activeNodes = fullNeckNodes;
-        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode);
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
     }
 
     auto transition = generateSweepTransition(fb, transitionId, rootPc, sweepStrings, posIdx, &ch, &sc, mode);
@@ -739,9 +781,25 @@ std::string handleArpeggioApi(std::string_view query) {
         << ",\"pattern\":" << static_cast<int>(pat)
         << ",\"posIdx\":" << resolvedPosIdx
         << ",\"sweepStrings\":" << sweepStrings
+        << ",\"seqStyle\":" << seqStyle
+        << ",\"stringSet\":" << stringSet
+        << ",\"octaves\":" << octaves
         << ",\"viewMode\":\"" << jsonEscape(viewMode) << "\""
         << ",\"scaleFullName\":\"" << jsonEscape(sc.fullName(false)) << "\""
-        << ",\"positions\":[";
+        << ",\"formula\":[";
+    for (std::size_t i = 0; i < chDef->intervals.size(); ++i) {
+        if (i > 0) oss << ",";
+        const auto& iv = chDef->intervals[i];
+        Note n = iv.applyTo(ch.root).withAccidentalMode(mode);
+        int midi = 48 + rootPc + iv.semitones;
+        double hz = 440.0 * std::pow(2.0, (midi - 69) / 12.0);
+        oss << "{\"note\":\"" << jsonEscape(n.toString(false)) << "\""
+            << ",\"interval\":\"" << jsonEscape(iv.symbol(true)) << "\""
+            << ",\"isRoot\":" << (i == 0 ? "true" : "false")
+            << ",\"midi\":" << midi
+            << ",\"freq\":" << hz << "}";
+    }
+    oss << "],\"positions\":[";
     for (std::size_t i = 0; i < positions.size(); ++i) {
         if (i > 0) oss << ",";
         oss << "{\"idx\":" << positions[i].idx

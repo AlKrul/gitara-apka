@@ -396,22 +396,24 @@ select, input[type="number"] {
   background: rgba(243, 146, 55, 0.12);
 }
 
-/* Kształcenie słuchu – stałe, czytelne kafelki (bez ściskania i skalowania!) */
+/* Kształcenie słuchu – wyśrodkowany układ 2-kolumnowy z czytelnymi kafelkami */
 .ear-config-layout {
   display: flex;
   gap: 28px;
   align-items: flex-start;
-  max-width: 1180px;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
 }
 .ear-config-main {
   flex: 1;
-  min-width: 660px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 .ear-summary-box {
-  width: 320px;
+  width: 340px;
   flex-shrink: 0;
   background: #171310;
   border: 1px solid var(--border);
@@ -420,6 +422,128 @@ select, input[type="number"] {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+/* Praktyka skal – pełny, wyśrodkowany układ studyjny z kartami i sticky podsumowaniem */
+.sp-shell {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.sp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  align-items: start;
+}
+.sp-cards-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.sp-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sp-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #26201b;
+}
+.sp-card-head h3 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text);
+}
+.sp-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+}
+.sp-dir-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.sp-dir-btn {
+  background: #16120f;
+  color: #a8a096;
+  border: 1px solid #2b241e;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.12s;
+  text-align: center;
+}
+.sp-dir-btn:hover { color: var(--text); border-color: #5c4b3c; }
+.sp-dir-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #140e08;
+  font-weight: 700;
+}
+.sp-summary-card {
+  position: sticky;
+  top: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sp-summary-pills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  background: #130f0c;
+  border: 1px solid #26201b;
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.sp-summary-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sp-summary-pill span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+.sp-summary-pill strong {
+  font-size: 12.5px;
+  color: var(--text);
+  font-weight: 700;
+}
+@media (max-width: 1120px) {
+  .sp-grid { grid-template-columns: 1fr; }
+  .sp-summary-card { position: static; }
+  .sp-two-col { grid-template-columns: 1fr; }
 }
 .ear-intervals-grid {
   display: grid;
@@ -1137,13 +1261,15 @@ const state = {
   streakDays: 3,
   // Zakładka Arpeggio i Sweep Picking
   arpViewMode: 'single', // 'single' | 'transition'
-  arpPattern: 4, // 0=Cały gryf, 1=CAGED, 2=2NPS, 3=3NPS, 4=Sweep Picking
+  arpPattern: 6, // 0=Cały gryf, 1=CAGED, 2=2NPS, 3=3NPS, 4=Sweep Picking, 5=Inwersje, 6=Od prymy (1-2 okt.)
   arpPosIdx: 0,
   arpSweepStrings: 3, // 3 | 5 | 6
   arpDirection: 0, // 0=W górę i w dół, 1=W górę, 2=W dół
+  arpSeqStyle: 0, // 0=Prosto (1-3-5), 1=Grupy po 3, 2=Skoki (1-5-3)
+  arpStringSet: 0, // 0=G-B-e/D-G-B-e, 1=D-G-B/A-D-G-B, 2=A-D-G/E-A-D-G
+  arpOctaves: 2, // 1 | 2 dla trybu Od prymy
   arpTransitionId: 'neoclassical_minor',
   arpActiveSegIdx: 0,
-  arpShowGhostFullNeck: true,
   arpDiatonicSevenths: true,
   arpDiatonicScaleId: 'major',
   arpDiatonicScaleRootPc: 0,
@@ -1153,6 +1279,8 @@ const state = {
   arpPlayStepIdx: -1,
   arpData: null,
   tabCreationEnabled: true,
+  exerciseShowStaff: true, // Pięciolinia (nuty): po wyłączeniu widać samą tabulaturę (większą i w mniejszej wysokości)
+  exerciseTabWrapRows: false, // false = 1 linia przewijana z zapasem | true = zawijane wiersze (2+ rzędy wypełniające okno)
   tempoBpm: 120,
   timeSigNum: 4,
   timeSigDen: 4,
@@ -1424,6 +1552,31 @@ function updateGuitarToKeyboardSync() {
           if (el) el.classList.add('guitar-chord-sync');
         }
       });
+    }
+  }
+
+  // 2b. W zakładce Arpeggio podświetlamy na klawiszach wyłącznie dokładne dźwięki aktualnego kształtu / kroku ćwiczenia
+  if (state.mainView === 'practice' && state.subtab === 'arpeggio' && state.arpData) {
+    let arpNodes = state.arpData.nodes || [];
+    if (state.arpViewMode === 'transition' && state.arpData.transition && state.arpData.transition.segments) {
+      const seg = state.arpData.transition.segments[state.arpActiveSegIdx || 0];
+      arpNodes = seg ? (seg.nodes || []) : [];
+    } else if (state.arpPattern === 0 && (state.arpPlaying || state.arpPlayStepIdx >= 0)) {
+      arpNodes = getActiveArpeggioSteps();
+    }
+    arpNodes.forEach(n => {
+      if (n && n.midi !== undefined) {
+        const el = resolvePianoKeyElement(n.midi);
+        if (el) el.classList.add('guitar-chord-sync');
+      }
+    });
+    if (state.arpPlayStepIdx >= 0) {
+      const st = getActiveArpeggioSteps()[state.arpPlayStepIdx];
+      if (st && st.midi !== undefined) {
+        const el = resolvePianoKeyElement(st.midi);
+        if (el) el.classList.add('guitar-play-sync');
+      }
+      return;
     }
   }
 
@@ -3441,8 +3594,12 @@ function renderFretboardToolbarForActiveTab() {
           🎵 Pokaż skalę w tle (${state.fretboardData.scaleFullName})
         </button>
       </div>
-      <div style="display:flex;gap:12px;align-items:center;font-size:12px;flex-wrap:wrap;">
+      <div style="display:flex;gap:10px;align-items:center;font-size:12px;flex-wrap:wrap;">
         ${zoomCtrl}
+        <button class="chip-btn ${state.labelType==='notes'?'active':''}" style="padding:3px 8px;font-size:11px;"
+                onclick="setFretboardLabelType('notes')">Nuty</button>
+        <button class="chip-btn ${state.labelType==='intervals'?'active':''}" style="padding:3px 8px;font-size:11px;"
+                onclick="setFretboardLabelType('intervals')">Interwały</button>
         <span><b style="color:#ff9f43">●</b> Pryma akordu</span>
         <span><b style="color:#4ade80">●</b> Składnik chwytu</span>
         <span><b style="color:#38bdf8">●</b> Tapping (T)</span>
@@ -3470,10 +3627,18 @@ function renderFretboardToolbarForActiveTab() {
     const arpTitle = (state.arpViewMode === 'transition' && state.arpData && state.arpData.transition)
       ? `⚡ Przejście Sweep: ${state.arpData.transition.name}`
       : `Gryf Arpeggio: ${(state.arpData && state.arpData.chordSymbol) ? state.arpData.chordSymbol : state.chordId}`;
-    const patNames = ['Cały gryf', 'CAGED', '2NPS', '3NPS', `Sweep Picking (${state.arpSweepStrings} str.)`];
+    const patNames = [
+      'Mapa całego gryfu',
+      'CAGED (5 kszt.)',
+      '2NPS (2/strunę)',
+      '3NPS (legato)',
+      `Sweep Picking (${state.arpSweepStrings} str.)`,
+      'Inwersje (zestaw strun)',
+      `Od prymy (${state.arpOctaves} okt.)`
+    ];
     const subDesc = (state.arpViewMode === 'transition' && state.arpData && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments[state.arpActiveSegIdx])
       ? `Aktywny akord: ${state.arpData.transition.segments[state.arpActiveSegIdx].symbol} (${state.arpData.transition.segments[state.arpActiveSegIdx].roman})`
-      : `Wzorzec: ${patNames[state.arpPattern] || 'Sweep Picking'}`;
+      : `Wzorzec: ${patNames[state.arpPattern] || 'Arpeggio'}`;
     bar.innerHTML = `
       <div>
         <strong style="color:var(--text);font-size:14px;">${arpTitle}</strong>
@@ -3482,11 +3647,9 @@ function renderFretboardToolbarForActiveTab() {
       <div style="display:flex;gap:10px;align-items:center;font-size:12px;flex-wrap:wrap;">
         ${zoomCtrl}
         <button class="chip-btn ${state.labelType==='notes'?'active':''}" style="padding:3px 8px;font-size:11px;"
-                onclick="state.labelType='notes';renderFretboardToolbarForActiveTab();drawFretboard()">Nuty</button>
+                onclick="setFretboardLabelType('notes')">Nuty</button>
         <button class="chip-btn ${state.labelType==='intervals'?'active':''}" style="padding:3px 8px;font-size:11px;"
-                onclick="state.labelType='intervals';renderFretboardToolbarForActiveTab();drawFretboard()">Interwały</button>
-        <button class="chip-btn ${state.arpShowGhostFullNeck?'active':''}" style="padding:3px 8px;font-size:11px;"
-                onclick="state.arpShowGhostFullNeck=!state.arpShowGhostFullNeck;renderFretboardToolbarForActiveTab();drawFretboard()">Tło całego gryfu</button>
+                onclick="setFretboardLabelType('intervals')">Interwały</button>
         <span><b style="color:#f39237">●</b> 1</span>
         <span><b style="color:#4ade80">●</b> 3</span>
         <span><b style="color:#38bdf8">●</b> 5</span>
@@ -3552,6 +3715,28 @@ function resetFretMask() {
   state.maskRight = [maxF, maxF, maxF, maxF, maxF, maxF];
   state.maskedCells.clear();
   drawFretboard();
+}
+
+function computeIntervalLabel(pc, rootPc, useTensions = false) {
+  const semi = (((pc - rootPc) % 12) + 12) % 12;
+  if (useTensions) {
+    const tens = ['1', '♭9', '9', '♯9', '3', '11', '♯11', '5', '♭13', '13', '♭7', '7'];
+    return tens[semi] || '1';
+  }
+  const simple = ['1', '♭2', '2', '♭3', '3', '4', '♭5', '5', '♯5', '6', '♭7', '7'];
+  return simple[semi] || '1';
+}
+
+function setFretboardLabelType(lblType) {
+  state.labelType = lblType;
+  saveSettings();
+  renderFretboardToolbarForActiveTab();
+  drawFretboard();
+  if (state.subtab === 'arpeggio') {
+    refreshArpTabSvgOnly();
+  } else if (state.subtab === 'scale') {
+    renderStageAndInspector();
+  }
 }
 
 // Wektorowy renderer gryfu SVG (ostrość żylety na każdym ekranie, duchy nut chromatycznych w tle,
@@ -3718,23 +3903,26 @@ function drawFretboard() {
   state.markedFretCells = new Set();
 
   let searchChordSet = null, searchTensionSet = null, searchAvoidSet = null;
-  let arpNodeMap = null, arpGhostMap = null, arpNextSegMap = null, arpTechMap = null, arpActiveStepObj = null;
+  let arpNodeMap = null, arpNextSegMap = null, arpTechMap = null, arpActiveStepObj = null;
+  let arpActiveRootPc = state.rootPc, arpNextRootPc = state.rootPc;
   if (isArpeggioTab && state.arpData) {
     arpNodeMap = new Map();
-    arpGhostMap = new Map();
     arpNextSegMap = new Map();
     arpTechMap = new Map();
 
     let activeNodes = state.arpData.nodes || [];
     let activeSteps = state.arpData.steps || [];
+    if (state.arpData.rootPc !== undefined) arpActiveRootPc = state.arpData.rootPc;
     if (state.arpViewMode === 'transition' && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments.length > 0) {
       const segs = state.arpData.transition.segments;
       const segIdx = Math.max(0, Math.min(state.arpActiveSegIdx || 0, segs.length - 1));
       const curSeg = segs[segIdx];
       activeNodes = curSeg.nodes || [];
       activeSteps = curSeg.steps || [];
+      if (curSeg.rootPc !== undefined) arpActiveRootPc = curSeg.rootPc;
       const nextSeg = segs[(segIdx + 1) % segs.length];
       if (nextSeg && nextSeg !== curSeg) {
+        arpNextRootPc = (nextSeg.rootPc !== undefined) ? nextSeg.rootPc : arpActiveRootPc;
         for (const nn of (nextSeg.nodes || [])) arpNextSegMap.set(`${nn.s}:${nn.f}`, nn);
       }
       const allSteps = getActiveArpeggioSteps();
@@ -3742,8 +3930,10 @@ function drawFretboard() {
         arpActiveStepObj = allSteps[state.arpPlayStepIdx];
       }
     } else {
-      if (state.arpShowGhostFullNeck) {
-        for (const gn of (state.arpData.fullNeckNodes || [])) arpGhostMap.set(`${gn.s}:${gn.f}`, gn);
+      // Jeśli wybrano Cały gryf, w trakcie odtwarzania/ćwiczenia pokazuj WYŁĄCZNIE dźwięki granej sekwencji!
+      if (state.arpPattern === 0 && (state.arpPlaying || state.arpPlayStepIdx >= 0) && activeSteps.length > 0) {
+        const playedKeys = new Set(activeSteps.map(st => `${st.s}:${st.f}`));
+        activeNodes = activeNodes.filter(n => playedKeys.has(`${n.s}:${n.f}`));
       }
       if (state.arpPlayStepIdx >= 0 && activeSteps[state.arpPlayStepIdx]) {
         arpActiveStepObj = activeSteps[state.arpPlayStepIdx];
@@ -3756,15 +3946,15 @@ function drawFretboard() {
       if (!arpTechMap.has(key)) arpTechMap.set(key, st);
     }
 
-    // Subtelna trajektoria kostkowania w trybie Sweep Picking (łączy kolejne nuty w kształcie)
-    if ((state.arpPattern === 4 || state.arpViewMode === 'transition') && activeNodes.length >= 2) {
-      const ordered = activeNodes.slice().sort((a, b) => (a.s - b.s) || (a.f - b.f));
+    // Subtelna trajektoria kostkowania w trybie Sweep, Od prymy oraz Inwersje (łączy kolejne nuty w kształcie)
+    if ((state.arpPattern === 4 || state.arpPattern === 5 || state.arpPattern === 6 || state.arpViewMode === 'transition') && activeNodes.length >= 2) {
+      const ordered = activeNodes.slice().sort((a, b) => (a.midi - b.midi) || (a.s - b.s));
       const pts = ordered.map(n => {
         const px = (n.f === 0) ? (leftNutX * 0.48) : (leftNutX + (n.f - 0.5) * fretW);
         const py = topPad + (nStrings - 1 - n.s) * stringH;
         return `${px.toFixed(1)},${py.toFixed(1)}`;
       }).join(' ');
-      svg += `<polyline points="${pts}" fill="none" stroke="rgba(243,146,55,0.45)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,4" pointer-events="none"/>`;
+      svg += `<polyline points="${pts}" fill="none" stroke="rgba(243,146,55,0.42)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,4" pointer-events="none"/>`;
     }
   }
   if (isSearchTab && state.searchData) {
@@ -3874,12 +4064,11 @@ function drawFretboard() {
       const key = `${s}:${f}`;
       const aNode = arpNodeMap.get(key);
       const nextNode = arpNextSegMap ? arpNextSegMap.get(key) : null;
-      const ghostNode = arpGhostMap ? arpGhostMap.get(key) : null;
       const isCurStep = !!(arpActiveStepObj && arpActiveStepObj.s === s && arpActiveStepObj.f === f);
 
       if (aNode) {
         shouldDrawCircle = true;
-        const ivStr = aNode.interval || '';
+        const ivStr = aNode.interval || computeIntervalLabel(pc, arpActiveRootPc, false);
         if (isCurStep) {
           fillAttr = '#22c55e';
           strokeAttr = '#ffffff';
@@ -3902,20 +4091,18 @@ function drawFretboard() {
           textColor = '#171206';
         }
       } else if (nextNode) {
-        // Podgląd pozycji kolejnego akordu w przejściu sweep (przerywany kontur)
-        svg += `<g opacity="0.55" pointer-events="none">
-          <circle cx="${cx}" cy="${cy}" r="${(radius * 0.84).toFixed(1)}" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,2"/>
-          <text x="${cx}" y="${cy + 3.5}" fill="#7dd3fc" font-family="Segoe UI, sans-serif" font-size="10" font-weight="700" text-anchor="middle">${state.labelType==='intervals' ? nextNode.interval : nextNode.note}</text>
+        // Podgląd pozycji kolejnego akordu w przejściu sweep (przerywany kontur) — continue zapobiega zakryciu tekstu tłem!
+        const nextLbl = (state.labelType === 'intervals')
+          ? (nextNode.interval || computeIntervalLabel(pc, arpNextRootPc, false))
+          : nextNode.note;
+        svg += `<g opacity="0.72" pointer-events="none">
+          <circle cx="${cx}" cy="${cy}" r="${(radius * 0.84).toFixed(1)}" fill="rgba(20,16,13,0.88)" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="${cx}" y="${cy + 3.8}" fill="#7dd3fc" font-family="Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle">${nextLbl}</text>
         </g>`;
-      } else if (ghostNode) {
-        shouldDrawCircle = true;
-        customNodeOpacity = '0.26';
-        if (ghostNode.isRoot) {
-          fillAttr = 'url(#rootGrad)';
-          strokeAttr = '#ffb86c';
-          textColor = '#160f08';
-        }
-      } else if (isDetected) {
+        continue;
+      } else if (micStream && !state.arpPlaying && state.arpPlayStepIdx < 0 && isDetected) {
+        // Podczas odtwarzania ćwiczenia arpeggio NIE podświetlamy innych strun/oktaw spoza ćwiczenia;
+        // podświetlenie wykrywania działa tylko dla żywego mikrofonu poza syntetycznym odtwarzaniem.
         shouldDrawCircle = true;
         fillAttr = 'rgba(74, 222, 128, 0.35)';
         strokeAttr = '#4ade80';
@@ -3997,12 +4184,30 @@ function drawFretboard() {
     let label = cell.note;
     const activeLblType = isSearchTab ? state.searchLabelType : state.labelType;
     if (isArpeggioTab && arpNodeMap) {
-      const aNode = arpNodeMap.get(`${s}:${f}`) || (arpGhostMap && arpGhostMap.get(`${s}:${f}`));
+      const aNode = arpNodeMap.get(`${s}:${f}`);
       if (aNode) {
-        label = (activeLblType === 'intervals' && aNode.interval) ? aNode.interval : aNode.note;
+        const ivLbl = (aNode.interval && (aNode.isRoot || aNode.interval !== '1'))
+          ? aNode.interval
+          : computeIntervalLabel(pc, arpActiveRootPc, false);
+        label = (activeLblType === 'intervals') ? ivLbl : aNode.note;
       }
-    } else if (activeLblType === 'intervals' && cell.interval) {
-      label = cell.interval;
+    } else if (isChordTab) {
+      const vFret = (activeChordVoicing && activeChordVoicing.frets) ? activeChordVoicing.frets[s] : -1;
+      const vRootPc = (activeChordVoicing && activeChordVoicing.rootPc !== undefined) ? activeChordVoicing.rootPc : state.rootPc;
+      if (activeLblType === 'intervals') {
+        label = (vFret === f)
+          ? computeIntervalLabel(pc, vRootPc, false)
+          : (cell.interval || computeIntervalLabel(pc, state.chordFilterByScale ? state.chordScaleRootPc : state.rootPc, false));
+      }
+    } else if (isSearchTab) {
+      if (activeLblType === 'intervals') {
+        label = computeIntervalLabel(pc, state.rootPc, false);
+      } else if (activeLblType === 'tensions') {
+        const isTens = !!(searchTensionSet && searchTensionSet.has(pc));
+        label = computeIntervalLabel(pc, state.rootPc, isTens);
+      }
+    } else if (activeLblType === 'intervals') {
+      label = cell.interval || computeIntervalLabel(pc, state.rootPc, false);
     }
     if (isTappedVoicingNode) {
       label = 'T:' + label;
@@ -4020,8 +4225,8 @@ function drawFretboard() {
       if (stInfo && arpNodeMap && arpNodeMap.has(`${s}:${f}`)) {
         const symMap = { D: '↓', U: '↑', H: 'H', P: 'P', S: 'S' };
         const badge = (symMap[stInfo.tech] || stInfo.tech) + (stInfo.roll ? '·R' : '');
-        svg += `<rect x="${cx - 12}" y="${cy - radius - 14}" width="24" height="12" rx="3" fill="#17120e" stroke="${stInfo.roll ? '#facc15' : '#574230'}" stroke-width="0.9"/>`;
-        svg += `<text x="${cx}" y="${cy - radius - 5}" fill="${stInfo.roll ? '#fde047' : '#fb923c'}" font-family="Segoe UI, sans-serif" font-size="9" font-weight="800" text-anchor="middle">${badge}</text>`;
+        svg += `<rect x="${cx - 11}" y="${cy - radius - 12}" width="22" height="11" rx="3" fill="#17120e" stroke="${stInfo.roll ? '#facc15' : '#574230'}" stroke-width="0.9"/>`;
+        svg += `<text x="${cx}" y="${cy - radius - 3.5}" fill="${stInfo.roll ? '#fde047' : '#fb923c'}" font-family="Segoe UI, sans-serif" font-size="8.5" font-weight="800" text-anchor="middle">${badge}</text>`;
       }
     }
     svg += `</g>`;
@@ -5783,8 +5988,8 @@ async function renderStageAndInspector() {
       <div>
         <div class="section-label">ETYKIETY</div>
         <div class="btn-grid-2">
-          <button class="chip-btn ${state.labelType==='notes'?'active':''}" onclick="state.labelType='notes';drawFretboard();renderStageAndInspector()">Nuty</button>
-          <button class="chip-btn ${state.labelType==='intervals'?'active':''}" onclick="state.labelType='intervals';drawFretboard();renderStageAndInspector()">Interwały</button>
+          <button class="chip-btn ${state.labelType==='notes'?'active':''}" onclick="setFretboardLabelType('notes')">Nuty</button>
+          <button class="chip-btn ${state.labelType==='intervals'?'active':''}" onclick="setFretboardLabelType('intervals')">Interwały</button>
         </div>
       </div>
       <div>
@@ -6149,10 +6354,13 @@ async function renderStageAndInspector() {
 
   } else if (state.subtab === 'arpeggio') {
     // =======================================================================
-    // ZAKŁADKA: ARPEGGIO I SWEEP PICKING (wzorce CAGED/2NPS/3NPS/Sweep + 8 przejść Sweep!)
+    // ZAKŁADKA: ARPEGGIO I SWEEP PICKING (Od prymy, CAGED, Inwersje, 2NPS, Sweep + 8 przejść Sweep!)
     // =======================================================================
     const customParam = state.customStringMidis.join(',');
-    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${state.arpPattern}&posIdx=${state.arpPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&viewMode=${encodeURIComponent(state.arpViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${state.arpDiatonicScaleRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
+    const effDiatRootPc = (state.arpViewMode === 'transition' && state.arpTransitionId === 'diatonic_climb')
+      ? state.rootPc
+      : state.arpDiatonicScaleRootPc;
+    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${state.arpPattern}&posIdx=${state.arpPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=${encodeURIComponent(state.arpViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
     const data = await fetchJson(arpUrl);
     state.arpData = data;
     if (data.posIdx !== undefined) state.arpPosIdx = data.posIdx;
@@ -6166,24 +6374,45 @@ async function renderStageAndInspector() {
     const tabSvg = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, state.arpPlayStepIdx, isTrans);
     const hasRollAny = activeSteps.some(st => st.roll);
     const rootLabels = getRootLabels();
+    const quickArpTypes = [
+      { id: 'major', lbl: 'maj' }, { id: 'minor', lbl: 'm' }, { id: 'dim', lbl: 'dim' },
+      { id: 'aug', lbl: 'aug' }, { id: 'maj7', lbl: 'maj7' }, { id: '7', lbl: '7' },
+      { id: 'm7', lbl: 'm7' }, { id: 'm7b5', lbl: 'm7♭5' }, { id: 'dim7', lbl: 'dim7' }
+    ];
     const chordOptHtml = (c) => `<option value="${c.id}" ${c.id===state.chordId?'selected':''}>${c.id} (${c.name})</option>`;
     const groupedChordsHtml = ['Trójdźwięki', 'Dwudźwięki', 'Septymowe', 'Rozszerzone', 'Alterowane'].map(cat => {
       const items = (state.initData.chords || []).filter(c => c.category === cat);
       return items.length ? `<optgroup label="${cat}">${items.map(chordOptHtml).join('')}</optgroup>` : '';
     }).join('');
+    const formulaHtml = (!isTrans && data.formula && data.formula.length)
+      ? `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
+           <span style="font-size:11.5px;color:var(--text-muted);">Składniki:</span>
+           ${data.formula.map(f => {
+             const iv = f.interval || '';
+             const col = f.isRoot ? '#f39237' : ((iv === '3' || iv === '♭3') ? '#4ade80' : ((iv === '5' || iv === '♭5' || iv === '♯5') ? '#38bdf8' : '#facc15'));
+             return `<button class="chip-btn" style="padding:2px 8px;font-size:11.5px;border-color:${col};color:${col};"
+                             onclick="pluckGuitarFrequency(${f.freq.toFixed(2)}, 0.78)" title="Kliknij, aby posłuchać składnika">
+                       <strong>${f.note}</strong> <span style="opacity:0.8;">(${iv})</span>
+                     </button>`;
+           }).join('')}
+         </div>`
+      : '';
+    const is4Note = (data.formula && data.formula.length >= 4);
+    const stringSetLabels = is4Note
+      ? ['Struny D–G–B–e', 'Struny A–D–G–B', 'Struny E–A–D–G']
+      : ['Struny G–B–e', 'Struny D–G–B', 'Struny A–D–G'];
 
     stage.innerHTML = `
       <div class="fretboard-card" style="gap:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div>
             <div style="font-size:17px;font-weight:800;color:var(--text);">
               ${isTrans ? `⚡ ${tr.name}` : `Arpeggio: ${data.chordSymbol} <span style="color:var(--text-muted);font-weight:600;font-size:13px;">(${data.chordName})</span>`}
             </div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
-              ${isTrans ? tr.description : 'Kliknij dowolną nutę na TAB-ie lub naciśnij „Odsłuchaj”, aby zobaczyć kierunek kostkowania i animację na gryfie.'}
-            </div>
+            ${formulaHtml || `<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${tr.description}</div>`}
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            ${!isTrans ? `<button class="chip-btn" style="padding:7px 11px;font-size:12px;" onclick="playArpeggioChordPreview()" title="Posłuchaj akordu bazowego dla tego arpeggio">🎸 Akord</button>` : ''}
             <button id="arpPlayBtn" class="chip-btn ${state.arpPlaying?'active':''}" style="padding:7px 14px;font-weight:700;"
                     onclick="toggleArpeggioPlayback()">
               ${state.arpPlaying ? '⏹ Stop' : '▶ Odsłuchaj'}
@@ -6197,7 +6426,7 @@ async function renderStageAndInspector() {
             </div>
             <button class="chip-btn" style="padding:7px 12px;font-size:12px;border-color:var(--accent);color:var(--accent);"
                     onclick="sendArpeggioToExerciseTab()" title="Przenieś sekwencję do Edytora Ćwiczeń (ćwiczenie z mikrofonem i eksport GP5/MIDI)">
-              ✏️ Ćwicz w TAB / Eksport GP5
+              ✏️ Ćwicz w TAB / GP5
             </button>
           </div>
         </div>
@@ -6208,10 +6437,14 @@ async function renderStageAndInspector() {
 
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text-muted);background:rgba(243,146,55,0.06);border:1px solid #3c2c1f;border-radius:8px;padding:9px 12px;">
           <div>
-            <strong style="color:var(--accent);">💡 Wskazówka techniczna:</strong>
-            ${isTrans ? tr.practiceTip : (hasRollAny
-              ? 'W tym kształcie występuje przetoczenie palca (Roll · R) — lekko przewiń staw palca między sąsiednimi strunami na tym samym progu, żeby dźwięki nie zlewały się ze sobą.'
-              : 'Prowadź kostkę jednym płynnym ruchem opadającym (↓) w górę arpeggio, wykonaj czysty Hammer-on / Pull-off (H / P) na strunie E1 i wróć ruchem w górę (↑).')}
+            <strong style="color:var(--accent);">💡 Wskazówka:</strong>
+            ${isTrans ? tr.practiceTip
+              : (state.arpPattern === 6 ? 'Czyste arpeggio od prymy do oktawy — idealny start! Najpierw kliknij „🎸 Akord”, żeby usłyszeć harmonię, potem zagraj składniki po kolei.'
+                : (state.arpPattern === 5 ? 'Poziome przewroty (inwersje) na jednym zestawie strun: kliknij „Wszystkie po kolei”, aby przejść płynnie przez wszystkie przewroty w górę gryfu.'
+                  : (state.arpPattern === 1 ? 'System CAGED łączy kształt akordu z arpeggio w jednej pozycji lewej dłoni (bez zdublowanych dźwięków unisono).'
+                    : (hasRollAny
+                      ? 'W tym kształcie występuje przetoczenie palca (Roll · R) — lekko przewiń staw palca między sąsiednimi strunami na tym samym progu.'
+                      : 'Tabulatura automatycznie przewija się z zapasem do przodu — kliknij dowolny próg na TAB-ie, aby odsłuchać pojedynczy dźwięk.'))))}
           </div>
           <div style="display:flex;gap:10px;white-space:nowrap;">
             <span><b style="color:#fb923c;">↓</b> w dół</span>
@@ -6328,22 +6561,52 @@ async function renderStageAndInspector() {
         </div>
       ` : `
         <div>
-          <div class="section-label">RODZAJ AKORDU (ARPEGGIO)</div>
+          <div class="section-label">TYP ARPEGGIO (SZYBKI WYBÓR)</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;">
+            ${quickArpTypes.map(qt => `
+              <button class="chip-btn ${state.chordId===qt.id?'active':''}" style="padding:5px 4px;font-size:11.5px;"
+                      onclick="stopArpeggioPlayback(false);state.chordId='${qt.id}';state.arpPosIdx=0;renderStageAndInspector()">${qt.lbl}</button>
+            `).join('')}
+          </div>
           <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;state.arpPosIdx=0;renderStageAndInspector();">
             ${groupedChordsHtml}
           </select>
         </div>
+
         <div>
-          <div class="section-label">WZORZEC ARPEGGIO</div>
+          <div class="section-label">UKŁAD NA GRYFIE</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <button class="chip-btn ${state.arpPattern===4?'active':''}" style="grid-column:1 / -1;"
-                    onclick="stopArpeggioPlayback(false);state.arpPattern=4;state.arpPosIdx=0;renderStageAndInspector()">⚡ Sweep Picking (klasyczny)</button>
-            <button class="chip-btn ${state.arpPattern===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=1;state.arpPosIdx=0;renderStageAndInspector()">CAGED (5 poz.)</button>
-            <button class="chip-btn ${state.arpPattern===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=2;state.arpPosIdx=0;renderStageAndInspector()">2NPS (2/strunę)</button>
-            <button class="chip-btn ${state.arpPattern===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=3;state.arpPosIdx=0;renderStageAndInspector()">3NPS (legato)</button>
-            <button class="chip-btn ${state.arpPattern===0?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=0;state.arpPosIdx=0;renderStageAndInspector()">Cały gryf</button>
+            <button class="chip-btn ${state.arpPattern===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=6;state.arpPosIdx=0;renderStageAndInspector()">🎯 Od prymy</button>
+            <button class="chip-btn ${state.arpPattern===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=1;state.arpPosIdx=0;renderStageAndInspector()">📦 CAGED (5 kszt.)</button>
+            <button class="chip-btn ${state.arpPattern===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=5;state.arpPosIdx=0;renderStageAndInspector()">↔ Inwersje</button>
+            <button class="chip-btn ${state.arpPattern===4?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=4;state.arpPosIdx=0;renderStageAndInspector()">⚡ Sweep Picking</button>
+            <button class="chip-btn ${state.arpPattern===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=2;state.arpPosIdx=0;renderStageAndInspector()">2NPS (2/str.)</button>
+            <button class="chip-btn ${state.arpPattern===0?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=0;state.arpPosIdx=0;renderStageAndInspector()">Mapa gryfu</button>
           </div>
         </div>
+
+        ${state.arpPattern === 6 ? `
+          <div>
+            <div class="section-label">ZAKRES OKTAW</div>
+            <div class="btn-grid-2">
+              <button class="chip-btn ${state.arpOctaves===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpOctaves=1;renderStageAndInspector()">1 oktawa</button>
+              <button class="chip-btn ${state.arpOctaves===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpOctaves=2;renderStageAndInspector()">2 oktawy</button>
+            </div>
+          </div>
+        ` : ''}
+
+        ${state.arpPattern === 5 ? `
+          <div>
+            <div class="section-label">ZESTAW STRUN (INWERSJE)</div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              ${stringSetLabels.map((lbl, idx) => `
+                <button class="chip-btn ${state.arpStringSet===idx?'active':''}" style="padding:5px 8px;font-size:11.5px;"
+                        onclick="stopArpeggioPlayback(false);state.arpStringSet=${idx};state.arpPosIdx=0;renderStageAndInspector()">${lbl}</button>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
         ${state.arpPattern === 4 ? `
           <div>
             <div class="section-label">LICZBA STRUN SWEEP</div>
@@ -6354,17 +6617,10 @@ async function renderStageAndInspector() {
             </div>
           </div>
         ` : ''}
-        <div>
-          <div class="section-label">KIERUNEK ODTWARZANIA</div>
-          <div class="btn-grid-3">
-            <button class="chip-btn ${state.arpDirection===0?'active':''}" onclick="stopArpeggioPlayback(false);state.arpDirection=0;renderStageAndInspector()">↕ Góra-dół</button>
-            <button class="chip-btn ${state.arpDirection===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpDirection=1;renderStageAndInspector()">↓ W górę</button>
-            <button class="chip-btn ${state.arpDirection===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpDirection=2;renderStageAndInspector()">↑ W dół</button>
-          </div>
-        </div>
+
         ${(data.positions && data.positions.length > 0) ? `
           <div>
-            <div class="section-label">POZYCJA NA GRYFIE (${data.positions.length})</div>
+            <div class="section-label">POZYCJA / PRZEWRÓT (${data.positions.length})</div>
             <div style="display:flex;flex-wrap:wrap;gap:5px;">
               ${data.positions.map(pos => `
                 <button class="chip-btn ${state.arpPosIdx===pos.idx?'active':''}" style="padding:5px 8px;font-size:11px;"
@@ -6375,6 +6631,21 @@ async function renderStageAndInspector() {
             </div>
           </div>
         ` : ''}
+
+        <div>
+          <div class="section-label">SEKWENCJA I KIERUNEK</div>
+          <div class="btn-grid-3" style="margin-bottom:6px;">
+            <button class="chip-btn ${state.arpSeqStyle===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=0;renderStageAndInspector()">Prosto</button>
+            <button class="chip-btn ${state.arpSeqStyle===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=1;renderStageAndInspector()">Grupy po 3</button>
+            <button class="chip-btn ${state.arpSeqStyle===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=2;renderStageAndInspector()">Skoki 1–5</button>
+          </div>
+          <div class="btn-grid-3">
+            <button class="chip-btn ${state.arpDirection===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=0;renderStageAndInspector()">↕ Góra-dół</button>
+            <button class="chip-btn ${state.arpDirection===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=1;renderStageAndInspector()">↓ W górę</button>
+            <button class="chip-btn ${state.arpDirection===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=2;renderStageAndInspector()">↑ W dół</button>
+          </div>
+        </div>
+
         <div>
           <div class="section-label">SKALA DLA KART DIATONICZNYCH</div>
           <select onchange="state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
@@ -6388,14 +6659,15 @@ async function renderStageAndInspector() {
 
   } else if (state.subtab === 'scale_practice') {
     // =======================================================================
-    // ZAKŁADKA: PRAKTYKA SKAL (100% ODBLOKOWANY KREATOR ĆWICZEŃ – ZRZUT 3)
+    // ZAKŁADKA: PRAKTYKA SKAL I ARPEGGIÓW (Pełny, wyśrodkowany układ studyjny)
     // =======================================================================
     const baseNoteLabels = getRootLabels();
     const scaleObj = (state.initData.scales || []).find(s => s.id === state.scaleId) || { id: 'major', name: 'Durowa' };
+    const chordObj = (state.initData.chords || []).find(c => c.id === state.chordId) || { id: 'minor', name: 'Molowy' };
     const degList = (state.fretboardData && state.fretboardData.scaleDegrees) ? state.fretboardData.scaleDegrees : [];
     const degNumsStr = degList.map(d => d.interval || String(d.deg)).join(' ');
     const patternOptions = [
-      { code: 0, name: 'Cała skala', desc: 'Graj kolejno każdy dźwięk w skali: C, D, E, F, G...' },
+      { code: 0, name: 'Cała skala', desc: 'Graj kolejno każdy dźwięk w skali: 1, 2, 3, 4, 5...' },
       { code: 3, name: 'Grupy po 3', desc: 'Trójki dźwiękowe w górę i w dół skali: 1-2-3, 2-3-4...' },
       { code: 4, name: 'Grupy po 4', desc: 'Cztery kolejne dźwięki w grupie: 1-2-3-4, 2-3-4-5...' },
       { code: 5, name: 'Skoki tercjowe', desc: 'Melodia skokami co tercję: 1-3, 2-4, 3-5...' },
@@ -6405,9 +6677,11 @@ async function renderStageAndInspector() {
       { code: 9, name: 'Skoki oktawowe', desc: 'Oktawy wzdłuż skali: 1-8, 2-9...' }
     ];
     const activePat = patternOptions.find(p => p.code === state.spPattern) || patternOptions[0];
-    const dirNames = ['Rosnąco', 'Malejąco', 'Rosnąco → Malejąco', 'Malejąco → Rosnąco'];
-    const posNames = ['Brak (Cały gryf)', '3NPS', '4NPS', 'CAGED'];
-    const stringLabels = ['E', 'A', 'D', 'G', 'B', 'E'];
+    const dirNames = ['Rosnąco ↑', 'Malejąco ↓', 'Rosnąco → Malejąco', 'Malejąco → Rosnąco'];
+    const posNames = ['Cały gryf', '3NPS', '4NPS', 'CAGED'];
+    const stringLabels = (state.customStringMidis && state.customStringMidis.length === 6)
+      ? state.customStringMidis.map(m => baseNoteLabels[((m % 12) + 12) % 12])
+      : ['E', 'A', 'D', 'G', 'B', 'E'];
     const scaleDescMap = {
       major: 'Jasna i rozwiązana: punkt odniesienia dla reszty.',
       natural_minor: 'Naturalnie melancholijna i śpiewna barwa molowa.',
@@ -6420,33 +6694,38 @@ async function renderStageAndInspector() {
       minor_pentatonic: 'Absolutna klasyka solówek rockowych i bluesowych.',
       blues: 'Pentatonika molowa wzbogacona o blue note (Tryton ♭5).'
     };
-    const scaleCharDesc = scaleDescMap[state.scaleId] || 'Pełna skala odblokowana do ćwiczeń i analizy na gryfie.';
+    const isScaleMode = (state.scalePracticeMode === 'scale');
+    const scaleCharDesc = scaleDescMap[state.scaleId] || 'Pełna skala gotowa do ćwiczeń i analizy na gryfie.';
     const rootNoteLbl = baseNoteLabels[state.rootPc] || 'C';
-    const summaryHeadline = state.scalePracticeMode === 'scale'
+    const summaryHeadline = isScaleMode
       ? `${rootNoteLbl} ${scaleObj.name.toLowerCase()}`
-      : `${state.scalePracticeMode === 'arpeggio' ? 'Arpeggio' : 'Wzór arpeggia'}: ${rootNoteLbl} ${state.chordId}`;
-    const summarySub = `${dirNames[state.spDirection] || 'Rosnąco'} · ${state.spOctaves} ${state.spOctaves === 1 ? 'oktawa' : 'oktawy'} · ${activePat.name}`;
+      : `${state.scalePracticeMode === 'arpeggio' ? 'Arpeggio' : 'Wzór arpeggia'}: ${rootNoteLbl}${chordObj.id === 'major' ? 'maj' : (chordObj.id === 'minor' ? 'm' : chordObj.id)}`;
+    const activeStartStrLbl = state.spStartString < 0 ? 'Dowolna' : `Struna ${6 - state.spStartString} (${stringLabels[state.spStartString]})`;
 
     stage.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:16px;">
-        <!-- Górny przełącznik [ Praktyka skal | Ćwiczenie ] -->
-        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-          <h2 style="font-size:24px;font-weight:800;margin:0;">Praktyka</h2>
-          <div class="ear-seg-row" style="width:320px;">
-            <button class="ear-seg-btn active" onclick="switchPracticeSubtab('scale_practice')">Praktyka skal</button>
-            <button class="ear-seg-btn" onclick="switchPracticeSubtab('exercise')">Ćwiczenie</button>
+      <div class="sp-shell">
+        <div class="sp-header">
+          <div>
+            <h2 style="font-size:21px;font-weight:800;margin:0;color:var(--text);">Praktyka skal i arpeggiów</h2>
+            <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">
+              Skonfiguruj ćwiczenie i uruchom interaktywną grę z mikrofonem lub odsłuch na żywo.
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="chip-btn" style="padding:7px 13px;font-size:12px;" onclick="randomizeScalePractice()">🎲 Losowa tonacja i skala</button>
+            <button class="chip-btn" style="padding:7px 13px;font-size:12px;" onclick="switchPracticeSubtab('exercise')">✏️ Otwórz kompozytor TAB</button>
           </div>
         </div>
 
-        <div class="ear-config-layout">
-          <div class="ear-config-main">
-            <!-- Co grać -->
-            <div>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <h3 style="font-size:18px;font-weight:800;margin:0;">Co grać</h3>
-                <button class="chip-btn" style="padding:6px 12px;font-size:12px;" onclick="randomizeScalePractice()">🎲 Losowa tonacja i skala</button>
+        <div class="sp-grid">
+          <div class="sp-cards-col">
+            <!-- Karta 1: Co grać -->
+            <div class="sp-card">
+              <div class="sp-card-head">
+                <h3>1. Co grać</h3>
+                <span style="font-size:11.5px;color:var(--text-muted);">${isScaleMode ? 'Wybierz tonację i skalę' : 'Wybierz prymę i rodzaj arpeggio'}</span>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+              <div class="sp-two-col">
                 <div>
                   <div class="section-label">TRYB</div>
                   <div class="ear-seg-row" style="margin-bottom:14px;">
@@ -6458,48 +6737,55 @@ async function renderStageAndInspector() {
                             onclick="state.scalePracticeMode='arpeggio_pattern';renderStageAndInspector()">Wzór arpeggia</button>
                   </div>
 
-                  <div class="section-label">${state.scalePracticeMode === 'scale' ? 'TONACJA' : 'PRYMA AKORDU'}</div>
+                  <div class="section-label">${isScaleMode ? 'TONACJA' : 'PRYMA AKORDU'}</div>
                   <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">
                     ${baseNoteLabels.map((lbl, pc) => `
-                      <button class="chip-btn ${state.rootPc===pc?'active':''}" style="padding:10px 4px;font-weight:700;"
+                      <button class="chip-btn ${state.rootPc===pc?'active':''}" style="padding:9px 4px;font-weight:700;"
                               onclick="setRootPc(${pc})">${lbl}</button>
                     `).join('')}
                   </div>
                 </div>
 
                 <div>
-                  <div class="section-label">${state.scalePracticeMode === 'scale' ? 'SKALA' : 'RODZAJ AKORDU'}</div>
-                  ${state.scalePracticeMode === 'scale' ? `
+                  <div class="section-label">${isScaleMode ? 'SKALA' : 'RODZAJ AKORDU'}</div>
+                  ${isScaleMode ? `
                     <select onchange="state.scaleId=this.value;renderAll()" style="margin-bottom:10px;">
                       ${state.initData.scales.map(s => `<option value="${s.id}" ${s.id===state.scaleId?'selected':''}>${s.name} (${s.category})</option>`).join('')}
                     </select>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                      <span style="font-size:12.5px;color:var(--accent);font-weight:700;letter-spacing:2px;">${degNumsStr || '1 2 3 4 5 6 7'}</span>
+                      <button class="chip-btn" style="padding:4px 10px;font-size:11px;color:#4ade80;border-color:#244b33;background:rgba(74,222,128,0.08);white-space:nowrap;"
+                              onclick="playScalePracticeScalePreview()">▶ Posłuchaj skali</button>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);line-height:1.45;background:#130f0c;border:1px solid #26201b;border-radius:8px;padding:10px 12px;">
+                      <b style="color:var(--text);">${scaleObj.name}</b><br>
+                      <span>${scaleCharDesc}</span>
+                    </div>
                   ` : `
                     <select onchange="state.chordId=this.value;renderAll()" style="margin-bottom:10px;">
                       ${state.initData.chords.map(c => `<option value="${c.id}" ${c.id===state.chordId?'selected':''}>${c.id} (${c.name})</option>`).join('')}
                     </select>
+                    <div style="font-size:12px;color:var(--text-muted);line-height:1.45;background:#130f0c;border:1px solid #26201b;border-radius:8px;padding:10px 12px;">
+                      <b style="color:var(--text);">${rootNoteLbl} · ${chordObj.name} (${chordObj.id})</b><br>
+                      <span>${state.scalePracticeMode === 'arpeggio' ? 'Rozłożony akord grany dźwięk po dźwięku w wybranym kierunku i oktawach.' : 'Wzór melodyczny zbudowany na składnikach akordu.'}</span>
+                    </div>
                   `}
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <span style="font-size:12px;color:var(--text);font-weight:700;letter-spacing:2px;">${degNumsStr || '1 2 3 4 5 6 7'}</span>
-                    <button class="chip-btn" style="padding:4px 10px;font-size:11px;color:#4ade80;border-color:#244b33;background:rgba(74,222,128,0.08);"
-                            onclick="playScalePracticeScalePreview()">▶ POSŁUCHAJ SKALI</button>
-                  </div>
-                  <div style="font-size:12px;color:var(--text-muted);line-height:1.45;">
-                    <b style="color:var(--text);">${scaleObj.name}</b><br>
-                    <i>${scaleCharDesc}</i>
-                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Jak grać -->
-            <div style="border-top:1px solid #241e19;padding-top:16px;">
-              <h3 style="font-size:18px;font-weight:800;margin-bottom:14px;">Jak grać</h3>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:14px;">
+            <!-- Karta 2: Jak grać -->
+            <div class="sp-card">
+              <div class="sp-card-head">
+                <h3>2. Jak grać</h3>
+                <span style="font-size:11.5px;color:var(--text-muted);">Układ na gryfie, kierunek i wzorzec</span>
+              </div>
+              <div class="sp-two-col">
                 <div>
-                  <div class="section-label">POZYCJA (WSZYSTKIE SYSTEMY ODBLOKOWANE)</div>
+                  <div class="section-label">POZYCJA NA GRYFIE</div>
                   <div class="ear-seg-row">
                     ${posNames.map((nm, pIdx) => `
-                      <button class="ear-seg-btn ${state.spPosSystem===pIdx?'active':''}"
+                      <button class="ear-seg-btn ${state.spPosSystem===pIdx?'active':''}" style="padding:9px 8px;white-space:nowrap;"
                               onclick="state.spPosSystem=${pIdx};state.posSystem=${pIdx};renderAll()">${pIdx === 0 ? 'Brak' : nm}</button>
                     `).join('')}
                   </div>
@@ -6507,130 +6793,164 @@ async function renderStageAndInspector() {
                 <div>
                   <div class="section-label">STRUNA STARTOWA</div>
                   <div class="ear-seg-row">
-                    <button class="ear-seg-btn ${state.spStartString===-1?'active':''}"
+                    <button class="ear-seg-btn ${state.spStartString===-1?'active':''}" style="padding:9px 8px;white-space:nowrap;"
                             onclick="state.spStartString=-1;renderStageAndInspector()">Dowolna</button>
                     ${stringLabels.map((sLbl, sIdx) => `
-                      <button class="ear-seg-btn ${state.spStartString===sIdx?'active':''}"
+                      <button class="ear-seg-btn ${state.spStartString===sIdx?'active':''}" style="padding:9px 6px;white-space:nowrap;"
                               onclick="state.spStartString=${sIdx};renderStageAndInspector()">${sLbl}</button>
                     `).join('')}
                   </div>
                 </div>
               </div>
 
-              <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-bottom:14px;">
+              <div class="sp-two-col">
                 <div>
                   <div class="section-label">KIERUNEK</div>
-                  <div class="ear-seg-row">
+                  <div class="sp-dir-grid">
                     ${dirNames.map((dNm, dIdx) => `
-                      <button class="ear-seg-btn ${state.spDirection===dIdx?'active':''}" style="padding:8px 6px;font-size:11.5px;"
+                      <button class="sp-dir-btn ${state.spDirection===dIdx?'active':''}"
                               onclick="state.spDirection=${dIdx};renderStageAndInspector()">${dNm}</button>
                     `).join('')}
                   </div>
                 </div>
-                <div>
-                  <div class="section-label">OKTAWY</div>
-                  <div class="ear-seg-row">
-                    <button class="ear-seg-btn ${state.spOctaves===1?'active':''}"
-                            onclick="state.spOctaves=1;renderStageAndInspector()">1 oktawa</button>
-                    <button class="ear-seg-btn ${state.spOctaves===2?'active':''}"
-                            onclick="state.spOctaves=2;renderStageAndInspector()">2 oktawy</button>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                  <div>
+                    <div class="section-label">OKTAWY</div>
+                    <div class="ear-seg-row">
+                      <button class="ear-seg-btn ${state.spOctaves===1?'active':''}"
+                              onclick="state.spOctaves=1;renderStageAndInspector()">1 oktawa</button>
+                      <button class="ear-seg-btn ${state.spOctaves===2?'active':''}"
+                              onclick="state.spOctaves=2;renderStageAndInspector()">2 oktawy</button>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="section-label">ETYKIETY NA GRYFIE</div>
+                    <div class="ear-seg-row">
+                      <button class="ear-seg-btn ${state.labelType==='notes'?'active':''}"
+                              onclick="state.labelType='notes';saveSettings();renderStageAndInspector()">Nuty</button>
+                      <button class="ear-seg-btn ${state.labelType==='intervals'?'active':''}"
+                              onclick="state.labelType='intervals';saveSettings();renderStageAndInspector()">Interwały</button>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:18px;">
-                <div>
-                  <div class="section-label">WZORZEC (WSZYSTKIE 8 WZORCÓW)</div>
-                  <select onchange="state.spPattern=parseInt(this.value,10);renderStageAndInspector()">
+              <div>
+                <div class="section-label">WZORZEC MELODYCZNY</div>
+                <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                  <select onchange="state.spPattern=parseInt(this.value,10);renderStageAndInspector()" style="max-width:320px;">
                     ${patternOptions.map(p => `<option value="${p.code}" ${p.code===state.spPattern?'selected':''}>${p.name}</option>`).join('')}
                   </select>
-                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:6px;">${activePat.desc}</div>
-                </div>
-                <div>
-                  <div class="section-label">ETYKIETY</div>
-                  <div class="ear-seg-row">
-                    <button class="ear-seg-btn ${state.labelType==='notes'?'active':''}"
-                            onclick="state.labelType='notes';renderStageAndInspector()">Nuty</button>
-                    <button class="ear-seg-btn ${state.labelType==='intervals'?'active':''}"
-                            onclick="state.labelType='intervals';renderStageAndInspector()">Interwały</button>
-                  </div>
+                  <span style="font-size:12px;color:var(--text-muted);">${activePat.desc}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Dźwięk i wejście -->
-            <div style="border-top:1px solid #241e19;padding-top:16px;">
-              <h3 style="font-size:18px;font-weight:800;margin-bottom:14px;">Dźwięk i wejście</h3>
-              <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:240px;">
+            <!-- Karta 3: Dźwięk i wejście -->
+            <div class="sp-card">
+              <div class="sp-card-head">
+                <h3>3. Dźwięk i wejście</h3>
+                <button class="chip-btn" style="padding:5px 11px;font-size:11.5px;" onclick="toggleFretboardSettingsModal()">⚙ Konfiguracja gitary i stroju</button>
+              </div>
+              <div class="sp-two-col">
+                <div>
                   <div class="section-label">WEJŚCIE AUDIO</div>
                   <select onchange="onAudioInputChanged(this.value)">
                     ${state.audioInputDevices.map(d => `<option value="${d.id}" ${d.id===state.selectedAudioInputId?'selected':''}>${d.label}</option>`).join('')}
                   </select>
                 </div>
-                <button class="chip-btn" style="padding:10px 14px;" onclick="toggleFretboardSettingsModal()">⚙ Konfiguracja gitary</button>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 26px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="section-label" style="margin:0;">UŻYWAM SŁUCHAWEK</span>
-                  <button class="ear-toggle-switch ${state.spUseHeadphones?'on':''}"
-                          onclick="state.spUseHeadphones=!state.spUseHeadphones;saveSettings();renderStageAndInspector()"></button>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="section-label" style="margin:0;">METRONOM</span>
-                  <button class="ear-toggle-switch ${state.spMetronome?'on':''}"
-                          onclick="state.spMetronome=!state.spMetronome;saveSettings();renderStageAndInspector()"></button>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="section-label" style="margin:0;">NUTA REFERENCYJNA</span>
-                  <button class="ear-toggle-switch ${state.spRefNote?'on':''}"
-                          onclick="state.spRefNote=!state.spRefNote;saveSettings();renderStageAndInspector()"></button>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="section-label" style="margin:0;">AKORD W TLE</span>
-                  <button class="ear-toggle-switch ${state.spBgChord?'on':''}"
-                          onclick="state.spBgChord=!state.spBgChord;saveSettings();renderStageAndInspector()"></button>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;align-content:center;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                    <span class="section-label" style="margin:0;">SŁUCHAWKI</span>
+                    <button class="ear-toggle-switch ${state.spUseHeadphones?'on':''}"
+                            onclick="state.spUseHeadphones=!state.spUseHeadphones;saveSettings();renderStageAndInspector()"></button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                    <span class="section-label" style="margin:0;">METRONOM</span>
+                    <button class="ear-toggle-switch ${state.spMetronome?'on':''}"
+                            onclick="state.spMetronome=!state.spMetronome;saveSettings();renderStageAndInspector()"></button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                    <span class="section-label" style="margin:0;">NUTA REF.</span>
+                    <button class="ear-toggle-switch ${state.spRefNote?'on':''}"
+                            onclick="state.spRefNote=!state.spRefNote;saveSettings();renderStageAndInspector()"></button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                    <span class="section-label" style="margin:0;">AKORD W TLE</span>
+                    <button class="ear-toggle-switch ${state.spBgChord?'on':''}"
+                            onclick="state.spBgChord=!state.spBgChord;saveSettings();renderStageAndInspector()"></button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Prawa karta akcji (Graj / Posłuchaj / Dodaj do sesji / Zaskocz mnie) -->
-          <div class="ear-summary-box" style="width:330px;">
-            <div style="font-size:21px;font-weight:800;line-height:1.25;">${summaryHeadline}</div>
-            <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:4px;">${summarySub}</div>
-            <button class="action-btn" style="width:100%;padding:13px;font-size:15px;"
-                    onclick="launchScalePractice('play')">Graj</button>
-            <button class="action-btn secondary" style="width:100%;padding:11px;font-size:14px;"
-                    onclick="launchScalePractice('listen')">Posłuchaj</button>
+          <!-- Prawa karta podsumowania i startu (sticky) -->
+          <div class="sp-summary-card">
+            <div>
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);font-weight:700;margin-bottom:4px;">Wybrane ćwiczenie</div>
+              <div style="font-size:21px;font-weight:800;line-height:1.25;color:var(--text);">${summaryHeadline}</div>
+            </div>
 
-            <button class="chip-btn" style="width:100%;padding:10px;display:flex;justify-content:space-between;align-items:center;"
+            <div class="sp-summary-pills">
+              <div class="sp-summary-pill">
+                <span>Pozycja</span>
+                <strong>${posNames[state.spPosSystem] || 'Cały gryf'}</strong>
+              </div>
+              <div class="sp-summary-pill">
+                <span>Struna startowa</span>
+                <strong>${activeStartStrLbl}</strong>
+              </div>
+              <div class="sp-summary-pill">
+                <span>Kierunek</span>
+                <strong>${dirNames[state.spDirection] || 'Rosnąco ↑'}</strong>
+              </div>
+              <div class="sp-summary-pill">
+                <span>Zakres</span>
+                <strong>${state.spOctaves} ${state.spOctaves === 1 ? 'oktawa' : 'oktawy'}</strong>
+              </div>
+              <div class="sp-summary-pill">
+                <span>Wzorzec</span>
+                <strong>${activePat.name}</strong>
+              </div>
+              <div class="sp-summary-pill">
+                <span>Etykiety</span>
+                <strong>${state.labelType === 'intervals' ? 'Interwały' : 'Nuty'}</strong>
+              </div>
+            </div>
+
+            <button class="action-btn" style="width:100%;padding:13px;font-size:15px;"
+                    onclick="launchScalePractice('play')">▶ Graj (z mikrofonem)</button>
+            <button class="action-btn secondary" style="width:100%;padding:11px;font-size:14px;"
+                    onclick="launchScalePractice('listen')">🔊 Posłuchaj</button>
+
+            <button class="chip-btn" style="width:100%;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;"
                     onclick="state.spAddToSessionOpen=!state.spAddToSessionOpen;renderStageAndInspector()">
-              <span>Dodaj do sesji</span>
+              <span>Dodaj do sesji treningowej</span>
               <span>${state.spAddToSessionOpen ? '▴' : '▾'}</span>
             </button>
             ${state.spAddToSessionOpen ? `
-              <div style="background:#120f0c;border:1px solid #26201b;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;">
-                <div style="font-size:11.5px;color:var(--text-muted);"><b>${summaryHeadline}</b> trafi na koniec wybranej sesji.</div>
+              <div style="background:#120f0c;border:1px solid #26201b;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;">
+                <div style="font-size:11.5px;color:var(--text-muted);line-height:1.35;"><b>${summaryHeadline}</b> trafi na koniec wybranej sesji.</div>
                 ${(state.initData.sessions || []).map((ses, sIdx) => `
-                  <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px;">
-                    <div>
-                      <div style="font-size:13px;font-weight:700;">${ses.name}</div>
-                      <div style="font-size:11px;color:var(--text-muted);">Sesja treningowa</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;border-top:1px solid #1e1915;">
+                    <div style="min-width:0;">
+                      <div style="font-size:12.5px;font-weight:700;color:var(--text);line-height:1.25;">${ses.name}</div>
+                      <div style="font-size:10.5px;color:var(--text-muted);">Sesja treningowa</div>
                     </div>
-                    <button class="chip-btn" style="padding:4px 10px;font-size:11.5px;color:var(--accent);"
+                    <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;color:var(--accent);white-space:nowrap;flex-shrink:0;"
                             onclick="addScalePracticeToSession(${sIdx})">+ Dodaj</button>
                   </div>
                 `).join('')}
-                <button class="chip-btn" style="width:100%;padding:8px;font-size:12px;"
+                <button class="chip-btn" style="width:100%;padding:8px;font-size:12px;margin-top:2px;"
                         onclick="state.mainView='workshop';state.workshopSubView='new_session';renderAll()">+ Nowa sesja</button>
               </div>
             ` : ''}
 
-            <button class="chip-btn" style="width:100%;padding:12px;border-color:#573d26;background:rgba(243,146,55,0.08);"
+            <button class="chip-btn" style="width:100%;padding:11px 12px;border-color:#573d26;background:rgba(243,146,55,0.08);"
                     onclick="surpriseScalePractice()">
-              <div style="font-weight:700;color:var(--text);">Zaskocz mnie</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Losowe ćwiczenie dla Ciebie</div>
+              <div style="font-weight:700;color:var(--text);">🎲 Zaskocz mnie</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Wylosuj gotowe ćwiczenie i uruchom</div>
             </button>
           </div>
         </div>
@@ -6651,12 +6971,15 @@ async function renderStageAndInspector() {
       const targetLabel = (curEv && !curEv.rest && curEv.midi > 0)
         ? `${curEv.note || labels[((curEv.midi % 12) + 12) % 12]} ${Math.floor(curEv.midi / 12) - 1}`
         : 'Pauza (𝄽)';
-      const scoreSvg = buildExerciseStaffAndTabSvg(stepIdx);
+      const prevScoreScroll = document.getElementById('exerciseScoreWrap')?.scrollLeft || 0;
+      const prevScoreScrollTop = document.getElementById('exerciseScoreWrap')?.scrollTop || 0;
+      const scoreAvailW = Math.max(720, Math.min(1140, (stage.clientWidth || 1100) - 56));
+      const scoreSvg = buildExerciseStaffAndTabSvg(stepIdx, scoreAvailW);
       const fbSvg = buildExerciseFretboardSvg(stepIdx, false);
 
       stage.innerHTML = `
         <div style="max-width:1180px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:18px;padding:6px 0;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
             <div style="display:flex;align-items:center;gap:14px;">
               <button class="chip-btn" style="width:36px;height:36px;font-size:15px;"
                       onclick="toggleExercisePlayerPause()" title="${state.exercisePlayerPaused ? 'Wznów' : 'Pauza'}">
@@ -6668,8 +6991,18 @@ async function renderStageAndInspector() {
                 ${state.exercisePlayerMode === 'listen' ? 'Exercise · Odsłuch ćwiczenia' : 'Exercise · Zagraj na gitarze'}
               </h2>
             </div>
-            <div style="display:flex;align-items:center;gap:12px;">
-              <button class="chip-btn ${state.spMetronome?'active':''}" style="padding:6px 12px;font-size:12px;"
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button class="chip-btn ${state.exerciseShowStaff!==false?'active':''}" style="padding:6px 10px;font-size:12px;"
+                      onclick="state.exerciseShowStaff=!(state.exerciseShowStaff!==false);if(!state.exerciseShowStaff)state.tabCreationEnabled=true;renderStageAndInspector()"
+                      title="Włącz lub ukryj pięciolinię (nuty), żeby mieć więcej miejsca na tabulaturę">
+                🎼 Nuty: ${state.exerciseShowStaff!==false ? 'Wł.' : 'Wył.'}
+              </button>
+              <button class="chip-btn ${state.exerciseTabWrapRows?'active':''}" style="padding:6px 10px;font-size:12px;"
+                      onclick="state.exerciseTabWrapRows=!state.exerciseTabWrapRows;renderStageAndInspector()"
+                      title="Przełącz między 1 linią przewijaną a wieloma wierszami wypełniającymi okno">
+                📄 Układ: ${state.exerciseTabWrapRows ? 'Wiersze' : '1 linia'}
+              </button>
+              <button class="chip-btn ${state.spMetronome?'active':''}" style="padding:6px 10px;font-size:12px;"
                       onclick="toggleExerciseMetronome()" title="Włącz / wyłącz metronom w tempie ćwiczenia">
                 🥁 Metronom: ${state.spMetronome ? 'Wł.' : 'Wył.'}
               </button>
@@ -6709,7 +7042,7 @@ async function renderStageAndInspector() {
             <button class="chip-btn" style="padding:8px 14px;" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Od początku</button>
           </div>
 
-          <div style="background:#15110e;border:1px solid #2c241e;border-radius:12px;padding:16px 20px;overflow-x:auto;">
+          <div id="exerciseScoreWrap" style="background:#15110e;border:1px solid #2c241e;border-radius:12px;padding:16px 20px;${state.exerciseTabWrapRows ? 'max-height:360px;overflow-y:auto;overflow-x:hidden;' : 'overflow-x:auto;'}">
             ${scoreSvg}
           </div>
 
@@ -6717,6 +7050,20 @@ async function renderStageAndInspector() {
             ${fbSvg}
           </div>
         </div>`;
+      const exScoreWrap = document.getElementById('exerciseScoreWrap');
+      if (exScoreWrap) {
+        if (state.exerciseTabWrapRows) {
+          exScoreWrap.scrollTop = prevScoreScrollTop;
+          const actRect = exScoreWrap.querySelector('[data-ex-active="1"]');
+          if (actRect && typeof actRect.scrollIntoView === 'function') {
+            actRect.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+        } else {
+          exScoreWrap.scrollLeft = prevScoreScroll;
+          const xStart = (state.exerciseShowStaff !== false) ? 96 : 58;
+          scrollTabContainerToX(exScoreWrap, xStart + stepIdx * 46, true);
+        }
+      }
       return;
     }
 
@@ -6740,7 +7087,8 @@ async function renderStageAndInspector() {
       { code: '◊', label: '◊ (Flażolet)' },
       { code: 'T', label: 'T (Tapping)' }
     ];
-    const scoreSvg = buildExerciseStaffAndTabSvg(-1);
+    const composerAvailW = Math.max(700, (stage.clientWidth || 960) - 48);
+    const scoreSvg = buildExerciseStaffAndTabSvg(-1, composerAvailW);
     const exFretSvg = buildExerciseFretboardSvg(hasNotes ? (state.recordedEvents.length - 1) : -1, true);
     const rootLabels = getRootLabels();
 
@@ -6899,16 +7247,14 @@ async function renderStageAndInspector() {
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div>
-          <div class="section-label">KLUCZ</div>
-          <div class="btn-grid-3">
-            <button class="chip-btn ${state.exerciseClef==='treble'?'active':''}" style="padding:7px 4px;font-size:11.5px;"
-                    onclick="state.exerciseClef='treble';renderStageAndInspector()">Wiolinowy</button>
-            <button class="chip-btn ${state.exerciseClef==='bass'?'active':''}" style="padding:7px 4px;font-size:11.5px;"
-                    onclick="state.exerciseClef='bass';renderStageAndInspector()">Basowy</button>
-            <button class="chip-btn ${state.exerciseClef==='auto'?'active':''}" style="padding:7px 4px;font-size:11.5px;"
-                    onclick="state.exerciseClef='auto';renderStageAndInspector()">Auto</button>
+          <div class="section-label">PIĘCIOLINIA (NUTY)</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exerciseShowStaff!==false?'active':''}"
+                    onclick="state.exerciseShowStaff=true;renderStageAndInspector()">Wł.</button>
+            <button class="chip-btn ${state.exerciseShowStaff===false?'active':''}"
+                    onclick="state.exerciseShowStaff=false;state.tabCreationEnabled=true;renderStageAndInspector()">Wył.</button>
           </div>
         </div>
         <div>
@@ -6917,7 +7263,30 @@ async function renderStageAndInspector() {
             <button class="chip-btn ${state.tabCreationEnabled?'active':''}"
                     onclick="state.tabCreationEnabled=true;renderStageAndInspector()">Wł.</button>
             <button class="chip-btn ${!state.tabCreationEnabled?'active':''}"
-                    onclick="state.tabCreationEnabled=false;renderStageAndInspector()">Wył.</button>
+                    onclick="state.tabCreationEnabled=false;state.exerciseShowStaff=true;renderStageAndInspector()">Wył.</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:10px;">
+        <div>
+          <div class="section-label">UKŁAD TABULATURY</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${!state.exerciseTabWrapRows?'active':''}" style="padding:7px 4px;font-size:11.5px;"
+                    onclick="state.exerciseTabWrapRows=false;renderStageAndInspector()">1 linia</button>
+            <button class="chip-btn ${state.exerciseTabWrapRows?'active':''}" style="padding:7px 4px;font-size:11.5px;"
+                    onclick="state.exerciseTabWrapRows=true;renderStageAndInspector()">Wiersze (2+)</button>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">KLUCZ</div>
+          <div class="btn-grid-3">
+            <button class="chip-btn ${state.exerciseClef==='treble'?'active':''}" style="padding:7px 2px;font-size:11px;"
+                    onclick="state.exerciseClef='treble';renderStageAndInspector()">Wiol.</button>
+            <button class="chip-btn ${state.exerciseClef==='bass'?'active':''}" style="padding:7px 2px;font-size:11px;"
+                    onclick="state.exerciseClef='bass';renderStageAndInspector()">Bas.</button>
+            <button class="chip-btn ${state.exerciseClef==='auto'?'active':''}" style="padding:7px 2px;font-size:11px;"
+                    onclick="state.exerciseClef='auto';renderStageAndInspector()">Auto</button>
           </div>
         </div>
       </div>
@@ -7128,6 +7497,18 @@ function setSearchRootPc(pc) {
 
 let arpPlaybackTimer = null;
 
+// Płynne śledzenie tabulatury z zapasem ok. 74% widoku do przodu (aktywna nuta trzymana w ~26% od lewej)
+function scrollTabContainerToX(wrap, noteX, smooth = true) {
+  if (!wrap) return;
+  const vw = wrap.clientWidth || 700;
+  const maxScroll = Math.max(0, wrap.scrollWidth - vw);
+  if (maxScroll <= 0) return;
+  const target = Math.max(0, Math.min(maxScroll, Math.round(noteX - vw * 0.26)));
+  if (Math.abs(wrap.scrollLeft - target) > 6) {
+    wrap.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+  }
+}
+
 function getActiveArpeggioSteps() {
   if (!state.arpData) return [];
   if (state.arpViewMode === 'transition' && state.arpData.transition && state.arpData.transition.segments) {
@@ -7142,6 +7523,17 @@ function getActiveArpeggioSteps() {
   return state.arpData.steps || [];
 }
 
+function refreshArpTabSvgOnly() {
+  const wrap = document.getElementById('arpTabSvgWrap');
+  if (!wrap || !state.arpData) return;
+  const prevScroll = wrap.scrollLeft || 0;
+  const isTrans = (state.arpViewMode === 'transition');
+  const tr = state.arpData.transition || { segments: [] };
+  const activeSteps = getActiveArpeggioSteps();
+  wrap.innerHTML = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, state.arpPlayStepIdx, isTrans);
+  wrap.scrollLeft = prevScroll;
+}
+
 function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
   if (!steps || steps.length === 0) {
     return `<div style="padding:18px;text-align:center;color:var(--text-muted);">Brak wygenerowanych nut dla tej konfiguracji.</div>`;
@@ -7150,7 +7542,8 @@ function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
   const leftPad = 36;
   const colW = 34;
   const rightPad = 24;
-  const topY = isTransition ? 46 : 30;
+  const showIntervalsAbove = (state.labelType === 'intervals');
+  const topY = isTransition ? 56 : 40;
   const rowGap = 15;
   const W = Math.max(520, leftPad + steps.length * colW + rightPad);
   const H = topY + (nStrings - 1) * rowGap + 24;
@@ -7159,6 +7552,10 @@ function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
   const symColor = { D: '#fb923c', U: '#38bdf8', H: '#4ade80', P: '#4ade80', S: '#facc15' };
 
   let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // Pionowy kursor podążający za aktualną nutą (aktualizowany bez przeładowywania SVG -> idealne płynne przewijanie!)
+  const playX = (activeIdx >= 0 && activeIdx < steps.length) ? (leftPad + activeIdx * colW + colW * 0.5 - 14) : -100;
+  svg += `<rect id="arpPlayheadBg" x="${playX}" y="${topY - 22}" width="28" height="${(nStrings - 1) * rowGap + 34}" rx="6" fill="rgba(34,197,94,0.14)" stroke="rgba(74,222,128,0.45)" stroke-width="1" style="display:${activeIdx >= 0 ? 'block' : 'none'}"/>`;
+
   for (let r = 0; r < nStrings; r++) {
     const y = topY + r * rowGap;
     svg += `<text x="12" y="${y + 4}" fill="#8c8277" font-family="monospace" font-size="11" font-weight="700">${strNames[r]}</text>`;
@@ -7175,12 +7572,19 @@ function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
     if (isTransition && st.seg !== lastSeg) {
       lastSeg = st.seg;
       if (i > 0) {
-        svg += `<line x1="${x - colW * 0.5}" y1="${topY - 26}" x2="${x - colW * 0.5}" y2="${topY + (nStrings - 1) * rowGap + 6}" stroke="#57412e" stroke-width="1.3" stroke-dasharray="4,3"/>`;
+        svg += `<line x1="${x - colW * 0.5}" y1="${topY - 34}" x2="${x - colW * 0.5}" y2="${topY + (nStrings - 1) * rowGap + 6}" stroke="#57412e" stroke-width="1.3" stroke-dasharray="4,3"/>`;
       }
       const segObj = segments && segments[st.seg];
       const hdr = segObj ? `${segObj.symbol} (${segObj.roman})` : '';
       const hdrColor = (st.seg === state.arpActiveSegIdx) ? '#f39237' : '#d6cec2';
-      svg += `<text x="${x - 6}" y="15" fill="${hdrColor}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800">${hdr}</text>`;
+      svg += `<text data-seg-hdr="${st.seg}" x="${x - 6}" y="14" fill="${hdrColor}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800">${hdr}</text>`;
+    }
+
+    // Subtelny znacznik toniki (lub interwał) WYŻEJ nad tabulaturą — bez zaciemniania/podświetlania cyfr progów!
+    if (showIntervalsAbove && st.interval) {
+      svg += `<text x="${x}" y="${topY - 24}" fill="${st.isRoot ? '#f39237' : '#9c9288'}" font-family="Segoe UI, sans-serif" font-size="9.5" font-weight="${st.isRoot ? '800' : '600'}" text-anchor="middle">${st.interval}</text>`;
+    } else if (st.isRoot) {
+      svg += `<circle cx="${x}" cy="${topY - 26}" r="2.8" fill="#f39237"><title>Tonika (1)</title></circle>`;
     }
 
     // Symbol kostkowania / techniki nad tabulaturą
@@ -7188,23 +7592,75 @@ function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
     const tCol = symColor[st.tech] || '#fb923c';
     svg += `<text x="${x}" y="${topY - 10}" fill="${tCol}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800" text-anchor="middle">${techSym}${st.roll ? '·R' : ''}</text>`;
 
-    // Numer progu na odpowiedniej strunie
+    // Numer progu na odpowiedniej strunie (czysty biały na ciemnym tle; podświetlenie wyłącznie dla aktywnego kroku!)
     const r = (nStrings - 1) - st.s;
     const y = topY + r * rowGap;
     const fretVal = (st.f !== undefined) ? st.f : st.fret;
     const boxW = String(fretVal).length > 1 ? 22 : 16;
-    const bgFill = isAct ? '#22c55e' : (st.isRoot ? '#4a2b14' : '#14100d');
-    const txtFill = isAct ? '#05140b' : (st.isRoot ? '#fbbf24' : '#f5f2eb');
-    const strokeCol = isAct ? '#bbf7d0' : (st.isRoot ? '#f39237' : 'none');
+    const bgFill = isAct ? '#22c55e' : '#14100d';
+    const txtFill = isAct ? '#05140b' : '#f5f2eb';
+    const strokeCol = isAct ? '#bbf7d0' : 'none';
 
-    svg += `<g style="cursor:pointer" onclick="playSingleArpeggioStep(${i})">`;
-    svg += `<rect x="${x - boxW / 2}" y="${y - 7.5}" width="${boxW}" height="15" rx="3.5" fill="${bgFill}" stroke="${strokeCol}" stroke-width="${strokeCol !== 'none' ? '1.2' : '0'}"/>`;
-    svg += `<text x="${x}" y="${y + 4}" fill="${txtFill}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800" text-anchor="middle">${fretVal}</text>`;
+    svg += `<g style="cursor:pointer" data-step-g="${i}" data-step-x="${x}" data-root="${st.isRoot?1:0}" onclick="playSingleArpeggioStep(${i})">`;
+    svg += `<rect data-step-rect="${i}" x="${x - boxW / 2}" y="${y - 7.5}" width="${boxW}" height="15" rx="3.5" fill="${bgFill}" stroke="${strokeCol}" stroke-width="${isAct ? '1.2' : '0'}"/>`;
+    svg += `<text data-step-txt="${i}" x="${x}" y="${y + 4}" fill="${txtFill}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800" text-anchor="middle">${fretVal}</text>`;
     svg += `</g>`;
   }
 
   svg += `</svg>`;
   return svg;
+}
+
+// Aktualizuje podświetlenie aktywnej nuty TAB bez niszczenia DOM i płynnie przesuwa pasek przewijania z zapasem do przodu!
+function updateArpTabHighlightAndScroll(activeIdx, smooth = true) {
+  const wrap = document.getElementById('arpTabSvgWrap');
+  if (!wrap) return;
+  const svg = wrap.querySelector('svg');
+  if (!svg) return;
+
+  svg.querySelectorAll('g[data-step-g]').forEach(g => {
+    const idx = parseInt(g.getAttribute('data-step-g'), 10);
+    const isAct = (idx === activeIdx);
+    const rect = g.querySelector('rect');
+    const txt = g.querySelector('text');
+    if (rect) {
+      rect.setAttribute('fill', isAct ? '#22c55e' : '#14100d');
+      rect.setAttribute('stroke', isAct ? '#bbf7d0' : 'none');
+      rect.setAttribute('stroke-width', isAct ? '1.2' : '0');
+    }
+    if (txt) {
+      txt.setAttribute('fill', isAct ? '#05140b' : '#f5f2eb');
+    }
+  });
+
+  if (state.arpViewMode === 'transition') {
+    svg.querySelectorAll('text[data-seg-hdr]').forEach(t => {
+      const seg = parseInt(t.getAttribute('data-seg-hdr'), 10);
+      t.setAttribute('fill', seg === state.arpActiveSegIdx ? '#f39237' : '#d6cec2');
+    });
+  }
+
+  const ph = svg.querySelector('#arpPlayheadBg');
+  const actG = (activeIdx >= 0) ? svg.querySelector(`g[data-step-g="${activeIdx}"]`) : null;
+  if (ph) {
+    if (actG) {
+      const nx = parseFloat(actG.getAttribute('data-step-x')) || 0;
+      ph.setAttribute('x', String(nx - 14));
+      ph.style.display = 'block';
+      scrollTabContainerToX(wrap, nx, smooth);
+    } else {
+      ph.style.display = 'none';
+    }
+  }
+}
+
+function playArpeggioChordPreview() {
+  if (!state.arpData || !state.arpData.formula || !state.arpData.formula.length) return;
+  const freqs = state.arpData.formula.map(f => f.freq);
+  const scaleGain = Math.min(0.65, 1.35 / Math.sqrt(Math.max(1, freqs.length)));
+  freqs.forEach((hz, idx) => {
+    setTimeout(() => pluckGuitarFrequency(hz, scaleGain), idx * 35);
+  });
 }
 
 function selectDiatonicArpeggio(rootPc, chordId) {
@@ -7241,15 +7697,8 @@ function playSingleArpeggioStep(idx) {
   if (state.arpViewMode === 'transition' && st.seg !== undefined) {
     state.arpActiveSegIdx = st.seg;
   }
-  state.detectedMidi = st.midi;
   pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
-  updateGuitarToKeyboardSync();
-  const wrap = document.getElementById('arpTabSvgWrap');
-  if (wrap) {
-    const isTrans = (state.arpViewMode === 'transition');
-    const segs = isTrans && state.arpData && state.arpData.transition ? state.arpData.transition.segments : null;
-    wrap.innerHTML = buildArpeggioTabSvg(steps, segs, idx, isTrans);
-  }
+  updateArpTabHighlightAndScroll(idx, true);
   renderFretboardToolbarForActiveTab();
   drawFretboard();
 }
@@ -7267,13 +7716,7 @@ function stopArpeggioPlayback(redraw = true) {
     btn.classList.remove('active');
   }
   if (redraw && state.subtab === 'arpeggio') {
-    const wrap = document.getElementById('arpTabSvgWrap');
-    if (wrap) {
-      const steps = getActiveArpeggioSteps();
-      const isTrans = (state.arpViewMode === 'transition');
-      const segs = isTrans && state.arpData && state.arpData.transition ? state.arpData.transition.segments : null;
-      wrap.innerHTML = buildArpeggioTabSvg(steps, segs, -1, isTrans);
-    }
+    updateArpTabHighlightAndScroll(-1, false);
     drawFretboard();
   }
 }
@@ -7320,16 +7763,8 @@ function toggleArpeggioPlayback() {
       });
       renderFretboardToolbarForActiveTab();
     }
-    state.detectedMidi = st.midi;
     pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
-    updateGuitarToKeyboardSync();
-
-    const wrap = document.getElementById('arpTabSvgWrap');
-    if (wrap) {
-      const isTrans = (state.arpViewMode === 'transition');
-      const segs = isTrans && state.arpData && state.arpData.transition ? state.arpData.transition.segments : null;
-      wrap.innerHTML = buildArpeggioTabSvg(curSteps, segs, state.arpPlayStepIdx, isTrans);
-    }
+    updateArpTabHighlightAndScroll(state.arpPlayStepIdx, state.arpPlayStepIdx > 0);
     drawFretboard();
 
     state.arpPlayStepIdx++;
@@ -7386,8 +7821,12 @@ function saveSettings() {
       arpPattern: state.arpPattern,
       arpSweepStrings: state.arpSweepStrings,
       arpDirection: state.arpDirection,
+      arpSeqStyle: state.arpSeqStyle,
+      arpStringSet: state.arpStringSet,
+      arpOctaves: state.arpOctaves,
       arpTransitionId: state.arpTransitionId,
-      arpShowGhostFullNeck: state.arpShowGhostFullNeck,
+      arpDiatonicScaleId: state.arpDiatonicScaleId,
+      arpDiatonicScaleRootPc: state.arpDiatonicScaleRootPc,
       arpBpm: state.arpBpm,
       tuningId: state.tuningId,
       customStringMidis: state.customStringMidis,
@@ -7433,6 +7872,9 @@ function saveSettings() {
       timeSigNum: state.timeSigNum,
       timeSigDen: state.timeSigDen,
       exerciseClef: state.exerciseClef,
+      tabCreationEnabled: state.tabCreationEnabled,
+      exerciseShowStaff: state.exerciseShowStaff,
+      exerciseTabWrapRows: state.exerciseTabWrapRows,
       defaultDuration: state.defaultDuration,
       showExerciseNoteNames: state.showExerciseNoteNames,
       exerciseMinFret: state.exerciseMinFret,
@@ -9064,27 +9506,21 @@ function getDurationBeats(durCode, isTuplet) {
   return isTuplet ? (base * 2 / 3) : base;
 }
 
-function buildExerciseStaffAndTabSvg(highlightIdx = -1) {
+function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
   const evs = state.recordedEvents || [];
   const isPlayer = highlightIdx >= 0;
-  const colW = 46;
-  const x0 = 96;
-  const W = Math.max(700, 120 + evs.length * colW);
-  const showTab = state.tabCreationEnabled;
-  const staffTop = 32, staffGap = 10;
-  const tabTop = 110, tabGap = 12;
-  const H = showTab ? 204 : 114;
-  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  const showStaff = state.exerciseShowStaff !== false;
+  const showTab = state.tabCreationEnabled || !showStaff;
+  const wrapRows = !!state.exerciseTabWrapRows;
 
-  // Numer pierwszego taktu i tempo nad pięciolinią
-  svg += `<text x="14" y="20" fill="#9ca3af" font-size="10.5" font-weight="700">1</text>`;
-  svg += `<text x="84" y="15" fill="#e7e1d8" font-size="12" font-weight="700">♩ = ${state.tempoBpm}</text>`;
-
-  // 1. Pięciolinia nutowa (5 linii)
-  for (let i = 0; i < 5; i++) {
-    const y = staffTop + i * staffGap;
-    svg += `<line x1="12" y1="${y}" x2="${W - 12}" y2="${y}" stroke="#6b6257" stroke-width="1.2"/>`;
-  }
+  const baseColW = 46;
+  const x0 = showStaff ? 96 : 58;
+  const staffGap = 10;
+  const tabGap = showStaff ? 12 : 14; // Większa, czytelniejsza tabulatura gdy nuty są wyłączone!
+  const staffTopRel = 32;
+  const tabTopRel = showStaff ? 110 : 28;
+  const rowH = showStaff ? (showTab ? 204 : 114) : 116;
+  const rowGapY = 18;
 
   let useBass = state.exerciseClef === 'bass';
   if (state.exerciseClef === 'auto') {
@@ -9095,124 +9531,198 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1) {
     }
   }
   const clefSymbol = useBass ? '𝄢' : '𝄞';
-  svg += `<text x="20" y="${staffTop + (useBass ? 30 : 35)}" fill="${isPlayer ? '#e7e1d8' : '#f39237'}" font-size="34">${clefSymbol}</text>`;
-  svg += `<text x="54" y="${staffTop + 18}" fill="#d6cec2" font-size="14" font-weight="800">${state.timeSigNum}</text>`;
-  svg += `<text x="54" y="${staffTop + 37}" fill="#d6cec2" font-size="14" font-weight="800">${state.timeSigDen}</text>`;
-
-  // 2. 6-liniowa Tabulatura (TAB) pod pięciolinią
-  if (showTab) {
-    for (let s = 0; s < 6; s++) {
-      const y = tabTop + s * tabGap;
-      svg += `<line x1="12" y1="${y}" x2="${W - 12}" y2="${y}" stroke="#524940" stroke-width="1.1"/>`;
-    }
-    svg += `<text x="22" y="${tabTop + 22}" fill="#9ca3af" font-size="13" font-weight="800">T</text>`;
-    svg += `<text x="22" y="${tabTop + 37}" fill="#9ca3af" font-size="13" font-weight="800">A</text>`;
-    svg += `<text x="22" y="${tabTop + 52}" fill="#9ca3af" font-size="13" font-weight="800">B</text>`;
-  }
-
-  // Koniec pięciolinii i TAB (podwójna kreska końcowa)
-  const endY = showTab ? (tabTop + 5 * tabGap) : (staffTop + 4 * staffGap);
-  svg += `<line x1="${W - 12}" y1="${staffTop}" x2="${W - 12}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.6"/>`;
-  if (showTab) {
-    svg += `<line x1="${W - 12}" y1="${tabTop}" x2="${W - 12}" y2="${tabTop + 5 * tabGap}" stroke="#6b6257" stroke-width="1.6"/>`;
-  }
-
   const labels = getRootLabels();
   const diaPc = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
-  const refDia = useBass ? 18 : 30; // G2 (bass bottom) / E4 (treble bottom)
+  const refDia = useBass ? 18 : 30;
   const measureBeats = state.timeSigNum * (4 / Math.max(1, state.timeSigDen));
-  let accumBeats = 0;
-  let barNum = 1;
 
-  evs.forEach((ev, idx) => {
-    const x = x0 + idx * colW;
-    const isActive = (idx === highlightIdx);
-    const colColor = isActive ? '#f39237' : (isPlayer ? '#e7e1d8' : '#f39237');
-    const dur = ev.dur !== undefined ? ev.dur : 0;
+  // Wylicz takty dla wszystkich zdarzeń, żeby w trybie wieloliniowym ładnie zawijać na granicach taktów
+  const barMeta = [];
+  {
+    let acc = 0, bNum = 1;
+    evs.forEach((ev, idx) => {
+      const dur = ev.dur !== undefined ? ev.dur : 0;
+      acc += getDurationBeats(dur, ev.tuplet === 3);
+      const isBarEnd = (acc >= measureBeats - 0.001 && idx < evs.length - 1);
+      barMeta.push({ barNum: bNum, isBarEnd });
+      if (isBarEnd) { acc = 0; bNum++; }
+    });
+  }
 
-    svg += `<g style="cursor:pointer" onclick="onExerciseScoreNoteClick(${idx})">`;
-    if (isActive) {
-      svg += `<rect x="${x - 16}" y="${staffTop - 16}" width="32" height="${(endY - staffTop) + 26}" rx="6" fill="rgba(243,146,55,0.09)"/>`;
+  // Podział na wiersze (1 linia przewijana albo wiele wierszy wypełniających okno!)
+  const rows = [];
+  const targetRowW = Math.max(700, Math.round(availWidth || 1040));
+  if (!wrapRows || evs.length === 0) {
+    const W = Math.max(targetRowW, x0 + evs.length * baseColW + 24);
+    rows.push({ start: 0, end: evs.length, W, colW: baseColW });
+  } else {
+    const maxPerRow = Math.max(8, Math.floor((targetRowW - x0 - 20) / 40));
+    let cur = 0;
+    while (cur < evs.length) {
+      let end = Math.min(evs.length, cur + maxPerRow);
+      if (end < evs.length) {
+        // Jeśli w pobliżu końca wiersza wypada kreska taktowa, zawijaj dokładnie na takcie
+        let bestBarBreak = -1;
+        for (let k = end - 1; k >= Math.max(cur + Math.floor(maxPerRow * 0.55), cur + 4); k--) {
+          if (barMeta[k] && barMeta[k].isBarEnd) { bestBarBreak = k + 1; break; }
+        }
+        if (bestBarBreak > cur) end = bestBarBreak;
+      }
+      const nInRow = Math.max(1, end - cur);
+      // Rozciągnij odstępy pełnych wierszy równo do prawej krawędzi okna!
+      const isLastShort = (end === evs.length && nInRow < Math.max(6, Math.floor(maxPerRow * 0.65)));
+      const rowColW = isLastShort ? baseColW : ((targetRowW - x0 - 24) / nInRow);
+      rows.push({ start: cur, end, W: targetRowW, colW: Math.min(64, Math.max(32, rowColW)) });
+      cur = end;
+    }
+  }
+
+  const totalW = wrapRows ? targetRowW : rows[0].W;
+  const totalH = rows.length * rowH + Math.max(0, rows.length - 1) * rowGapY;
+  const svgStyle = wrapRows ? 'width:100%;height:auto;display:block;' : 'display:block;';
+  let svg = `<svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="${svgStyle}" xmlns="http://www.w3.org/2000/svg">`;
+
+  rows.forEach((rowInfo, rowIdx) => {
+    const yOff = rowIdx * (rowH + rowGapY);
+    const W = rowInfo.W;
+    const colW = rowInfo.colW;
+    const staffTop = yOff + staffTopRel;
+    const tabTop = yOff + tabTopRel;
+    const topVisual = showStaff ? staffTop : tabTop;
+    const endY = showTab ? (tabTop + 5 * tabGap) : (staffTop + 4 * staffGap);
+    const startBarNum = (rowInfo.start < barMeta.length) ? barMeta[rowInfo.start].barNum : 1;
+
+    // Numer taktu na początku wiersza + tempo w pierwszym wierszu
+    svg += `<text x="14" y="${yOff + 18}" fill="#9ca3af" font-size="10.5" font-weight="700">${startBarNum}</text>`;
+    if (rowIdx === 0) {
+      svg += `<text x="${showStaff ? 84 : 46}" y="${yOff + 16}" fill="#e7e1d8" font-size="12" font-weight="700">♩ = ${state.tempoBpm}</text>`;
     }
 
-    if (ev.rest) {
-      svg += `<text x="${x}" y="${staffTop + 26}" fill="${isActive ? '#f39237' : '#9ca3af'}" font-size="18" font-weight="700" text-anchor="middle">𝄽</text>`;
-    } else {
-      const midi = ev.midi || 60;
-      const oct = Math.floor(midi / 12) - 1;
-      const pc = ((midi % 12) + 12) % 12;
-      const dia = oct * 7 + diaPc[pc];
-      const rawNoteY = (staffTop + 40) - (dia - refDia) * 5;
-      const noteY = Math.max(12, Math.min(staffTop + 62, rawNoteY));
-
-      // Linie dodane dolne i górne
-      for (let ly = staffTop + 50; ly <= noteY + 1 && ly <= staffTop + 62; ly += 10) {
-        svg += `<line x1="${x - 11}" y1="${ly}" x2="${x + 11}" y2="${ly}" stroke="#8c7f72" stroke-width="1.1"/>`;
+    // 1. Pięciolinia nutowa (opcjonalna — można wyłączyć, żeby widzieć więcej tabulatury!)
+    if (showStaff) {
+      for (let i = 0; i < 5; i++) {
+        const y = staffTop + i * staffGap;
+        svg += `<line x1="12" y1="${y}" x2="${W - 12}" y2="${y}" stroke="#6b6257" stroke-width="1.2"/>`;
       }
-      for (let ly = staffTop - 10; ly >= noteY - 1 && ly >= 12; ly -= 10) {
-        svg += `<line x1="${x - 11}" y1="${ly}" x2="${x + 11}" y2="${ly}" stroke="#8c7f72" stroke-width="1.1"/>`;
+      svg += `<text x="20" y="${staffTop + (useBass ? 30 : 35)}" fill="${isPlayer ? '#e7e1d8' : '#f39237'}" font-size="34">${clefSymbol}</text>`;
+      if (rowIdx === 0) {
+        svg += `<text x="54" y="${staffTop + 18}" fill="#d6cec2" font-size="14" font-weight="800">${state.timeSigNum}</text>`;
+        svg += `<text x="54" y="${staffTop + 37}" fill="#d6cec2" font-size="14" font-weight="800">${state.timeSigDen}</text>`;
+      }
+      svg += `<line x1="${W - 12}" y1="${staffTop}" x2="${W - 12}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="${rowIdx === rows.length - 1 ? '1.8' : '1.2'}"/>`;
+    }
+
+    // 2. 6-liniowa Tabulatura (TAB)
+    if (showTab) {
+      for (let s = 0; s < 6; s++) {
+        const y = tabTop + s * tabGap;
+        svg += `<line x1="12" y1="${y}" x2="${W - 12}" y2="${y}" stroke="#524940" stroke-width="1.15"/>`;
+      }
+      const tabMidH = 5 * tabGap;
+      svg += `<text x="20" y="${tabTop + tabMidH * 0.30}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">T</text>`;
+      svg += `<text x="20" y="${tabTop + tabMidH * 0.56}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">A</text>`;
+      svg += `<text x="20" y="${tabTop + tabMidH * 0.82}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">B</text>`;
+      svg += `<line x1="${W - 12}" y1="${tabTop}" x2="${W - 12}" y2="${tabTop + 5 * tabGap}" stroke="#6b6257" stroke-width="${rowIdx === rows.length - 1 ? '1.8' : '1.2'}"/>`;
+    }
+
+    for (let idx = rowInfo.start; idx < rowInfo.end; idx++) {
+      const ev = evs[idx];
+      const localIdx = idx - rowInfo.start;
+      const x = x0 + localIdx * colW;
+      const isActive = (idx === highlightIdx);
+      const colColor = isActive ? '#4ade80' : '#e7e1d8';
+      const dur = ev.dur !== undefined ? ev.dur : 0;
+
+      svg += `<g style="cursor:pointer" ${isActive ? 'data-ex-active="1"' : ''} onclick="onExerciseScoreNoteClick(${idx})">`;
+      if (isActive) {
+        svg += `<rect x="${x - 16}" y="${topVisual - 14}" width="32" height="${(endY - topVisual) + 24}" rx="6" fill="rgba(34,197,94,0.14)" stroke="rgba(74,222,128,0.45)" stroke-width="1"/>`;
       }
 
-      const nm = ev.note || labels[pc];
-      if (nm.includes('#')) {
-        svg += `<text x="${x - 12}" y="${noteY + 4}" fill="${colColor}" font-size="12" font-weight="800" text-anchor="middle">#</text>`;
-      } else if (nm.includes('b')) {
-        svg += `<text x="${x - 12}" y="${noteY + 4}" fill="${colColor}" font-size="12" font-weight="800" text-anchor="middle">♭</text>`;
-      }
-
-      // Główka nuty (pusta dla całej i półnuty, pełna dla ćwierćnuty i krótszych)
-      if (dur <= -1) {
-        svg += `<ellipse cx="${x}" cy="${noteY}" rx="6.5" ry="4.5" fill="none" stroke="${colColor}" stroke-width="2"/>`;
+      if (ev.rest) {
+        const restY = showStaff ? (staffTop + 26) : (tabTop + 2.7 * tabGap);
+        svg += `<text x="${x}" y="${restY}" fill="${isActive ? '#f39237' : '#9ca3af'}" font-size="18" font-weight="700" text-anchor="middle">𝄽</text>`;
       } else {
-        svg += `<ellipse cx="${x}" cy="${noteY}" rx="6.2" ry="4.6" fill="${colColor}"/>`;
-      }
+        const midi = ev.midi || 60;
+        const oct = Math.floor(midi / 12) - 1;
+        const pc = ((midi % 12) + 12) % 12;
+        const nm = ev.note || labels[pc];
 
-      // Laska + chorągiewki
-      if (dur > -2) {
-        const stemDown = noteY <= staffTop + 20;
-        const sx = stemDown ? (x - 5.5) : (x + 5.5);
-        const sy2 = stemDown ? (noteY + 24) : (noteY - 24);
-        svg += `<line x1="${sx}" y1="${noteY}" x2="${sx}" y2="${sy2}" stroke="${colColor}" stroke-width="1.6"/>`;
-        if (dur >= 1) {
-          const dir = stemDown ? -1 : 1;
-          svg += `<path d="M${sx},${sy2} Q${sx + 9},${sy2 + 6 * dir} ${sx + 4},${sy2 + 12 * dir}" fill="none" stroke="${colColor}" stroke-width="1.6"/>`;
+        if (showStaff) {
+          const dia = oct * 7 + diaPc[pc];
+          const rawNoteY = (staffTop + 40) - (dia - refDia) * 5;
+          const noteY = Math.max(yOff + 12, Math.min(staffTop + 62, rawNoteY));
+
+          for (let ly = staffTop + 50; ly <= noteY + 1 && ly <= staffTop + 62; ly += 10) {
+            svg += `<line x1="${x - 11}" y1="${ly}" x2="${x + 11}" y2="${ly}" stroke="#8c7f72" stroke-width="1.1"/>`;
+          }
+          for (let ly = staffTop - 10; ly >= noteY - 1 && ly >= yOff + 12; ly -= 10) {
+            svg += `<line x1="${x - 11}" y1="${ly}" x2="${x + 11}" y2="${ly}" stroke="#8c7f72" stroke-width="1.1"/>`;
+          }
+          if (nm.includes('#')) {
+            svg += `<text x="${x - 12}" y="${noteY + 4}" fill="${colColor}" font-size="12" font-weight="800" text-anchor="middle">#</text>`;
+          } else if (nm.includes('b')) {
+            svg += `<text x="${x - 12}" y="${noteY + 4}" fill="${colColor}" font-size="12" font-weight="800" text-anchor="middle">♭</text>`;
+          }
+          if (dur <= -1) {
+            svg += `<ellipse cx="${x}" cy="${noteY}" rx="6.5" ry="4.5" fill="none" stroke="${colColor}" stroke-width="2"/>`;
+          } else {
+            svg += `<ellipse cx="${x}" cy="${noteY}" rx="6.2" ry="4.6" fill="${colColor}"/>`;
+          }
+          if (dur > -2) {
+            const stemDown = noteY <= staffTop + 20;
+            const sx = stemDown ? (x - 5.5) : (x + 5.5);
+            const sy2 = stemDown ? (noteY + 24) : (noteY - 24);
+            svg += `<line x1="${sx}" y1="${noteY}" x2="${sx}" y2="${sy2}" stroke="${colColor}" stroke-width="1.6"/>`;
+            if (dur >= 1) {
+              const dir = stemDown ? -1 : 1;
+              svg += `<path d="M${sx},${sy2} Q${sx + 9},${sy2 + 6 * dir} ${sx + 4},${sy2 + 12 * dir}" fill="none" stroke="${colColor}" stroke-width="1.6"/>`;
+            }
+            if (dur >= 2) {
+              const dir = stemDown ? -1 : 1;
+              const sy3 = sy2 + 5 * dir;
+              svg += `<path d="M${sx},${sy3} Q${sx + 9},${sy3 + 6 * dir} ${sx + 4},${sy3 + 12 * dir}" fill="none" stroke="${colColor}" stroke-width="1.6"/>`;
+            }
+          }
+          if (ev.tuplet === 3) {
+            svg += `<text x="${x}" y="${noteY - 26}" fill="#4ade80" font-size="10" font-weight="800" text-anchor="middle">3</text>`;
+          }
         }
-        if (dur >= 2) {
-          const dir = stemDown ? -1 : 1;
-          const sy3 = sy2 + 5 * dir;
-          svg += `<path d="M${sx},${sy3} Q${sx + 9},${sy3 + 6 * dir} ${sx + 4},${sy3 + 12 * dir}" fill="none" stroke="${colColor}" stroke-width="1.6"/>`;
+
+        const isRootPc = (pc === state.rootPc);
+        const topNoteLbl = (state.labelType === 'intervals')
+          ? computeIntervalLabel(pc, state.rootPc, false)
+          : nm;
+        if (state.showExerciseNoteNames) {
+          svg += `<text x="${x}" y="${topVisual - 6}" fill="${isRootPc ? '#f39237' : '#f5f2eb'}" font-size="10" font-weight="${isRootPc ? '800' : '700'}" text-anchor="middle">${topNoteLbl}</text>`;
+        } else if (isRootPc && showTab && !showStaff) {
+          svg += `<circle cx="${x}" cy="${topVisual - 10}" r="2.6" fill="#f39237"><title>Tonika (1)</title></circle>`;
+        }
+
+        if (showTab && ev.s !== undefined && ev.f !== undefined && ev.s >= 0 && ev.f >= 0) {
+          const row = 5 - ev.s;
+          const ty = tabTop + row * tabGap;
+          const boxW = String(ev.f).length > 1 ? 22 : 18;
+          const tabBg = isActive ? '#22c55e' : '#15110e';
+          const tabTxt = isActive ? '#05140b' : '#f5f2eb';
+          svg += `<rect x="${x - boxW / 2}" y="${ty - 7.5}" width="${boxW}" height="15" rx="3.5" fill="${tabBg}" stroke="${isActive ? '#bbf7d0' : 'none'}" stroke-width="${isActive ? '1.1' : '0'}"/>`;
+          svg += `<text x="${x}" y="${ty + 4.2}" fill="${tabTxt}" font-size="${showStaff ? 12 : 13}" font-weight="800" text-anchor="middle">${ev.f}</text>`;
+          if (ev.tech && ev.tech !== '-' && ev.tech !== '—') {
+            svg += `<text x="${x + boxW / 2 + 4}" y="${ty - 2}" fill="#4ade80" font-size="9" font-weight="800">${ev.tech}</text>`;
+          }
         }
       }
+      svg += `</g>`;
 
-      if (state.showExerciseNoteNames) {
-        svg += `<text x="${x}" y="${staffTop - 6}" fill="#f5f2eb" font-size="10" font-weight="700" text-anchor="middle">${nm}</text>`;
-      }
-      if (ev.tuplet === 3) {
-        svg += `<text x="${x}" y="${noteY - 26}" fill="#4ade80" font-size="10" font-weight="800" text-anchor="middle">3</text>`;
-      }
-
-      if (showTab && ev.s !== undefined && ev.f !== undefined && ev.s >= 0 && ev.f >= 0) {
-        const row = 5 - ev.s;
-        const ty = tabTop + row * tabGap;
-        svg += `<rect x="${x - 9}" y="${ty - 7}" width="18" height="14" rx="3" fill="#15110e"/>`;
-        svg += `<text x="${x}" y="${ty + 4}" fill="${colColor}" font-size="12" font-weight="800" text-anchor="middle">${ev.f}</text>`;
-        if (ev.tech && ev.tech !== '-') {
-          svg += `<text x="${x + 11}" y="${ty - 2}" fill="#4ade80" font-size="9" font-weight="800">${ev.tech}</text>`;
+      if (barMeta[idx] && barMeta[idx].isBarEnd && idx < rowInfo.end - 1) {
+        const barX = x + colW * 0.5;
+        if (showStaff) {
+          svg += `<line x1="${barX}" y1="${staffTop}" x2="${barX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.2"/>`;
         }
+        if (showTab) {
+          svg += `<line x1="${barX}" y1="${tabTop}" x2="${barX}" y2="${tabTop + 5 * tabGap}" stroke="#524940" stroke-width="1.2"/>`;
+        }
+        svg += `<text x="${barX + 5}" y="${yOff + 18}" fill="#9ca3af" font-size="10.5" font-weight="700">${barMeta[idx].barNum + 1}</text>`;
       }
-    }
-    svg += `</g>`;
-
-    accumBeats += getDurationBeats(dur, ev.tuplet === 3);
-    if (accumBeats >= measureBeats - 0.001 && idx < evs.length - 1) {
-      accumBeats = 0;
-      barNum++;
-      const barX = x + colW * 0.5;
-      svg += `<line x1="${barX}" y1="${staffTop}" x2="${barX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.2"/>`;
-      if (showTab) {
-        svg += `<line x1="${barX}" y1="${tabTop}" x2="${barX}" y2="${tabTop + 5 * tabGap}" stroke="#524940" stroke-width="1.2"/>`;
-      }
-      svg += `<text x="${barX + 5}" y="20" fill="#9ca3af" font-size="10.5" font-weight="700">${barNum}</text>`;
     }
   });
 
@@ -9295,7 +9805,10 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
     const cx = ev.f === 0 ? openX + 10 : (nutX + (ev.f - 0.5) * fretW);
     const openMidi = state.customStringMidis[ev.s] !== undefined ? state.customStringMidis[ev.s] : [40, 45, 50, 55, 59, 64][ev.s];
     const m = ev.midi || (openMidi + ev.f);
-    const nm = ev.note || labels[((m % 12) + 12) % 12];
+    const pc = ((m % 12) + 12) % 12;
+    const nm = (state.labelType === 'intervals')
+      ? computeIntervalLabel(pc, state.rootPc, false)
+      : (ev.note || labels[pc]);
     svg += `<circle cx="${cx}" cy="${cy}" r="10.5" fill="#4f290f" stroke="#a65b26" stroke-width="1.4"/>`;
     svg += `<text x="${cx}" y="${cy + 3.8}" fill="#f5d0a9" font-size="10" font-weight="800" text-anchor="middle">${nm}</text>`;
   });
@@ -9309,7 +9822,10 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
       const cx = aEv.f === 0 ? openX + 10 : (nutX + (aEv.f - 0.5) * fretW);
       const openMidi = state.customStringMidis[aEv.s] !== undefined ? state.customStringMidis[aEv.s] : [40, 45, 50, 55, 59, 64][aEv.s];
       const m = aEv.midi || (openMidi + aEv.f);
-      const nm = aEv.note || labels[((m % 12) + 12) % 12];
+      const pc = ((m % 12) + 12) % 12;
+      const nm = (state.labelType === 'intervals')
+        ? computeIntervalLabel(pc, state.rootPc, false)
+        : (aEv.note || labels[pc]);
       svg += `<circle cx="${cx}" cy="${cy}" r="16" fill="rgba(243,146,55,0.22)" stroke="#f39237" stroke-width="2"/>`;
       svg += `<circle cx="${cx}" cy="${cy}" r="11.5" fill="#f39237" stroke="#fff2e2" stroke-width="1.2"/>`;
       svg += `<text x="${cx}" y="${cy + 4}" fill="#120f0c" font-size="10.5" font-weight="900" text-anchor="middle">${nm}</text>`;

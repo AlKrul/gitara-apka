@@ -357,6 +357,24 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
     const int nStrings = fretboard.stringCount();
     const int nFrets = fretboard.fretCount();
 
+    auto dedupUnisons = [&](std::vector<ArpeggioPositionNode> raw, double idealCenterFret) {
+        std::sort(raw.begin(), raw.end(), [&](const auto& a, const auto& b) {
+            int ma = fretboard.midiAt(a.position.stringIndex, a.position.fret);
+            int mb = fretboard.midiAt(b.position.stringIndex, b.position.fret);
+            if (ma != mb) return ma < mb;
+            return std::abs(a.position.fret - idealCenterFret) < std::abs(b.position.fret - idealCenterFret);
+        });
+        std::vector<ArpeggioPositionNode> out;
+        int lastMidi = -1;
+        for (const auto& n : raw) {
+            int m = fretboard.midiAt(n.position.stringIndex, n.position.fret);
+            if (m == lastMidi) continue;
+            out.push_back(n);
+            lastMidi = m;
+        }
+        return out;
+    };
+
     if (pattern == ArpeggioPattern::FullNeck) {
         for (int s = 0; s < nStrings; ++s) {
             for (int f = 0; f <= nFrets; ++f) {
@@ -370,31 +388,66 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
         return nodes;
     }
 
-    if (pattern == ArpeggioPattern::CAGED) {
-        // 5 realnych boksów CAGED (C, A, G, E, D) ułożonych wzdłuż gryfu wokół prymy
-        int rootPc = chord.root.pitchClass();
-        int openE = fretboard.midiAt(0, 0) % 12;
-        int eRootFret = (rootPc - openE + 12) % 12;
-        // Kolejność kształtów na gryfie: E -> D -> C -> A -> G (albo C, A, G, E, D wg positionIndex 0..4)
-        constexpr std::array<int, 5> offsets = {0, 2, 5, 7, 9};
-        int box = ((positionIndex % 5) + 5) % 5;
-        int minFret = (eRootFret + offsets[static_cast<std::size_t>(box)]) % 12;
-        if (minFret == 0 && box > 0) minFret = 12;
-        int maxFret = std::min(nFrets, minFret + 4);
+    if (pattern == ArpeggioPattern::RootOctave) {
+        return generateRootOctaveArpeggio(fretboard, chord, positionIndex, 2, mode, mask);
+    }
 
-        for (int s = 0; s < nStrings; ++s) {
-            for (int f = minFret; f <= maxFret; ++f) {
-                if (mask && !mask->isAllowed(s, f)) continue;
-                if (chord.containsPitchClass(fretboard.midiAt(s, f) % 12)) {
-                    nodes.push_back(makeArpNode(fretboard, chord, s, f, mode));
-                }
-            }
+    if (pattern == ArpeggioPattern::Inversions) {
+        auto invs = generateArpeggioInversions(fretboard, chord, 0, mode, mask);
+        if (!invs.empty()) {
+            int idx = ((positionIndex % static_cast<int>(invs.size())) + static_cast<int>(invs.size())) %
+                      static_cast<int>(invs.size());
+            return invs[static_cast<std::size_t>(idx)].nodes;
         }
         return nodes;
     }
 
+    if (pattern == ArpeggioPattern::CAGED) {
+        // 5 autentycznych kształtów CAGED: 0=C, 1=A, 2=G, 3=E, 4=D zakotwiczonych na realnych progach prymy!
+        int rootPc = chord.root.pitchClass();
+        int rE = (rootPc - (fretboard.midiAt(0, 0) % 12) + 12) % 12;
+        int rA = (nStrings > 1) ? ((rootPc - (fretboard.midiAt(1, 0) % 12) + 12) % 12) : rE;
+        int rD = (nStrings > 2) ? ((rootPc - (fretboard.midiAt(2, 0) % 12) + 12) % 12) : rE;
+
+        int box = ((positionIndex % 5) + 5) % 5;
+        int minFret = 0, maxFret = 4;
+        if (box == 0) { // Kształt C (pryma na strunie A -> boks [rA-3 .. rA+1])
+            int anchor = (rA < 3) ? (rA + 12) : rA;
+            minFret = std::max(0, anchor - 3);
+            maxFret = std::min(nFrets, anchor + 1);
+        } else if (box == 1) { // Kształt A (pryma na strunie A -> boks [rA .. rA+4])
+            int anchor = (rA == 0) ? 12 : rA;
+            minFret = anchor;
+            maxFret = std::min(nFrets, anchor + 4);
+        } else if (box == 2) { // Kształt G (pryma na strunie E -> boks [rE-3 .. rE+1])
+            int anchor = (rE < 3) ? (rE + 12) : rE;
+            minFret = std::max(0, anchor - 3);
+            maxFret = std::min(nFrets, anchor + 1);
+        } else if (box == 3) { // Kształt E (pryma na strunie E -> boks [rE-1 .. rE+3])
+            int anchor = (rE == 0) ? 12 : rE;
+            minFret = std::max(0, anchor - 1);
+            maxFret = std::min(nFrets, anchor + 3);
+        } else { // Kształt D (pryma na strunie D -> boks [rD .. rD+4])
+            int anchor = (rD == 0) ? 12 : rD;
+            minFret = anchor;
+            maxFret = std::min(nFrets, anchor + 4);
+        }
+
+        std::vector<ArpeggioPositionNode> raw;
+        for (int s = 0; s < nStrings; ++s) {
+            for (int f = minFret; f <= maxFret; ++f) {
+                if (mask && !mask->isAllowed(s, f)) continue;
+                if (chord.containsPitchClass(fretboard.midiAt(s, f) % 12)) {
+                    raw.push_back(makeArpNode(fretboard, chord, s, f, mode));
+                }
+            }
+        }
+        return dedupUnisons(std::move(raw), 0.5 * (minFret + maxFret));
+    }
+
     if (pattern == ArpeggioPattern::TwoNPS || pattern == ArpeggioPattern::ThreeNPS) {
         const int targetPerString = (pattern == ArpeggioPattern::TwoNPS) ? 2 : 3;
+        const int maxPerStringSpan = (pattern == ArpeggioPattern::TwoNPS) ? 5 : 7;
         const auto chordNotes = chord.notes(mode);
         if (chordNotes.empty()) return nodes;
 
@@ -404,17 +457,21 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
         int startPc = chordNotes[static_cast<std::size_t>(startIdx)].pitchClass();
         int openLowPc = fretboard.midiAt(0, 0) % 12;
         int firstFret = (startPc - openLowPc + 12) % 12;
-        if (firstFret == 0 && positionIndex >= static_cast<int>(chordNotes.size())) firstFret = 12;
+        // Trzymaj pozycję startową na niskich/średnich progach, żeby arpeggio zmieściło się na wszystkich 6 strunach!
+        if (firstFret > 9) firstFret = std::max(0, firstFret - 12);
         int minMidi = fretboard.midiAt(0, firstFret);
 
         for (int s = 0; s < nStrings; ++s) {
             int count = 0;
+            int firstOnStr = -1;
             for (int f = 0; f <= nFrets; ++f) {
                 int m = fretboard.midiAt(s, f);
                 if (m >= minMidi && chord.containsPitchClass(m % 12)) {
+                    if (firstOnStr >= 0 && (f - firstOnStr) > maxPerStringSpan) break;
                     if (!mask || mask->isAllowed(s, f)) {
                         nodes.push_back(makeArpNode(fretboard, chord, s, f, mode));
                     }
+                    if (firstOnStr < 0) firstOnStr = f;
                     minMidi = m + 1;
                     ++count;
                     if (count >= targetPerString) break;
@@ -437,20 +494,185 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
     return nodes;
 }
 
+std::vector<ArpeggioInversionBox> generateArpeggioInversions(
+    const Fretboard& fretboard,
+    const Chord& chord,
+    int stringSetIndex,
+    AccidentalMode mode,
+    const FretboardMask* mask) {
+    std::vector<ArpeggioInversionBox> out;
+    if (!chord.definition || fretboard.stringCount() < 3) return out;
+
+    const int nStrings = fretboard.stringCount();
+    const int nFrets = fretboard.fretCount();
+    const auto chordNotes = chord.notes(mode);
+    const int reqCount = static_cast<int>(chordNotes.size());
+    const int setSize = (reqCount >= 4 && nStrings >= 4) ? 4 : 3;
+
+    // 0 = najwyższe (G-B-e lub D-G-B-e), 1 = środkowe (D-G-B lub A-D-G-B), 2 = niższe (A-D-G lub E-A-D-G)
+    int maxStart = nStrings - setSize;
+    int s0 = std::clamp(maxStart - std::clamp(stringSetIndex, 0, 2), 0, maxStart);
+
+    int essentialMask = 0;
+    for (int i = 0; i < reqCount; ++i) {
+        bool isOpt = (reqCount > setSize) &&
+            std::find(chord.definition->optionalIndices.begin(),
+                      chord.definition->optionalIndices.end(), i) != chord.definition->optionalIndices.end();
+        if (!isOpt) essentialMask |= (1 << chordNotes[static_cast<std::size_t>(i)].pitchClass());
+    }
+
+    std::set<std::vector<int>> seenFrets;
+    for (int fBase = 0; fBase <= std::min(nFrets, 19); ++fBase) {
+        if (mask && !mask->isAllowed(s0, fBase)) continue;
+        int baseMidi = fretboard.midiAt(s0, fBase);
+        if (!chord.containsPitchClass(baseMidi % 12)) continue;
+
+        int lo = std::max(0, fBase - 3);
+        int hi = std::min(nFrets, fBase + 4);
+        std::vector<ArpeggioPositionNode> picked;
+        picked.push_back(makeArpNode(fretboard, chord, s0, fBase, mode));
+        int prevMidi = baseMidi;
+        int pcMask = (1 << (baseMidi % 12));
+        bool ok = true;
+
+        for (int k = 1; k < setSize; ++k) {
+            int s = s0 + k;
+            int bestF = -1;
+            int bestScore = -9999;
+            for (int f = lo; f <= hi; ++f) {
+                if (mask && !mask->isAllowed(s, f)) continue;
+                int m = fretboard.midiAt(s, f);
+                if (m <= prevMidi) continue;
+                int pc = m % 12;
+                if (!chord.containsPitchClass(pc)) continue;
+                int sc = 0;
+                if ((pcMask & (1 << pc)) == 0) sc += 100;
+                if ((essentialMask & (1 << pc)) && !(pcMask & (1 << pc))) sc += 60;
+                sc -= std::abs(f - fBase) * 10;
+                if (sc > bestScore) { bestScore = sc; bestF = f; }
+            }
+            if (bestF < 0) { ok = false; break; }
+            picked.push_back(makeArpNode(fretboard, chord, s, bestF, mode));
+            prevMidi = fretboard.midiAt(s, bestF);
+            pcMask |= (1 << (prevMidi % 12));
+        }
+        if (!ok) continue;
+
+        int distinct = 0;
+        for (int b = 0; b < 12; ++b) if (pcMask & (1 << b)) ++distinct;
+        int minDist = (reqCount <= 2) ? 2 : std::min(setSize, reqCount);
+        if (distinct < minDist) continue;
+
+        int mnF = 99, mxF = 0;
+        std::vector<int> sig;
+        for (const auto& n : picked) {
+            sig.push_back(n.position.fret);
+            if (n.position.fret > 0) { mnF = std::min(mnF, n.position.fret); mxF = std::max(mxF, n.position.fret); }
+        }
+        if (mnF <= mxF && (mxF - mnF) > 4) continue;
+        if (!seenFrets.insert(sig).second) continue;
+        if (mnF > mxF) mnF = 0;
+
+        std::string bassIv = picked.front().intervalFromRoot.symbol(true);
+        std::string invName = "Przewrót (" + bassIv + " w basie)";
+        if (picked.front().isRoot || bassIv == "1") invName = "Postać zasadnicza (1)";
+        else if (bassIv == "3" || bassIv == "♭3" || bassIv == "b3") invName = "1. przewrót (" + bassIv + ")";
+        else if (bassIv == "5" || bassIv == "♭5" || bassIv == "♯5") invName = "2. przewrót (" + bassIv + ")";
+        else invName = "3. przewrót (" + bassIv + ")";
+
+        ArpeggioInversionBox box{};
+        box.inversionIndex = static_cast<int>(out.size());
+        box.minFret = mnF;
+        box.maxFret = mxF;
+        box.label = invName + " · pr. " + std::to_string(mnF) + "–" + std::to_string(mxF);
+        box.nodes = std::move(picked);
+        out.push_back(std::move(box));
+    }
+    return out;
+}
+
+std::vector<ArpeggioPositionNode> generateRootOctaveArpeggio(
+    const Fretboard& fretboard,
+    const Chord& chord,
+    int positionIndex,
+    int octaves,
+    AccidentalMode mode,
+    const FretboardMask* mask) {
+    std::vector<ArpeggioPositionNode> out;
+    if (!chord.definition || fretboard.stringCount() < 4) return out;
+
+    const int nStrings = fretboard.stringCount();
+    const int nFrets = fretboard.fretCount();
+    const int rootPc = chord.root.pitchClass();
+    const int numOct = (octaves == 1) ? 1 : 2;
+
+    // 4 ergonomiczne kotwice startowe od prymy:
+    // 0 = pryma na strunie E6 (pozycja otwarta/niska), 1 = pryma na strunie A5,
+    // 2 = pryma na strunie D4 (1 okt. na wiolinowych), 3 = pryma na strunie E6 (wyżej / ok. 12. progu)
+    struct Anchor { int str; int fret; int boxShift; };
+    int rE = (rootPc - (fretboard.midiAt(0, 0) % 12) + 12) % 12;
+    int rA = (rootPc - (fretboard.midiAt(1, 0) % 12) + 12) % 12;
+    int rD = (rootPc - (fretboard.midiAt(2, 0) % 12) + 12) % 12;
+    std::vector<Anchor> anchors = {
+        {0, rE, 0},
+        {1, rA, 0},
+        {2, rD, 0},
+        {0, (rE <= 7 ? rE + 12 : rE), -2}
+    };
+    int idx = ((positionIndex % static_cast<int>(anchors.size())) + static_cast<int>(anchors.size())) %
+              static_cast<int>(anchors.size());
+    const auto& anc = anchors[static_cast<std::size_t>(idx)];
+
+    int startMidi = fretboard.midiAt(anc.str, anc.fret);
+    int endMidi = startMidi + 12 * ((anc.str >= 2 && numOct == 2) ? 1 : numOct);
+    int boxMin = std::max(0, anc.fret + anc.boxShift - 1);
+    int boxMax = std::min(nFrets, boxMin + 4);
+    if (anc.fret > boxMax) { boxMax = anc.fret; boxMin = std::max(0, boxMax - 4); }
+    double centerFret = 0.5 * (boxMin + boxMax);
+
+    // Zbierz dokładnie dźwięki akordu z przedziału [startMidi .. endMidi], każdy unikalny MIDI najbliżej środka boksu!
+    std::vector<int> targetMidis;
+    for (int m = startMidi; m <= endMidi; ++m) {
+        if (chord.containsPitchClass(m % 12)) targetMidis.push_back(m);
+    }
+
+    int lastStr = anc.str;
+    for (int m : targetMidis) {
+        int bestS = -1, bestF = -1;
+        double bestCost = 1e9;
+        for (int s = lastStr; s < nStrings; ++s) {
+            int f = m - fretboard.midiAt(s, 0);
+            if (f < 0 || f > nFrets) continue;
+            if (mask && !mask->isAllowed(s, f)) continue;
+            double cost = std::abs(f - centerFret);
+            if (f < boxMin || f > boxMax) cost += 8.0 + std::min(std::abs(f - boxMin), std::abs(f - boxMax)) * 3.0;
+            if (s > lastStr + 1) cost += 4.0;
+            if (m == startMidi && s == anc.str && f == anc.fret) cost = -100.0;
+            if (cost < bestCost) { bestCost = cost; bestS = s; bestF = f; }
+        }
+        if (bestS >= 0) {
+            out.push_back(makeArpNode(fretboard, chord, bestS, bestF, mode));
+            lastStr = bestS;
+        }
+    }
+    return out;
+}
+
 std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
     const Fretboard& fretboard,
     const std::vector<ArpeggioPositionNode>& nodes,
     ArpeggioPattern pattern,
     int direction,
-    AccidentalMode mode) {
+    AccidentalMode mode,
+    int seqStyle) {
     if (nodes.empty()) return {};
 
-    if (pattern == ArpeggioPattern::Sweep) {
+    if (pattern == ArpeggioPattern::Sweep && seqStyle == 0) {
         bool roll = false;
         return buildSweepStepsFromNodes(fretboard, nodes, direction, 0, mode, roll);
     }
 
-    // Dla pozostałych wzorców (CAGED, 2NPS, 3NPS, FullNeck): sortuj rosnąco po wysokości (z limitem 24 nut dla FullNeck)
+    // Sortuj rosnąco po wysokości MIDI i ZAWSZE usuń zdublowane unisony (żeby nigdy nie grało dwa razy tej samej nuty)
     std::vector<ArpeggioPositionNode> sorted = nodes;
     std::sort(sorted.begin(), sorted.end(), [&](const auto& a, const auto& b) {
         int ma = fretboard.midiAt(a.position.stringIndex, a.position.fret);
@@ -459,42 +681,66 @@ std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
         return a.position.stringIndex < b.position.stringIndex;
     });
 
-    // Deduplikuj identyczne wysokości MIDI w FullNeck (zostaw ergonomiczny ciąg po gryfie)
     std::vector<ArpeggioPositionNode> clean;
     int lastMidi = -1;
     for (const auto& n : sorted) {
         int m = fretboard.midiAt(n.position.stringIndex, n.position.fret);
-        if (pattern == ArpeggioPattern::FullNeck && m == lastMidi) continue;
+        if (m == lastMidi) continue;
         clean.push_back(n);
         lastMidi = m;
-        if (pattern == ArpeggioPattern::FullNeck && clean.size() >= 16) break;
+        if (pattern == ArpeggioPattern::FullNeck && clean.size() >= 14) break;
     }
 
-    std::vector<ArpeggioStep> asc;
-    for (std::size_t i = 0; i < clean.size(); ++i) {
-        std::string tech = (i % 2 == 0) ? "D" : "U";
-        if (pattern == ArpeggioPattern::ThreeNPS && i > 0 &&
-            clean[i].position.stringIndex == clean[i - 1].position.stringIndex) {
-            tech = "H";
+    auto applySeqOrder = [&](const std::vector<ArpeggioPositionNode>& base) {
+        std::vector<ArpeggioPositionNode> ordered;
+        if (seqStyle == 1 && base.size() >= 3) {
+            // Grupy po 3 (triole / sekwencje 3-nutowe: 0-1-2, 1-2-3, 2-3-4...)
+            for (std::size_t i = 0; i + 2 < base.size(); ++i) {
+                ordered.push_back(base[i]);
+                ordered.push_back(base[i + 1]);
+                ordered.push_back(base[i + 2]);
+            }
+        } else if (seqStyle == 2 && base.size() >= 3) {
+            // Skoki interwałowe (1-5-3-7 / przeskoki o 2 składniki)
+            for (std::size_t i = 0; i + 2 < base.size(); ++i) {
+                ordered.push_back(base[i]);
+                ordered.push_back(base[i + 2]);
+            }
+            ordered.push_back(base.back());
+        } else {
+            ordered = base;
         }
-        asc.push_back(makeStepFromNode(fretboard, clean[i], tech, false, 0, mode));
-    }
+        return ordered;
+    };
 
-    std::vector<ArpeggioStep> desc;
-    for (int idx = static_cast<int>(clean.size()) - 1; idx >= 0; --idx) {
-        std::size_t i = static_cast<std::size_t>(idx);
-        std::string tech = ((clean.size() - 1 - i) % 2 == 0) ? "U" : "D";
-        if (pattern == ArpeggioPattern::ThreeNPS && idx < static_cast<int>(clean.size()) - 1 &&
-            clean[i].position.stringIndex == clean[static_cast<std::size_t>(idx + 1)].position.stringIndex) {
-            tech = "P";
+    auto ascNodes = applySeqOrder(clean);
+    std::vector<ArpeggioPositionNode> revClean(clean.rbegin(), clean.rend());
+    auto descNodes = applySeqOrder(revClean);
+
+    auto toSteps = [&](const std::vector<ArpeggioPositionNode>& seq, bool descending) {
+        std::vector<ArpeggioStep> out;
+        for (std::size_t i = 0; i < seq.size(); ++i) {
+            std::string tech = descending ? ((i % 2 == 0) ? "U" : "D") : ((i % 2 == 0) ? "D" : "U");
+            if (pattern == ArpeggioPattern::ThreeNPS && i > 0 &&
+                seq[i].position.stringIndex == seq[i - 1].position.stringIndex) {
+                tech = (seq[i].position.fret > seq[i - 1].position.fret) ? "H" : "P";
+            }
+            out.push_back(makeStepFromNode(fretboard, seq[i], tech, false, 0, mode));
         }
-        desc.push_back(makeStepFromNode(fretboard, clean[i], tech, false, 0, mode));
-    }
+        return out;
+    };
+
+    auto asc = toSteps(ascNodes, false);
+    auto desc = toSteps(descNodes, true);
 
     if (direction == 1) return asc;
     if (direction == 2) return desc;
     std::vector<ArpeggioStep> full = asc;
-    for (std::size_t i = 1; i + 1 < desc.size(); ++i) full.push_back(desc[i]);
+    std::size_t startDesc = (!full.empty() && !desc.empty() && full.back().midi == desc.front().midi) ? 1 : 0;
+    for (std::size_t i = startDesc; i < desc.size(); ++i) {
+        if (i + 1 == desc.size() && !full.empty() && desc[i].midi == full.front().midi && seqStyle == 0) continue;
+        full.push_back(desc[i]);
+    }
     return full;
 }
 

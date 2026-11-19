@@ -10,11 +10,13 @@ namespace gitara::theory {
 
 /// Wzorzec ogrywania arpeggio (zakładka „Praktyka -> Arpeggio”).
 enum class ArpeggioPattern : std::uint8_t {
-    FullNeck = 0, ///< Wszystkie składniki akordu na całym gryfie
-    CAGED    = 1, ///< 5 pozycji systemu CAGED
-    TwoNPS   = 2, ///< 2 dźwięki na strunę (2NPS)
-    ThreeNPS = 3, ///< 3 dźwięki na strunę (3NPS – szerokie rozciągnięcia / legato)
-    Sweep    = 4  ///< Sweep Picking (klasyczne kształty 3-, 5- i 6-strunowe z kierunkiem kostkowania)
+    FullNeck   = 0, ///< Mapa wszystkich składników akordu na całym gryfie
+    CAGED      = 1, ///< 5 pozycji systemu CAGED (kształty C, A, G, E, D bez zdublowanych unisonów)
+    TwoNPS     = 2, ///< 2 dźwięki na strunę (2NPS – kostkowanie naprzemienne / economy)
+    ThreeNPS   = 3, ///< 3 dźwięki na strunę (3NPS – szerokie rozciągnięcia / legato)
+    Sweep      = 4, ///< Sweep Picking (klasyczne kształty 3-, 5- i 6-strunowe z kierunkiem kostkowania)
+    Inversions = 5, ///< Poziome inwersje (przewroty) na wybranym zestawie strun (np. G-B-e, D-G-B-e)
+    RootOctave = 6  ///< Czyste arpeggio od prymy do prymy (1 lub 2 oktawy w zwartej pozycji)
 };
 
 /// Zestaw pozycji pojedynczego arpeggio na gryfie wraz z rolą każdego dźwięku (pryma, tercja, kwinta, septyma...).
@@ -23,6 +25,15 @@ struct ArpeggioPositionNode {
     Note note{};
     Interval intervalFromRoot{};
     bool isRoot{false};
+};
+
+/// Pojedynczy przewrót (inwersja) arpeggio na wybranym zestawie strun.
+struct ArpeggioInversionBox {
+    int inversionIndex{0};
+    std::string label;
+    int minFret{0};
+    int maxFret{0};
+    std::vector<ArpeggioPositionNode> nodes;
 };
 
 /// Pojedynczy krok odgrywanego arpeggio / sweep pickingu (do tabulatury, animacji gryfu i syntezy).
@@ -109,13 +120,33 @@ struct DiatonicArpeggio {
     AccidentalMode mode = AccidentalMode::Auto,
     const FretboardMask* mask = nullptr);
 
-/// Generuje kroki odtwarzania (TAB + kostkowanie) dla dowolnego wzorca arpeggio (FullNeck/CAGED/2NPS/3NPS/Sweep).
+/// Generuje poziome inwersje (przewroty) arpeggio na wybranym zestawie sąsiednich strun.
+/// stringSetIndex: 0 = najwyższe (G-B-e / D-G-B-e), 1 = środkowe (D-G-B / A-D-G-B), 2 = niższe (A-D-G / E-A-D-G).
+[[nodiscard]] std::vector<ArpeggioInversionBox> generateArpeggioInversions(
+    const Fretboard& fretboard,
+    const Chord& chord,
+    int stringSetIndex = 0,
+    AccidentalMode mode = AccidentalMode::Auto,
+    const FretboardMask* mask = nullptr);
+
+/// Generuje czyste 1- lub 2-oktawowe arpeggio od prymy do prymy (Root-to-Root) w zwartej pozycji.
+[[nodiscard]] std::vector<ArpeggioPositionNode> generateRootOctaveArpeggio(
+    const Fretboard& fretboard,
+    const Chord& chord,
+    int positionIndex = 0,
+    int octaves = 2,
+    AccidentalMode mode = AccidentalMode::Auto,
+    const FretboardMask* mask = nullptr);
+
+/// Generuje kroki odtwarzania (TAB + kostkowanie) dla dowolnego wzorca arpeggio (FullNeck/CAGED/2NPS/3NPS/Sweep/Inversions/RootOctave).
+/// seqStyle: 0 = Prosto (1-3-5-7), 1 = Grupy po 3, 2 = Skoki interwałowe (1-5-3-7).
 [[nodiscard]] std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
     const Fretboard& fretboard,
     const std::vector<ArpeggioPositionNode>& nodes,
     ArpeggioPattern pattern,
     int direction = 0,
-    AccidentalMode mode = AccidentalMode::Auto);
+    AccidentalMode mode = AccidentalMode::Auto,
+    int seqStyle = 0);
 
 /// Zwraca listę wbudowanych przejść / progresji Sweep Picking.
 [[nodiscard]] const std::vector<SweepTransitionPresetInfo>& allSweepTransitionPresets();
