@@ -806,7 +806,8 @@ SweepTransition generateSweepTransition(
     int startPositionIndex,
     const Chord* customChord,
     const Scale* customScale,
-    AccidentalMode mode) {
+    AccidentalMode mode,
+    bool diatonicSevenths) {
     SweepTransition tr{};
     tr.id = std::string(presetId);
 
@@ -890,19 +891,18 @@ SweepTransition generateSweepTransition(
             {9, "7",    "VI7",   jazzSpan, false}
         };
     } else if (presetId == "diatonic_climb") {
-        tr.name = "Wspinaczka diatoniczna w skali (I → ii → iii → IV → V)";
-        tr.category = "Skala → Arpeggio";
-        tr.description = "Kolejne diatoniczne trójdźwięki z wybranej skali grane sweepem w górę gryfu.";
-        tr.practiceTip = "Trzymaj stały puls (szesnastki lub triole) — każdy kolejny stopień przesuwa dłoń o 1–3 progi w górę gryfu.";
         Scale sc = (customScale && customScale->definition)
             ? *customScale
             : Scale{Note::fromPitchClass(rootPc, mode), findScaleDefinition("major")};
-        auto diat = generateDiatonicArpeggios(sc, false, mode);
-        if (diat.size() >= 5) {
-            for (std::size_t i = 0; i < 5; ++i) {
-                int relSemi = (diat[i].chord.root.pitchClass() - rootPc + 12) % 12;
-                specs.push_back({relSemi, diat[i].chord.definition->id, diat[i].romanNumeral, effSpan, i > 0});
-            }
+        tr.name = "Wspinaczka diatoniczna: " + sc.fullName(false) + (diatonicSevenths ? " (septymowe)" : " (trójdźwięki)");
+        tr.category = "Skala → Arpeggio";
+        tr.description = "Kolejne diatoniczne arpeggia z wybranej skali grane sweepem w górę gryfu.";
+        tr.practiceTip = "Trzymaj stały puls (szesnastki lub triole) — każdy kolejny stopień skali przesuwa dłoń o 1–3 progi w górę gryfu.";
+        auto diat = generateDiatonicArpeggios(sc, diatonicSevenths, mode);
+        const std::size_t maxSteps = std::min<std::size_t>(diat.size(), 7);
+        for (std::size_t i = 0; i < maxSteps; ++i) {
+            int relSemi = (diat[i].chord.root.pitchClass() - rootPc + 12) % 12;
+            specs.push_back({relSemi, diat[i].chord.definition->id, diat[i].romanNumeral, effSpan, i > 0});
         }
     } else {
         // Domyślnie: neoclassical_minor (i -> bVI -> iv -> V)

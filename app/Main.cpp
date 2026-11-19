@@ -72,8 +72,10 @@ START_JUCE_APPLICATION(gitara::app::GitaraApplication)
 #else
 
 #include <arpa/inet.h>
+#include <cctype>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 namespace {
@@ -771,7 +773,7 @@ std::string handleArpeggioApi(std::string_view query) {
         activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
     }
 
-    auto transition = generateSweepTransition(fb, transitionId, rootPc, sweepStrings, posIdx, &ch, &sc, mode);
+    auto transition = generateSweepTransition(fb, transitionId, rootPc, sweepStrings, posIdx, &ch, &sc, mode, diatonicSevenths);
 
     std::ostringstream oss;
     oss << "{\"chordSymbol\":\"" << jsonEscape(ch.symbol(false, mode)) << "\""
@@ -952,8 +954,10 @@ Song buildSongFromJsonEvents(std::string_view eventsJson, int bpm) {
     return song;
 }
 
-std::string handleTabPreviewApi(std::string_view query) {
-    std::string evs = getQueryParam(query, "events", "[]");
+std::string handleTabPreviewApi(std::string_view query, std::string_view body = "") {
+    std::string evs = (!body.empty() && body.front() == '[')
+        ? std::string(body)
+        : getQueryParam(query, "events", "[]");
     int bpm = getQueryInt(query, "bpm", 120);
     Song song = buildSongFromJsonEvents(evs, bpm);
     std::string tab = exportToAsciiTab(song);
@@ -1070,14 +1074,54 @@ int main(int argc, char** argv) {
         int clientFd = ::accept(serverFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
         if (clientFd < 0) continue;
 
-        char reqBuf[8192]{};
-        ssize_t nRead = ::read(clientFd, reqBuf, sizeof(reqBuf) - 1);
-        if (nRead <= 0) {
+        timeval tv{};
+        tv.tv_sec = 2;
+        tv.tv_usec = 0;
+        ::setsockopt(clientFd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+        // Odczyt pełnego żądania HTTP (nagłówki + opcjonalne ciało POST) bez limitu 8 KB!
+        std::string reqStr;
+        reqStr.reserve(16384);
+        constexpr std::size_t kMaxReqBytes = 4 * 1024 * 1024;
+        std::size_t headerEnd = std::string::npos;
+        std::size_t contentLength = 0;
+        char chunk[8192];
+        while (reqStr.size() < kMaxReqBytes) {
+            ssize_t nRead = ::read(clientFd, chunk, sizeof(chunk));
+            if (nRead <= 0) break;
+            reqStr.append(chunk, static_cast<std::size_t>(nRead));
+            if (headerEnd == std::string::npos) {
+                headerEnd = reqStr.find("\r\n\r\n");
+                if (headerEnd != std::string::npos) {
+                    std::string lowerHdr;
+                    lowerHdr.reserve(headerEnd);
+                    for (std::size_t i = 0; i < headerEnd; ++i) {
+                        lowerHdr.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(reqStr[i]))));
+                    }
+                    std::size_t clPos = lowerHdr.find("content-length:");
+                    if (clPos != std::string::npos) {
+                        std::size_t valStart = clPos + 15;
+                        while (valStart < headerEnd && (reqStr[valStart] == ' ' || reqStr[valStart] == '\t')) ++valStart;
+                        contentLength = static_cast<std::size_t>(std::max<long long>(0, std::atoll(reqStr.c_str() + valStart)));
+                    }
+                }
+            }
+            if (headerEnd != std::string::npos) {
+                std::size_t bodyRead = reqStr.size() - (headerEnd + 4);
+                if (bodyRead >= contentLength) break;
+            }
+        }
+        if (reqStr.empty()) {
             ::close(clientFd);
             continue;
         }
 
-        std::string_view req(reqBuf, static_cast<std::size_t>(nRead));
+        std::string_view req(reqStr);
+        std::string_view reqBody = (headerEnd != std::string::npos && reqStr.size() >= headerEnd + 4)
+            ? std::string_view(reqStr.data() + headerEnd + 4,
+                               std::min(contentLength, reqStr.size() - (headerEnd + 4)))
+            : std::string_view{};
+
         std::size_t firstSpace = req.find(' ');
         std::size_t secondSpace = (firstSpace != std::string_view::npos)
             ? req.find(' ', firstSpace + 1)
@@ -1090,6 +1134,15 @@ int main(int argc, char** argv) {
         std::size_t qPos = fullTarget.find('?');
         std::string_view path = (qPos == std::string_view::npos) ? fullTarget : fullTarget.substr(0, qPos);
         std::string_view query = (qPos == std::string_view::npos) ? "" : fullTarget.substr(qPos + 1);
+
+        auto writeAll = [&](const char* ptr, std::size_t len) {
+            std::size_t sent = 0;
+            while (sent < len) {
+                ssize_t w = ::write(clientFd, ptr + sent, len - sent);
+                if (w <= 0) break;
+                sent += static_cast<std::size_t>(w);
+            }
+        };
 
         auto sendResponse = [&](std::string_view status,
                                 std::string_view contentType,
@@ -1104,10 +1157,10 @@ int main(int argc, char** argv) {
                 << extraHeaders
                 << "Connection: close\r\n\r\n";
             std::string hStr = hdr.str();
-            auto w1 = ::write(clientFd, hStr.data(), hStr.size());
-            auto w2 = ::write(clientFd, data, size);
-            (void)w1;
-            (void)w2;
+            writeAll(hStr.data(), hStr.size());
+            if (size > 0 && data != nullptr) {
+                writeAll(static_cast<const char*>(data), size);
+            }
         };
 
         if (path == "/" || path == "/index.html") {
@@ -1143,7 +1196,9 @@ int main(int argc, char** argv) {
             }
             sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
         } else if (path == "/api/save_settings") {
-            std::string jsonPayload = getQueryParam(query, "data", "{}");
+            std::string jsonPayload = (!reqBody.empty() && reqBody.front() == '{')
+                ? std::string(reqBody)
+                : getQueryParam(query, "data", "{}");
             if (!jsonPayload.empty() && jsonPayload.front() == '{') {
                 std::ofstream ofs(".apka_gitara_settings.json", std::ios::binary | std::ios::trunc);
                 if (ofs) ofs.write(jsonPayload.data(), static_cast<std::streamsize>(jsonPayload.size()));
@@ -1166,20 +1221,24 @@ int main(int argc, char** argv) {
             std::string body = handleArpeggioApi(query);
             sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
         } else if (path == "/api/tab_preview") {
-            std::string body = handleTabPreviewApi(query);
+            std::string body = handleTabPreviewApi(query, reqBody);
             sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
         } else if (path == "/api/workshop_events") {
             std::string body = handleWorkshopEventsApi(query);
             sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
         } else if (path == "/api/export/gp5") {
-            Song song = buildSongFromJsonEvents(getQueryParam(query, "events", "[]"),
-                                                getQueryInt(query, "bpm", 120));
+            std::string evs = (!reqBody.empty() && reqBody.front() == '[')
+                ? std::string(reqBody)
+                : getQueryParam(query, "events", "[]");
+            Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120));
             auto bytes = exportToGp5Bytes(song);
             sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
                          "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.gp5\"\r\n");
         } else if (path == "/api/export/mid") {
-            Song song = buildSongFromJsonEvents(getQueryParam(query, "events", "[]"),
-                                                getQueryInt(query, "bpm", 120));
+            std::string evs = (!reqBody.empty() && reqBody.front() == '[')
+                ? std::string(reqBody)
+                : getQueryParam(query, "events", "[]");
+            Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120));
             auto bytes = exportToMidiBytes(song);
             sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
                          "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.mid\"\r\n");

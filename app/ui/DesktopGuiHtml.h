@@ -6,6 +6,7 @@ inline constexpr const char* kDesktopGuiHtml = R"HTML(<!DOCTYPE html>
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apka Gitarowa – Studio Treningowe (A–G)</title>
 <style>
 :root {
@@ -22,7 +23,36 @@ inline constexpr const char* kDesktopGuiHtml = R"HTML(<!DOCTYPE html>
   --text: #f5f2eb;
   --text-muted: #9ca3af;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3028 #14100d;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #130f0c;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #362d26;
+  border-radius: 6px;
+  border: 1.5px solid #130f0c;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #574638;
+}
+::-webkit-scrollbar-thumb:active {
+  background: rgba(243, 146, 55, 0.72);
+}
+::-webkit-scrollbar-corner {
+  background: #130f0c;
+}
 body {
   background: var(--bg-main);
   color: var(--text);
@@ -910,6 +940,273 @@ select, input[type="number"] {
   color: var(--text);
   border-radius: 6px;
 }
+
+/* Przełącznik skalowania interfejsu (Auto / Full HD / 2K) */
+.ui-scale-switcher {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 7px 8px;
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ui-scale-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+.ui-scale-badge {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.ui-scale-seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  background: var(--bg-main);
+  padding: 2px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+}
+.ui-scale-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  border-radius: 5px;
+  padding: 4px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.12s;
+  text-align: center;
+  white-space: nowrap;
+}
+.ui-scale-btn:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.ui-scale-btn.active {
+  background: var(--accent);
+  color: #120e0a;
+}
+
+/* Optymalizacje zagęszczenia i proporcji dla trybu Full HD (1920x1080 oraz laptopy 125%) */
+body.ui-mode-fhd .sidebar {
+  width: 194px;
+  padding: 10px 8px;
+  gap: 4px;
+}
+body.ui-mode-fhd .right-inspector {
+  width: 300px;
+  padding: 12px;
+  gap: 10px;
+}
+body.ui-mode-fhd .topbar {
+  min-height: 46px;
+  padding: 5px 12px;
+  gap: 6px 10px;
+}
+body.ui-mode-fhd .subtab-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+body.ui-mode-fhd .live-tuner-pill {
+  padding: 3px 8px;
+  gap: 6px;
+  font-size: 11.5px;
+}
+body.ui-mode-fhd .main-stage {
+  padding: 10px 14px;
+  gap: 10px;
+}
+body.ui-mode-fhd .fretboard-card {
+  padding: 11px 12px;
+  gap: 6px;
+}
+body.ui-mode-fhd .midi-footer {
+  min-height: 104px;
+  padding: 5px 12px 6px;
+  gap: 4px;
+}
+body.ui-mode-fhd .midi-keys {
+  height: 68px;
+  min-height: 68px;
+}
+body.ui-mode-fhd .ear-config-layout {
+  gap: 20px;
+}
+body.ui-mode-fhd .ear-summary-box {
+  width: 310px;
+  padding: 16px;
+}
+body.ui-mode-fhd .ear-intervals-grid {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+}
+body.ui-mode-fhd .ear-interval-tile {
+  width: auto;
+  height: 58px;
+}
+body.ui-mode-fhd .ear-answer-grid {
+  grid-template-columns: repeat(3, minmax(170px, 210px));
+}
+body.ui-mode-fhd .ear-answer-btn {
+  width: auto;
+  height: 62px;
+}
+body.ui-mode-fhd .sp-grid {
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 16px;
+}
+body.ui-mode-fhd .sp-card {
+  padding: 14px 16px;
+  gap: 12px;
+}
+
+/* Rozwijany pasek pięciolinii (nut) w sekcji Ćwiczenie (domyślnie zwinięty, TAB na wierzchu) */
+.ex-staff-toggle-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #1b1612;
+  border: 1px solid #302821;
+  border-radius: 9px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: border-color 0.14s, background 0.14s;
+  text-align: left;
+}
+.ex-staff-toggle-bar:hover {
+  border-color: var(--accent);
+  background: #221c17;
+}
+.ex-staff-toggle-bar.open {
+  border-color: rgba(243, 146, 55, 0.55);
+  background: rgba(243, 146, 55, 0.08);
+}
+.ex-staff-toggle-bar .ex-staff-hint {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.ex-staff-toggle-bar .ex-staff-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.ex-staff-toggle-bar.open .ex-staff-pill {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #120e0a;
+}
+
+/* Podłużny przycisk na prawej krawędzi do chowania i wysuwania prawego panelu */
+.right-edge-toggle {
+  width: 18px;
+  flex-shrink: 0;
+  background: #16120f;
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.right-edge-toggle:hover {
+  background: #231d18;
+  color: var(--accent);
+  border-left-color: rgba(243, 146, 55, 0.55);
+}
+.right-edge-toggle .edge-pill {
+  width: 14px;
+  height: 76px;
+  border-radius: 7px;
+  background: #221c17;
+  border: 1px solid #382f27;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  transition: 0.15s;
+}
+.right-edge-toggle:hover .edge-pill {
+  border-color: var(--accent);
+  background: rgba(243, 146, 55, 0.14);
+  color: var(--accent);
+}
+.right-inspector.collapsed {
+  display: none !important;
+}
+
+/* Przycisk chowania / wysuwania dolnej klawiatury (klawiszy) z prawej strony */
+.midi-collapse-btn {
+  margin-left: auto;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.14s;
+}
+.midi-collapse-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #261f19;
+}
+.midi-footer.collapsed {
+  display: none !important;
+}
+.midi-reveal-bar {
+  position: fixed;
+  right: 22px;
+  bottom: 0;
+  z-index: 40;
+  background: #1d1814;
+  color: var(--accent);
+  border: 1px solid rgba(243, 146, 55, 0.5);
+  border-bottom: none;
+  border-radius: 9px 9px 0 0;
+  padding: 5px 18px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.45);
+  transition: background 0.14s, transform 0.14s;
+}
+.midi-reveal-bar:hover {
+  background: #29211a;
+  transform: translateY(-1px);
+}
 </style>
 </head>
 <body>
@@ -917,6 +1214,17 @@ select, input[type="number"] {
   <!-- Lewy pasek nawigacji -->
   <aside class="sidebar">
     <div class="brand">🎸 Apka Gitarowa</div>
+    <div class="ui-scale-switcher" title="Przełącznik skalowania interfejsu dla ekranów Full HD i 2K">
+      <div class="ui-scale-head">
+        <span>🖥️ Interfejs</span>
+        <span id="uiScaleBadge" class="ui-scale-badge">Auto</span>
+      </div>
+      <div class="ui-scale-seg">
+        <button id="uiScaleBtn_auto" class="ui-scale-btn active" onclick="setUiScaleMode('auto')" title="Automatycznie dopasuj do rozdzielczości ekranu">Auto</button>
+        <button id="uiScaleBtn_fhd" class="ui-scale-btn" onclick="setUiScaleMode('fhd')" title="Skalowanie pod ekran Full HD (1920×1080 i laptopy)">FHD</button>
+        <button id="uiScaleBtn_2k" class="ui-scale-btn" onclick="setUiScaleMode('2k')" title="Natywny układ 2K (2560×1440)">2K</button>
+      </div>
+    </div>
     <button class="nav-btn active" onclick="switchMainView('practice', this)">🎵 Praktyka</button>
     <button class="nav-btn" onclick="switchMainView('ear', this)">👂 Kształcenie słuchu</button>
     <button class="nav-btn" onclick="switchMainView('changes', this)">🔄 Zmiany</button>
@@ -1047,6 +1355,12 @@ select, input[type="number"] {
         <div id="dynamicStagePanel" style="flex:1;display:flex;flex-direction:column;gap:12px;"></div>
       </section>
 
+      <!-- Podłużny przycisk na prawej krawędzi do chowania / wysuwania prawego panelu -->
+      <button id="rightInspectorEdgeToggle" class="right-edge-toggle" onclick="toggleRightInspectorPanel()"
+              title="Schowaj lub wysuń prawy panel parametrów">
+        <span id="rightEdgeArrow" class="edge-pill">›</span>
+      </button>
+
       <!-- Prawy inspektor parametrów -->
       <aside class="right-inspector" id="rightInspector"></aside>
     </div>
@@ -1054,9 +1368,9 @@ select, input[type="number"] {
 </div>
 
 <!-- Dolny moduł wirtualnej klawiatury MIDI i klawiszy do komponowania -->
-<footer class="midi-footer">
+<footer id="midiFooter" class="midi-footer">
   <div class="midi-bar">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:1;">
       <button id="midiFocusBtn" class="chip-btn active" style="padding:4px 12px;" onclick="toggleMidiFocus()">
         🎹 Klawisze
       </button>
@@ -1082,10 +1396,18 @@ select, input[type="number"] {
       <span style="color:var(--text-muted);font-size:11px;">
         Białe: <b>Q W E R T Y U I O P [ ]</b> · Czarne (#): <b>2 3 &nbsp; 5 6 7 &nbsp; 9 0 &nbsp; =</b> · Pauza: <b>[Spacja]</b> · Cofnij: <b>[Backspace]</b>
       </span>
+      <button id="midiHideBtn" class="midi-collapse-btn" onclick="toggleMidiKeyboardPanel()"
+              title="Schowaj dolną klawiaturę MIDI (klawisze)">
+        ▾ Schowaj klawisze
+      </button>
     </div>
   </div>
   <div id="midiKeysContainer" class="midi-keys"></div>
 </footer>
+<button id="midiRevealBtn" class="midi-reveal-bar" style="display:none;" onclick="toggleMidiKeyboardPanel()"
+        title="Wysuń dolną klawiaturę MIDI (klawisze)">
+  🎹 Pokaż klawisze ▴
+</button>
 
 <script>
 // Stan globalny aplikacji: Krzyżyki (accMode = 2) jako domyślne, bez opcji Auto!
@@ -1124,6 +1446,13 @@ const state = {
   harmonicDiffEnabled: {0: true, 1: false, 2: false, 3: false}, // Domyślnie jak na 1. zrzucie podświetlone Łatwe, reszta jako szare kontury!
   harmonicIntervalsEnabled: new Set(['1','2','3','#4','5','b6','b7','7']),
   harmonicsData: [],
+  // Skalowanie interfejsu (Auto / Full HD / 2K) oraz chowanie paneli
+  uiScaleMode: 'auto', // 'auto' | 'fhd' | '2k'
+  resolvedUiProfile: '2k',
+  appliedUiZoom: 1.0,
+  midiKeyboardHidden: false,
+  rightInspectorHidden: false,
+  exLastRenderedCount: -1,
   // Skalowanie gryfu wokół punktu 0 (oraz automatyczne wypełnianie pełnego ekranu bez ściskania przy małym oknie!)
   fretboardZoom: 0, // -5 .. 0 .. +10
   fretboardFitWidth: true,
@@ -1279,8 +1608,10 @@ const state = {
   arpPlayStepIdx: -1,
   arpData: null,
   tabCreationEnabled: true,
-  exerciseShowStaff: true, // Pięciolinia (nuty): po wyłączeniu widać samą tabulaturę (większą i w mniejszej wysokości)
-  exerciseTabWrapRows: false, // false = 1 linia przewijana z zapasem | true = zawijane wiersze (2+ rzędy wypełniające okno)
+  exerciseShowStaff: false, // Pięciolinia (nuty): domyślnie wyłączona (rozwijana paskiem), domyślnie sama tabulatura (TAB)
+  exerciseStaffPrefV2: false,
+  exerciseTabWrapRows: true, // Domyślnie zawijane wiersze jak tekst (bez poziomego paska przewijania)
+  exerciseBarsPerRow: 0, // 0 = Auto (zawijaj gdy takt się nie mieści), lub 2 / 4 / 6 / 8 taktów w wierszu
   tempoBpm: 120,
   timeSigNum: 4,
   timeSigDen: 4,
@@ -3358,6 +3689,15 @@ async function fetchJson(url) {
   return await res.json();
 }
 
+async function fetchJsonPost(url, dataObj) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dataObj)
+  });
+  return await res.json();
+}
+
 function setFretboardZoom(zoomVal) {
   state.fretboardZoom = Math.max(-5, Math.min(10, zoomVal));
   const slider = document.getElementById('fretboardZoomSlider');
@@ -3379,8 +3719,168 @@ function toggleFretboardFitWidth() {
   drawFretboard();
 }
 
+let uiScaleResizeTimer = null;
+
+function computeUiScaleProfile() {
+  const vw = window.innerWidth || 1920;
+  const vh = window.innerHeight || 1080;
+  const mode = (state.uiScaleMode === 'fhd' || state.uiScaleMode === '2k') ? state.uiScaleMode : 'auto';
+  const isAuto2k = (vw >= 2100 && vh >= 1120);
+  const profile = (mode === 'auto') ? (isAuto2k ? '2k' : 'fhd') : mode;
+
+  let zoom = 1.0;
+  if (profile === 'fhd') {
+    if (vw >= 1750 && vh >= 940) {
+      zoom = 0.82; // Standardowy ekran Full HD (1920x1080 @ 100%) lub wymuszony tryb FHD na monitorze 2K
+    } else if (vw >= 1400 && vh >= 760) {
+      zoom = 0.75; // Laptop Full HD ze skalowaniem systemowym 125% (ok. 1536x864)
+    } else {
+      zoom = Math.max(0.66, Math.min(0.74, Math.min(vw / 1920, vh / 1080)));
+    }
+  }
+  return { mode, profile, zoom: Math.round(zoom * 100) / 100, vw, vh };
+}
+
+function updateUiScaleControls() {
+  const info = computeUiScaleProfile();
+  const mode = info.mode;
+  const pct = Math.round(info.zoom * 100);
+  const profLbl = info.profile === '2k' ? '2K' : 'FHD';
+
+  ['auto', 'fhd', '2k'].forEach(k => {
+    const btn = document.getElementById(`uiScaleBtn_${k}`);
+    if (btn) btn.classList.toggle('active', mode === k);
+    const sBtn = document.getElementById(`settingsUiScaleBtn_${k}`);
+    if (sBtn) sBtn.classList.toggle('active', mode === k);
+  });
+
+  const badge = document.getElementById('uiScaleBadge');
+  if (badge) {
+    badge.textContent = (mode === 'auto')
+      ? `Auto→${profLbl} ${pct}%`
+      : `${profLbl} · ${pct}%`;
+  }
+
+  const infoEl = document.getElementById('settingsUiScaleInfo');
+  if (infoEl) {
+    const dpr = Math.round((window.devicePixelRatio || 1) * 100);
+    infoEl.textContent = `Aktywny profil: ${profLbl} (${pct}%) · Okno: ${info.vw}×${info.vh} px (DPI: ${dpr}%)`;
+  }
+}
+
+function applyUiScale(redraw = true) {
+  const info = computeUiScaleProfile();
+  state.resolvedUiProfile = info.profile;
+  state.appliedUiZoom = info.zoom;
+
+  const body = document.body;
+  const supportsZoom = (typeof CSS !== 'undefined' && CSS.supports) ? CSS.supports('zoom', '0.8') : true;
+
+  body.classList.toggle('ui-mode-fhd', info.profile === 'fhd');
+  body.classList.toggle('ui-mode-2k', info.profile === '2k');
+
+  if (info.zoom < 0.999 && supportsZoom) {
+    body.style.zoom = String(info.zoom);
+    body.style.width = '100%';
+    body.style.height = '100vh';
+    // Samoweryfikacja rozmiaru viewportu dla różnic między standardowym CSS zoom (Edge/Chrome 128+, Firefox 126+) a starszym Blink
+    const rect = body.getBoundingClientRect();
+    if (Math.abs(rect.height - window.innerHeight) > 2) {
+      body.style.height = `${Math.ceil(window.innerHeight / info.zoom)}px`;
+    }
+    if (Math.abs(rect.width - window.innerWidth) > 2) {
+      body.style.width = `${Math.ceil(window.innerWidth / info.zoom)}px`;
+    }
+  } else {
+    body.style.zoom = '';
+    body.style.width = '';
+    body.style.height = '';
+  }
+
+  updateUiScaleControls();
+
+  if (redraw) {
+    requestAnimationFrame(() => {
+      drawFretboard();
+      if (state.mainView === 'tuner') renderTunerCanvas();
+      if (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'exercise')) {
+        renderStageAndInspector();
+      }
+    });
+  }
+}
+
+function setUiScaleMode(mode) {
+  if (mode !== 'auto' && mode !== 'fhd' && mode !== '2k') mode = 'auto';
+  state.uiScaleMode = mode;
+  saveSettings();
+  applyUiScale(true);
+}
+
+function applyPanelCollapseStates() {
+  const midiFooter = document.getElementById('midiFooter');
+  const midiRevealBtn = document.getElementById('midiRevealBtn');
+  const midiHidden = !!state.midiKeyboardHidden;
+  if (midiFooter) midiFooter.classList.toggle('collapsed', midiHidden);
+  if (midiRevealBtn) midiRevealBtn.style.display = midiHidden ? 'inline-flex' : 'none';
+
+  const inspPanel = document.getElementById('rightInspector');
+  const edgeBtn = document.getElementById('rightInspectorEdgeToggle');
+  const edgeArrow = document.getElementById('rightEdgeArrow');
+  const viewHidesInsp = (state.mainView === 'ear') ||
+    (state.mainView === 'changes' && state.changesScreen !== 'editor') ||
+    (state.mainView === 'practice' && state.subtab === 'scale_practice') ||
+    (state.mainView === 'practice' && state.subtab === 'exercise' && state.exercisePlayerActive);
+
+  if (inspPanel) {
+    inspPanel.style.display = viewHidesInsp ? 'none' : 'flex';
+    inspPanel.classList.toggle('collapsed', !viewHidesInsp && !!state.rightInspectorHidden);
+  }
+  if (edgeBtn) {
+    edgeBtn.style.display = viewHidesInsp ? 'none' : 'flex';
+    edgeBtn.title = state.rightInspectorHidden
+      ? 'Wysuń prawy panel parametrów'
+      : 'Schowaj prawy panel parametrów';
+  }
+  if (edgeArrow) {
+    edgeArrow.textContent = state.rightInspectorHidden ? '‹' : '›';
+  }
+}
+
+function toggleMidiKeyboardPanel() {
+  state.midiKeyboardHidden = !state.midiKeyboardHidden;
+  saveSettings();
+  applyPanelCollapseStates();
+  requestAnimationFrame(() => {
+    drawFretboard();
+    if (state.mainView === 'tuner') renderTunerCanvas();
+  });
+}
+
+function toggleRightInspectorPanel() {
+  state.rightInspectorHidden = !state.rightInspectorHidden;
+  saveSettings();
+  applyPanelCollapseStates();
+  requestAnimationFrame(() => {
+    drawFretboard();
+    if (state.mainView === 'tuner') renderTunerCanvas();
+    if (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'exercise')) {
+      renderStageAndInspector();
+    }
+  });
+}
+
+function scrollExerciseTabTo(where) {
+  const wrap = document.getElementById('exerciseComposerScoreWrap') || document.getElementById('exerciseScoreWrap');
+  if (!wrap) return;
+  const targetTop = (where === 'top') ? 0 : wrap.scrollHeight;
+  wrap.scrollTo({ top: targetTop, behavior: 'smooth' });
+}
+
 async function initApp() {
   await loadSettings();
+  applyUiScale(false);
+  applyPanelCollapseStates();
   state.initData = await fetchJson('/api/init');
   if (state.tuningId !== 'custom' && state.initData && state.initData.tunings) {
     const found = state.initData.tunings.find(t => t.id === state.tuningId);
@@ -3398,10 +3898,13 @@ async function initApp() {
   refreshAudioDevices(false);
   setupFretboardDragScroll();
   window.addEventListener('resize', () => {
-    drawFretboard();
-    if (state.mainView === 'tuner') renderTunerCanvas();
+    clearTimeout(uiScaleResizeTimer);
+    uiScaleResizeTimer = setTimeout(() => {
+      applyUiScale(true);
+    }, 60);
   });
   await renderAll();
+  updateUiScaleControls();
 }
 
 function setupFretboardDragScroll() {
@@ -3414,7 +3917,7 @@ function setupFretboardDragScroll() {
     // Przeciąganie gryfu prawo-lewo przy wciśniętym środkowym przycisku lub z Alt
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
       isPanning = true;
-      startX = e.pageX - wrap.offsetLeft;
+      startX = e.clientX;
       scrollLeftStart = wrap.scrollLeft;
     }
   });
@@ -3427,8 +3930,8 @@ function setupFretboardDragScroll() {
   }, { passive: false });
   window.addEventListener('mousemove', e => {
     if (!isPanning) return;
-    const x = e.pageX - wrap.offsetLeft;
-    wrap.scrollLeft = scrollLeftStart - (x - startX);
+    const dx = (e.clientX - startX) / (state.appliedUiZoom || 1);
+    wrap.scrollLeft = scrollLeftStart - dx;
   });
   window.addEventListener('mouseup', () => { isPanning = false; });
 }
@@ -3764,11 +4267,13 @@ function drawFretboard() {
   const wrap = document.getElementById('fretboardWrap');
   const availW = (wrap && wrap.clientWidth > 100) ? (wrap.clientWidth - 6) : 1280;
   const zoomFactor = 1.0 + (state.fretboardZoom || 0) * 0.09;
-  const minBaseW = isHarmonicsTab ? 1080 : 1260;
-  const minBaseH = isHarmonicsTab ? 316 : 356;
+  const isFhdMode = (state.resolvedUiProfile === 'fhd');
+  const minBaseW = isHarmonicsTab ? 1080 : (isFhdMode ? 1160 : 1260);
+  const minBaseH = isHarmonicsTab ? (isFhdMode ? 300 : 316) : (isFhdMode ? 332 : 356);
   const baseW = state.fretboardFitWidth ? Math.max(minBaseW, availW) : minBaseW;
   const widthRatio = baseW / minBaseW;
-  const baseH = Math.round(minBaseH * Math.min(1.38, Math.max(1.0, Math.pow(widthRatio, 0.65))));
+  const maxHRatio = isFhdMode ? 1.24 : 1.38;
+  const baseH = Math.round(minBaseH * Math.min(maxHRatio, Math.max(1.0, Math.pow(widthRatio, 0.62))));
   const W = Math.round(baseW * zoomFactor);
   const H = Math.round(baseH * zoomFactor);
 
@@ -4648,15 +5153,8 @@ function switchPracticeSubtab(sub, btn) {
 
 async function renderAll() {
   await refreshFretboardFromCpp();
-  // Ukryj prawy panel inspektora w Kształceniu słuchu, na pełnoekranowych ekranach Zmian, w Praktyce skal oraz w Odtwarzaczu ćwiczeń
-  const inspPanel = document.getElementById('rightInspector');
-  if (inspPanel) {
-    const hideInsp = (state.mainView === 'ear') ||
-      (state.mainView === 'changes' && state.changesScreen !== 'editor') ||
-      (state.mainView === 'practice' && state.subtab === 'scale_practice') ||
-      (state.mainView === 'practice' && state.subtab === 'exercise' && state.exercisePlayerActive);
-    inspPanel.style.display = hideInsp ? 'none' : 'flex';
-  }
+  // Ukryj prawy panel inspektora tam gdzie widok jest pełnoekranowy oraz zastosuj stan zwinięcia paneli
+  applyPanelCollapseStates();
   // Gryf główny pokazywany w zakładkach Skala, Akord, Flażolety, Szukaj, Arpeggio;
   // W Ćwiczeniu (TAB) i Praktyce skal układ jest dopasowany indywidualnie (pięciolinia nad gryfem lub kreator).
   const fbCard = document.getElementById('fretboardCardContainer');
@@ -5733,6 +6231,28 @@ async function renderStageAndInspector() {
                         onclick="setMaxFrets(24)">24 progi</button>
               </div>
             </div>
+
+            <div style="border-top:1px solid var(--border);padding-top:14px;">
+              <div class="section-label">Skalowanie interfejsu (Full HD / 2K)</div>
+              <div class="btn-grid-3">
+                <button id="settingsUiScaleBtn_auto" class="chip-btn ${(state.uiScaleMode||'auto')==='auto'?'active':''}"
+                        onclick="setUiScaleMode('auto')">Auto</button>
+                <button id="settingsUiScaleBtn_fhd" class="chip-btn ${state.uiScaleMode==='fhd'?'active':''}"
+                        onclick="setUiScaleMode('fhd')">Full HD</button>
+                <button id="settingsUiScaleBtn_2k" class="chip-btn ${state.uiScaleMode==='2k'?'active':''}"
+                        onclick="setUiScaleMode('2k')">2K (100%)</button>
+              </div>
+              <div id="settingsUiScaleInfo" style="font-size:11.5px;color:var(--accent);font-weight:600;margin-top:6px;">
+                ${(() => {
+                  const info = computeUiScaleProfile();
+                  const dpr = Math.round((window.devicePixelRatio || 1) * 100);
+                  return `Aktywny profil: ${info.profile === '2k' ? '2K' : 'FHD'} (${Math.round(info.zoom * 100)}%) · Okno: ${info.vw}×${info.vh} px (DPI: ${dpr}%)`;
+                })()}
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">
+                Tryb Auto dobiera układ 2K na dużych monitorach (≥2100×1120) oraz skalowany interfejs Full HD na laptopach i ekranach 1080p.
+              </div>
+            </div>
           </div>
 
           <!-- Prawa kolumna Ustawień -->
@@ -6472,6 +6992,31 @@ async function renderStageAndInspector() {
               `).join('')}
             </div>
           </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+              <div class="section-label" style="margin:0;">SWEEP DIATONICZNY W SKALI (${data.scaleFullName}) — KLIKNIJ AKORD (INWERSJE SWEEP) LUB CAŁĄ SKALĘ</div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <button class="chip-btn ${state.arpTransitionId==='diatonic_climb'?'active':''}" style="padding:3px 10px;font-size:11px;"
+                        onclick="launchDiatonicScaleSweep()" title="Zagraj sweepem kolejno wszystkie stopnie wybranej skali">⚡ Cała skala (wspinaczka)</button>
+                <button class="chip-btn ${!state.arpDiatonicSevenths?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="stopArpeggioPlayback(false);state.arpDiatonicSevenths=false;renderStageAndInspector()">Trójdźwięki</button>
+                <button class="chip-btn ${state.arpDiatonicSevenths?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="stopArpeggioPlayback(false);state.arpDiatonicSevenths=true;renderStageAndInspector()">Septymowe</button>
+              </div>
+            </div>
+            <div class="chord-cards-grid">
+              ${(data.diatonic || []).map(d => {
+                const isCur = (state.arpTransitionId === 'same_chord_inversions' && d.rootPc === state.rootPc && d.chordId === state.chordId);
+                return `
+                  <div class="chord-box-card ${isCur?'selected':''}"
+                       onclick="selectDiatonicSweepChord(${d.rootPc}, '${d.chordId}')">
+                    <div style="font-size:12px;color:var(--text-muted);">Stopień ${d.roman}</div>
+                    <div style="font-size:18px;font-weight:800;color:var(--accent);">${d.symbol}</div>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>
         ` : `
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
@@ -6528,6 +7073,22 @@ async function renderStageAndInspector() {
             <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;renderStageAndInspector()">6 strun</button>
           </div>
         </div>
+        <div>
+          <div class="section-label">SKALA DLA SWEEP PICKING</div>
+          <select onchange="stopArpeggioPlayback(false);state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
+            ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
+          </select>
+          <div class="btn-grid-2" style="margin-top:6px;">
+            <button class="chip-btn ${!state.arpDiatonicSevenths?'active':''}" style="padding:5px 6px;font-size:11px;"
+                    onclick="stopArpeggioPlayback(false);state.arpDiatonicSevenths=false;renderStageAndInspector()">Trójdźwięki</button>
+            <button class="chip-btn ${state.arpDiatonicSevenths?'active':''}" style="padding:5px 6px;font-size:11px;"
+                    onclick="stopArpeggioPlayback(false);state.arpDiatonicSevenths=true;renderStageAndInspector()">Septymowe</button>
+          </div>
+          <button class="chip-btn ${state.arpTransitionId==='diatonic_climb'?'active':''}" style="width:100%;margin-top:6px;padding:6px 8px;font-size:11.5px;"
+                  onclick="launchDiatonicScaleSweep()">
+            ⚡ Wspinaczka po wybranej skali
+          </button>
+        </div>
         ${state.arpTransitionId === 'same_chord_inversions' ? `
           <div>
             <div class="section-label">AKORD DLA INWERSJI</div>
@@ -6536,16 +7097,8 @@ async function renderStageAndInspector() {
             </select>
           </div>
         ` : ''}
-        ${state.arpTransitionId === 'diatonic_climb' ? `
-          <div>
-            <div class="section-label">SKALA DO WSPINACZKI</div>
-            <select onchange="stopArpeggioPlayback(false);state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
-              ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
-            </select>
-          </div>
-        ` : ''}
         <div>
-          <div class="section-label">WYBIERZ PRZEJŚCIE SWEEP PICKING (${(data.transitionPresets || []).length})</div>
+          <div class="section-label">GOTOWE PROGRESJE SWEEP PICKING (${(data.transitionPresets || []).length})</div>
           <div style="display:flex;flex-direction:column;gap:6px;">
             ${(data.transitionPresets || []).map(p => `
               <button class="chip-btn ${state.arpTransitionId===p.id?'active':''}" style="text-align:left;padding:8px 10px;display:flex;flex-direction:column;gap:2px;"
@@ -6992,16 +7545,12 @@ async function renderStageAndInspector() {
               </h2>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <button class="chip-btn ${state.exerciseShowStaff!==false?'active':''}" style="padding:6px 10px;font-size:12px;"
-                      onclick="state.exerciseShowStaff=!(state.exerciseShowStaff!==false);if(!state.exerciseShowStaff)state.tabCreationEnabled=true;renderStageAndInspector()"
-                      title="Włącz lub ukryj pięciolinię (nuty), żeby mieć więcej miejsca na tabulaturę">
-                🎼 Nuty: ${state.exerciseShowStaff!==false ? 'Wł.' : 'Wył.'}
+              <button class="chip-btn ${state.exerciseShowStaff?'active':''}" style="padding:6px 10px;font-size:12px;"
+                      onclick="toggleExerciseStaff()"
+                      title="Rozwiń lub zwiń pięciolinię (nuty) nad tabulaturą">
+                🎼 Nuty: ${state.exerciseShowStaff ? 'Wł.' : 'Wył.'}
               </button>
-              <button class="chip-btn ${state.exerciseTabWrapRows?'active':''}" style="padding:6px 10px;font-size:12px;"
-                      onclick="state.exerciseTabWrapRows=!state.exerciseTabWrapRows;renderStageAndInspector()"
-                      title="Przełącz między 1 linią przewijaną a wieloma wierszami wypełniającymi okno">
-                📄 Układ: ${state.exerciseTabWrapRows ? 'Wiersze' : '1 linia'}
-              </button>
+              ${buildExerciseBarsPerRowControlHtml(true)}
               <button class="chip-btn ${state.spMetronome?'active':''}" style="padding:6px 10px;font-size:12px;"
                       onclick="toggleExerciseMetronome()" title="Włącz / wyłącz metronom w tempie ćwiczenia">
                 🥁 Metronom: ${state.spMetronome ? 'Wł.' : 'Wył.'}
@@ -7042,8 +7591,11 @@ async function renderStageAndInspector() {
             <button class="chip-btn" style="padding:8px 14px;" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Od początku</button>
           </div>
 
-          <div id="exerciseScoreWrap" style="background:#15110e;border:1px solid #2c241e;border-radius:12px;padding:16px 20px;${state.exerciseTabWrapRows ? 'max-height:360px;overflow-y:auto;overflow-x:hidden;' : 'overflow-x:auto;'}">
-            ${scoreSvg}
+          <div style="background:#15110e;border:1px solid #2c241e;border-radius:12px;padding:12px 16px;">
+            ${buildExerciseStaffBarHtml()}
+            <div id="exerciseScoreWrap" style="max-height:${state.exerciseShowStaff ? 442 : 276}px;overflow-y:auto;overflow-x:hidden;">
+              ${scoreSvg}
+            </div>
           </div>
 
           <div style="background:#14100d;border:1px solid #2c241e;border-radius:12px;padding:14px 16px;overflow-x:auto;">
@@ -7052,23 +7604,28 @@ async function renderStageAndInspector() {
         </div>`;
       const exScoreWrap = document.getElementById('exerciseScoreWrap');
       if (exScoreWrap) {
-        if (state.exerciseTabWrapRows) {
-          exScoreWrap.scrollTop = prevScoreScrollTop;
-          const actRect = exScoreWrap.querySelector('[data-ex-active="1"]');
-          if (actRect && typeof actRect.scrollIntoView === 'function') {
-            actRect.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-          }
-        } else {
-          exScoreWrap.scrollLeft = prevScoreScroll;
-          const xStart = (state.exerciseShowStaff !== false) ? 96 : 58;
-          scrollTabContainerToX(exScoreWrap, xStart + stepIdx * 46, true);
+        exScoreWrap.scrollTop = prevScoreScrollTop;
+        const actRect = exScoreWrap.querySelector('[data-ex-active="1"]');
+        if (actRect && typeof actRect.scrollIntoView === 'function') {
+          actRect.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
       }
       return;
     }
 
-    // WIDOK ZRZUTU 1: KOMPOZYTOR ĆWICZENIA (PIĘCIOLINIA + TAB -> GRYF -> TABELA NUT)
-    const tabPreview = await fetchJson(`/api/tab_preview?events=${encodeURIComponent(JSON.stringify(state.recordedEvents))}&bpm=${state.tempoBpm}`);
+    // WIDOK ZRZUTU 1: KOMPOZYTOR ĆWICZENIA (TAB -> GRYF -> TABELA NUT)
+    const prevComposerScrollEl = document.getElementById('exerciseComposerScoreWrap');
+    const prevComposerScrollTop = prevComposerScrollEl ? prevComposerScrollEl.scrollTop : 0;
+    const prevCount = state.exLastRenderedCount;
+    const shouldScrollToNewest = (prevCount !== state.recordedEvents.length);
+    state.exLastRenderedCount = state.recordedEvents.length;
+
+    let tabPreview = { detectedKey: (state.fretboardData && state.fretboardData.scaleFullName) ? state.fretboardData.scaleFullName : 'C Durowa' };
+    if (hasNotes) {
+      try {
+        tabPreview = await fetchJsonPost(`/api/tab_preview?bpm=${state.tempoBpm}`, state.recordedEvents);
+      } catch (e) {}
+    }
     const durOptions = [
       { code: -2, label: 'Cała nuta (1/1)' },
       { code: -1, label: 'Półnuta (1/2)' },
@@ -7087,10 +7644,11 @@ async function renderStageAndInspector() {
       { code: '◊', label: '◊ (Flażolet)' },
       { code: 'T', label: 'T (Tapping)' }
     ];
-    const composerAvailW = Math.max(700, (stage.clientWidth || 960) - 48);
+    const composerAvailW = Math.max(660, (stage.clientWidth || 960) - 56);
     const scoreSvg = buildExerciseStaffAndTabSvg(-1, composerAvailW);
     const exFretSvg = buildExerciseFretboardSvg(hasNotes ? (state.recordedEvents.length - 1) : -1, true);
     const rootLabels = getRootLabels();
+    const twoRowsMaxH = state.exerciseShowStaff ? 442 : 276;
 
     stage.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:14px;">
@@ -7111,23 +7669,30 @@ async function renderStageAndInspector() {
           </div>
         </div>
 
-        <h3 style="font-size:20px;font-weight:800;margin:2px 0 0;">Twoje ćwiczenie</h3>
-
-        <!-- Karta pięciolinii i tabulatury nad gryfem -->
-        <div style="background:#15110e;border:1px solid var(--border);border-radius:12px;padding:14px 16px;overflow-x:auto;">
-          ${!hasNotes ? `
-            <div style="padding:14px 6px;">
-              <div style="font-weight:700;font-size:15px;margin-bottom:4px;">Brak nut</div>
-              <div style="font-size:13px;color:var(--text-muted);">
-                Dotknij progu na gryfie poniżej, użyj klawiatury (<b>Q W E R T Y U...</b>) lub kliknij <b>„Dodaj nutę”</b>.
-              </div>
-            </div>
-          ` : `
-            ${scoreSvg}
-            ${state.tabCreationEnabled ? `
-              <pre style="background:#0d0b09;padding:8px 12px;border-radius:8px;border:1px solid #26201b;font-family:monospace;font-size:11.5px;line-height:1.3;margin-top:8px;overflow-x:auto;">${tabPreview.asciiTab}</pre>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:2px;">
+          <h3 style="font-size:20px;font-weight:800;margin:0;">Twoje ćwiczenie</h3>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            ${hasNotes ? `
+              <button class="chip-btn" style="padding:4px 9px;font-size:11px;" onclick="scrollExerciseTabTo('top')" title="Przewiń tabulaturę do początku (takt 1)">⬆ Początek</button>
+              <button class="chip-btn" style="padding:4px 9px;font-size:11px;" onclick="scrollExerciseTabTo('bottom')" title="Przewiń do najnowszych taktów">⬇ Najnowsze</button>
             ` : ''}
-          `}
+            ${buildExerciseBarsPerRowControlHtml(false)}
+          </div>
+        </div>
+
+        <!-- Karta tabulatury graficznej (max 2 widoczne linie + auto-scroll do najnowszych) + rozwijany pasek nut -->
+        <div style="background:#15110e;border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
+          ${buildExerciseStaffBarHtml()}
+          <div id="exerciseComposerScoreWrap" style="overflow-x:hidden;overflow-y:auto;max-height:${twoRowsMaxH}px;">
+            ${!hasNotes ? `
+              <div style="padding:10px 6px;">
+                <div style="font-weight:700;font-size:15px;margin-bottom:4px;">Brak dźwięków w tabulaturze</div>
+                <div style="font-size:13px;color:var(--text-muted);">
+                  Dotknij progu na gryfie poniżej, użyj klawiatury (<b>Q W E R T Y U...</b>) lub kliknij <b>„Dodaj nutę”</b>.
+                </div>
+              </div>
+            ` : scoreSvg}
+          </div>
         </div>
 
         <!-- Interaktywny gryf bezpośrednio pod pięciolinią (Zrzut 1) -->
@@ -7227,6 +7792,15 @@ async function renderStageAndInspector() {
         ` : ''}
       </div>`;
 
+    const compScoreWrap = document.getElementById('exerciseComposerScoreWrap');
+    if (compScoreWrap) {
+      if (shouldScrollToNewest) {
+        compScoreWrap.scrollTop = compScoreWrap.scrollHeight;
+      } else {
+        compScoreWrap.scrollTop = prevComposerScrollTop;
+      }
+    }
+
     insp.innerHTML = `
       <div style="background:var(--bg-card);padding:16px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
         <div style="font-size:22px;font-weight:800;">${hasNotes ? `${state.recordedEvents.length} nut` : 'Brak nut'}</div>
@@ -7251,43 +7825,42 @@ async function renderStageAndInspector() {
         <div>
           <div class="section-label">PIĘCIOLINIA (NUTY)</div>
           <div class="btn-grid-2">
-            <button class="chip-btn ${state.exerciseShowStaff!==false?'active':''}"
-                    onclick="state.exerciseShowStaff=true;renderStageAndInspector()">Wł.</button>
-            <button class="chip-btn ${state.exerciseShowStaff===false?'active':''}"
-                    onclick="state.exerciseShowStaff=false;state.tabCreationEnabled=true;renderStageAndInspector()">Wył.</button>
+            <button class="chip-btn ${state.exerciseShowStaff?'active':''}"
+                    onclick="setExerciseShowStaff(true)">Wł.</button>
+            <button class="chip-btn ${!state.exerciseShowStaff?'active':''}"
+                    onclick="setExerciseShowStaff(false)">Wył.</button>
           </div>
         </div>
         <div>
           <div class="section-label">TAB</div>
           <div class="btn-grid-2">
             <button class="chip-btn ${state.tabCreationEnabled?'active':''}"
-                    onclick="state.tabCreationEnabled=true;renderStageAndInspector()">Wł.</button>
+                    onclick="state.tabCreationEnabled=true;saveSettings();renderStageAndInspector()">Wł.</button>
             <button class="chip-btn ${!state.tabCreationEnabled?'active':''}"
-                    onclick="state.tabCreationEnabled=false;state.exerciseShowStaff=true;renderStageAndInspector()">Wył.</button>
+                    onclick="state.tabCreationEnabled=false;setExerciseShowStaff(true)">Wył.</button>
           </div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:10px;">
-        <div>
-          <div class="section-label">UKŁAD TABULATURY</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${!state.exerciseTabWrapRows?'active':''}" style="padding:7px 4px;font-size:11.5px;"
-                    onclick="state.exerciseTabWrapRows=false;renderStageAndInspector()">1 linia</button>
-            <button class="chip-btn ${state.exerciseTabWrapRows?'active':''}" style="padding:7px 4px;font-size:11.5px;"
-                    onclick="state.exerciseTabWrapRows=true;renderStageAndInspector()">Wiersze (2+)</button>
-          </div>
+      <div>
+        <div class="section-label">TAKTÓW W WIERSZU (ZAWIJANIE)</div>
+        <div style="display:grid;grid-template-columns:1.3fr repeat(4, 1fr);gap:4px;">
+          ${[0, 2, 4, 6, 8].map(n => `
+            <button class="chip-btn ${(state.exerciseBarsPerRow || 0) === n ? 'active' : ''}" style="padding:7px 2px;font-size:11.5px;"
+                    onclick="setExerciseBarsPerRow(${n})">${n === 0 ? 'Auto' : n}</button>
+          `).join('')}
         </div>
-        <div>
-          <div class="section-label">KLUCZ</div>
-          <div class="btn-grid-3">
-            <button class="chip-btn ${state.exerciseClef==='treble'?'active':''}" style="padding:7px 2px;font-size:11px;"
-                    onclick="state.exerciseClef='treble';renderStageAndInspector()">Wiol.</button>
-            <button class="chip-btn ${state.exerciseClef==='bass'?'active':''}" style="padding:7px 2px;font-size:11px;"
-                    onclick="state.exerciseClef='bass';renderStageAndInspector()">Bas.</button>
-            <button class="chip-btn ${state.exerciseClef==='auto'?'active':''}" style="padding:7px 2px;font-size:11px;"
-                    onclick="state.exerciseClef='auto';renderStageAndInspector()">Auto</button>
-          </div>
+      </div>
+
+      <div>
+        <div class="section-label">KLUCZ (GDY ROZWINIĘTO NUTY)</div>
+        <div class="btn-grid-3">
+          <button class="chip-btn ${state.exerciseClef==='treble'?'active':''}" style="padding:7px 2px;font-size:11px;"
+                  onclick="state.exerciseClef='treble';saveSettings();renderStageAndInspector()">Wiolinowy</button>
+          <button class="chip-btn ${state.exerciseClef==='bass'?'active':''}" style="padding:7px 2px;font-size:11px;"
+                  onclick="state.exerciseClef='bass';saveSettings();renderStageAndInspector()">Basowy</button>
+          <button class="chip-btn ${state.exerciseClef==='auto'?'active':''}" style="padding:7px 2px;font-size:11px;"
+                  onclick="state.exerciseClef='auto';saveSettings();renderStageAndInspector()">Auto</button>
         </div>
       </div>
 
@@ -7671,6 +8244,26 @@ function selectDiatonicArpeggio(rootPc, chordId) {
   renderAll();
 }
 
+function selectDiatonicSweepChord(rootPc, chordId) {
+  stopArpeggioPlayback(false);
+  state.rootPc = rootPc;
+  state.chordId = chordId;
+  state.arpTransitionId = 'same_chord_inversions';
+  state.arpActiveSegIdx = 0;
+  state.arpPosIdx = 0;
+  renderAll();
+}
+
+function launchDiatonicScaleSweep() {
+  stopArpeggioPlayback(false);
+  if (state.arpDiatonicScaleRootPc !== undefined && state.arpDiatonicScaleRootPc !== null) {
+    state.rootPc = state.arpDiatonicScaleRootPc;
+  }
+  state.arpTransitionId = 'diatonic_climb';
+  state.arpActiveSegIdx = 0;
+  renderAll();
+}
+
 function selectArpTransitionSegment(segIdx) {
   stopArpeggioPlayback(false);
   state.arpActiveSegIdx = segIdx;
@@ -7844,6 +8437,9 @@ function saveSettings() {
       alteredVoicingIntensity: state.alteredVoicingIntensity,
       movingVoices: state.movingVoices,
       maxDisplayedFret: state.maxDisplayedFret,
+      uiScaleMode: state.uiScaleMode,
+      midiKeyboardHidden: !!state.midiKeyboardHidden,
+      rightInspectorHidden: !!state.rightInspectorHidden,
       fretboardZoom: state.fretboardZoom,
       fretboardFitWidth: state.fretboardFitWidth,
       lockUnmarkedNotes: state.lockUnmarkedNotes,
@@ -7873,8 +8469,10 @@ function saveSettings() {
       timeSigDen: state.timeSigDen,
       exerciseClef: state.exerciseClef,
       tabCreationEnabled: state.tabCreationEnabled,
-      exerciseShowStaff: state.exerciseShowStaff,
-      exerciseTabWrapRows: state.exerciseTabWrapRows,
+      exerciseShowStaff: !!state.exerciseShowStaff,
+      exerciseStaffPrefV2: !!state.exerciseStaffPrefV2,
+      exerciseTabWrapRows: true,
+      exerciseBarsPerRow: state.exerciseBarsPerRow || 0,
       defaultDuration: state.defaultDuration,
       showExerciseNoteNames: state.showExerciseNoteNames,
       exerciseMinFret: state.exerciseMinFret,
@@ -7892,7 +8490,11 @@ function saveSettings() {
     };
     const jsonStr = JSON.stringify(payload);
     localStorage.setItem('apka_gitara_settings_v1', jsonStr);
-    fetch('/api/save_settings?data=' + encodeURIComponent(jsonStr)).catch(() => {});
+    fetch('/api/save_settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: jsonStr
+    }).catch(() => {});
   } catch (e) {}
 }
 
@@ -7909,6 +8511,62 @@ async function loadSettings() {
       Object.assign(state, diskData);
     }
   } catch (e) {}
+  // Domyślnie w sekcji Ćwiczenie nuty (pięciolinia) są zwinięte, a tabulatura (TAB) jest widoczna
+  if (!state.exerciseStaffPrefV2) {
+    state.exerciseShowStaff = false;
+    state.tabCreationEnabled = true;
+  }
+}
+
+function setExerciseShowStaff(show) {
+  state.exerciseShowStaff = !!show;
+  state.exerciseStaffPrefV2 = true;
+  if (!state.exerciseShowStaff) {
+    state.tabCreationEnabled = true;
+  }
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function toggleExerciseStaff() {
+  setExerciseShowStaff(!state.exerciseShowStaff);
+}
+
+function buildExerciseStaffBarHtml() {
+  const open = !!state.exerciseShowStaff;
+  return `
+    <button type="button" class="ex-staff-toggle-bar ${open ? 'open' : ''}" onclick="toggleExerciseStaff()"
+            title="${open ? 'Kliknij, aby zwinąć pięciolinię (nuty) i zostawić samą tabulaturę' : 'Kliknij, aby rozwinąć pięciolinię (nuty) nad tabulaturą'}">
+      <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span>🎼 Zapis nutowy (pięciolinia)</span>
+        <span class="ex-staff-hint">${open ? 'Widoczne nuty + tabulatura (TAB)' : 'Domyślnie ukryte — wyświetlana jest sama tabulatura (TAB)'}</span>
+      </span>
+      <span class="ex-staff-pill">${open ? '▾ Zwiń nuty' : '▸ Rozwiń nuty'}</span>
+    </button>`;
+}
+
+function setExerciseBarsPerRow(n) {
+  const allowed = [0, 2, 4, 6, 8];
+  state.exerciseBarsPerRow = allowed.includes(n) ? n : 0;
+  state.exerciseTabWrapRows = true;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function buildExerciseBarsPerRowControlHtml(compact = false) {
+  const cur = [0, 2, 4, 6, 8].includes(state.exerciseBarsPerRow) ? state.exerciseBarsPerRow : 0;
+  const opts = compact ? [0, 4, 6, 8] : [0, 2, 4, 6, 8];
+  return `
+    <div style="display:flex;align-items:center;gap:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:3px 6px;">
+      <span style="font-size:11px;color:var(--text-muted);font-weight:700;padding:0 3px;white-space:nowrap;">Taktów w linii:</span>
+      ${opts.map(n => `
+        <button class="chip-btn ${cur === n ? 'active' : ''}" style="padding:3px 8px;font-size:11px;"
+                onclick="setExerciseBarsPerRow(${n})"
+                title="${n === 0 ? 'Automatyczne zawijanie taktów do nowej linii bez poziomego paska' : `Dokładnie ${n} takty w każdym wierszu`}">
+          ${n === 0 ? 'Auto' : n}
+        </button>
+      `).join('')}
+    </div>`;
 }
 
 function setAlteredIntensity(id, val) {
@@ -9406,9 +10064,24 @@ async function loadWorkshopPatternIntoTab(groupSize) {
   renderStageAndInspector();
 }
 
-function downloadTabExport(fmt) {
-  const evParam = encodeURIComponent(JSON.stringify(state.recordedEvents));
-  window.location.href = `/api/export/${fmt}?events=${evParam}&bpm=${state.tempoBpm}`;
+async function downloadTabExport(fmt) {
+  try {
+    const res = await fetch(`/api/export/${fmt}?bpm=${state.tempoBpm}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.recordedEvents)
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (fmt === 'mid') ? 'cwiczenie_tuxguitar.mid' : 'cwiczenie_tuxguitar.gp5';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  } catch (e) {}
 }
 
 // Mapowanie klawiszy do komponowania dokładnie jak na dwuwarstwowym pianinie:
@@ -9509,17 +10182,17 @@ function getDurationBeats(durCode, isTuplet) {
 function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
   const evs = state.recordedEvents || [];
   const isPlayer = highlightIdx >= 0;
-  const showStaff = state.exerciseShowStaff !== false;
+  const showStaff = !!state.exerciseShowStaff;
   const showTab = state.tabCreationEnabled || !showStaff;
-  const wrapRows = !!state.exerciseTabWrapRows;
+  const barsPerRow = [0, 2, 4, 6, 8].includes(state.exerciseBarsPerRow) ? state.exerciseBarsPerRow : 0;
 
-  const baseColW = 46;
-  const x0 = showStaff ? 96 : 58;
+  const x0 = showStaff ? 86 : 48;
+  const rightMargin = 14;
   const staffGap = 10;
   const tabGap = showStaff ? 12 : 14; // Większa, czytelniejsza tabulatura gdy nuty są wyłączone!
-  const staffTopRel = 32;
-  const tabTopRel = showStaff ? 110 : 28;
-  const rowH = showStaff ? (showTab ? 204 : 114) : 116;
+  const staffTopRel = 34;
+  const tabTopRel = showStaff ? 112 : 36;
+  const rowH = showStaff ? (showTab ? 208 : 118) : 124;
   const rowGapY = 18;
 
   let useBass = state.exerciseClef === 'bass';
@@ -9536,194 +10209,261 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
   const refDia = useBass ? 18 : 30;
   const measureBeats = state.timeSigNum * (4 / Math.max(1, state.timeSigDen));
 
-  // Wylicz takty dla wszystkich zdarzeń, żeby w trybie wieloliniowym ładnie zawijać na granicach taktów
-  const barMeta = [];
+  // 1. Pogrupuj zdarzenia w pełne takty (measures)
+  const measures = [];
   {
-    let acc = 0, bNum = 1;
+    let curM = { barNum: 1, events: [], totalBeats: 0 };
     evs.forEach((ev, idx) => {
       const dur = ev.dur !== undefined ? ev.dur : 0;
-      acc += getDurationBeats(dur, ev.tuplet === 3);
-      const isBarEnd = (acc >= measureBeats - 0.001 && idx < evs.length - 1);
-      barMeta.push({ barNum: bNum, isBarEnd });
-      if (isBarEnd) { acc = 0; bNum++; }
-    });
-  }
-
-  // Podział na wiersze (1 linia przewijana albo wiele wierszy wypełniających okno!)
-  const rows = [];
-  const targetRowW = Math.max(700, Math.round(availWidth || 1040));
-  if (!wrapRows || evs.length === 0) {
-    const W = Math.max(targetRowW, x0 + evs.length * baseColW + 24);
-    rows.push({ start: 0, end: evs.length, W, colW: baseColW });
-  } else {
-    const maxPerRow = Math.max(8, Math.floor((targetRowW - x0 - 20) / 40));
-    let cur = 0;
-    while (cur < evs.length) {
-      let end = Math.min(evs.length, cur + maxPerRow);
-      if (end < evs.length) {
-        // Jeśli w pobliżu końca wiersza wypada kreska taktowa, zawijaj dokładnie na takcie
-        let bestBarBreak = -1;
-        for (let k = end - 1; k >= Math.max(cur + Math.floor(maxPerRow * 0.55), cur + 4); k--) {
-          if (barMeta[k] && barMeta[k].isBarEnd) { bestBarBreak = k + 1; break; }
-        }
-        if (bestBarBreak > cur) end = bestBarBreak;
+      const beats = getDurationBeats(dur, ev.tuplet === 3);
+      if (curM.events.length > 0 && curM.totalBeats >= measureBeats - 0.001) {
+        measures.push(curM);
+        curM = { barNum: curM.barNum + 1, events: [], totalBeats: 0 };
       }
-      const nInRow = Math.max(1, end - cur);
-      // Rozciągnij odstępy pełnych wierszy równo do prawej krawędzi okna!
-      const isLastShort = (end === evs.length && nInRow < Math.max(6, Math.floor(maxPerRow * 0.65)));
-      const rowColW = isLastShort ? baseColW : ((targetRowW - x0 - 24) / nInRow);
-      rows.push({ start: cur, end, W: targetRowW, colW: Math.min(64, Math.max(32, rowColW)) });
-      cur = end;
+      curM.events.push({ ev, idx, beats });
+      curM.totalBeats += beats;
+    });
+    if (curM.events.length > 0) {
+      measures.push(curM);
     }
   }
 
-  const totalW = wrapRows ? targetRowW : rows[0].W;
+  // 2. Zawsze zawijaj na wiersze dopasowane do szerokości (bez poziomego paska przewijania!)
+  const targetRowW = Math.max(620, Math.round(availWidth || 1000));
+  const usableW = Math.max(420, targetRowW - x0 - rightMargin);
+  const rows = [];
+
+  if (measures.length === 0) {
+    rows.push({ measures: [] });
+  } else if (barsPerRow > 0) {
+    // Stała liczba taktów w wierszu (2 / 4 / 6 / 8)
+    for (let i = 0; i < measures.length; i += barsPerRow) {
+      rows.push({ measures: measures.slice(i, i + barsPerRow) });
+    }
+  } else {
+    // Tryb Auto: zawijaj takty jak tekst — gdy kolejny takt się nie mieści, przechodzi od razu do nowej linii!
+    let curRow = [];
+    let curPrefW = 0;
+    for (const m of measures) {
+      const slotEst = Math.max(Math.round(measureBeats), m.events.length);
+      const prefW = Math.max(130, slotEst * 38 + 20);
+      if (curRow.length > 0 && curPrefW + prefW > usableW) {
+        rows.push({ measures: curRow });
+        curRow = [m];
+        curPrefW = prefW;
+      } else {
+        curRow.push(m);
+        curPrefW += prefW;
+      }
+    }
+    if (curRow.length > 0) rows.push({ measures: curRow });
+  }
+
+  const totalW = targetRowW;
   const totalH = rows.length * rowH + Math.max(0, rows.length - 1) * rowGapY;
-  const svgStyle = wrapRows ? 'width:100%;height:auto;display:block;' : 'display:block;';
-  let svg = `<svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="${svgStyle}" xmlns="http://www.w3.org/2000/svg">`;
+  let svg = `<svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">`;
 
   rows.forEach((rowInfo, rowIdx) => {
     const yOff = rowIdx * (rowH + rowGapY);
-    const W = rowInfo.W;
-    const colW = rowInfo.colW;
+    const W = targetRowW;
     const staffTop = yOff + staffTopRel;
     const tabTop = yOff + tabTopRel;
     const topVisual = showStaff ? staffTop : tabTop;
     const endY = showTab ? (tabTop + 5 * tabGap) : (staffTop + 4 * staffGap);
-    const startBarNum = (rowInfo.start < barMeta.length) ? barMeta[rowInfo.start].barNum : 1;
+    const rowMeasures = rowInfo.measures;
+    const isLastRow = (rowIdx === rows.length - 1);
 
-    // Numer taktu na początku wiersza + tempo w pierwszym wierszu
-    svg += `<text x="14" y="${yOff + 18}" fill="#9ca3af" font-size="10.5" font-weight="700">${startBarNum}</text>`;
+    // Tempo w pierwszym wierszu
     if (rowIdx === 0) {
-      svg += `<text x="${showStaff ? 84 : 46}" y="${yOff + 16}" fill="#e7e1d8" font-size="12" font-weight="700">♩ = ${state.tempoBpm}</text>`;
+      svg += `<text x="${showStaff ? 84 : 48}" y="${yOff + 15}" fill="#e7e1d8" font-size="11.5" font-weight="700">♩ = ${state.tempoBpm}</text>`;
     }
 
-    // 1. Pięciolinia nutowa (opcjonalna — można wyłączyć, żeby widzieć więcej tabulatury!)
+    // 1. Pięciolinia nutowa (opcjonalna — zwijana/rozwijana paskiem)
     if (showStaff) {
       for (let i = 0; i < 5; i++) {
         const y = staffTop + i * staffGap;
-        svg += `<line x1="12" y1="${y}" x2="${W - 12}" y2="${y}" stroke="#6b6257" stroke-width="1.2"/>`;
+        svg += `<line x1="12" y1="${y}" x2="${W - rightMargin}" y2="${y}" stroke="#6b6257" stroke-width="1.2"/>`;
       }
-      svg += `<text x="20" y="${staffTop + (useBass ? 30 : 35)}" fill="${isPlayer ? '#e7e1d8' : '#f39237'}" font-size="34">${clefSymbol}</text>`;
+      svg += `<text x="18" y="${staffTop + (useBass ? 30 : 35)}" fill="${isPlayer ? '#e7e1d8' : '#f39237'}" font-size="33">${clefSymbol}</text>`;
       if (rowIdx === 0) {
-        svg += `<text x="54" y="${staffTop + 18}" fill="#d6cec2" font-size="14" font-weight="800">${state.timeSigNum}</text>`;
-        svg += `<text x="54" y="${staffTop + 37}" fill="#d6cec2" font-size="14" font-weight="800">${state.timeSigDen}</text>`;
+        svg += `<text x="50" y="${staffTop + 18}" fill="#d6cec2" font-size="14" font-weight="800">${state.timeSigNum}</text>`;
+        svg += `<text x="50" y="${staffTop + 37}" fill="#d6cec2" font-size="14" font-weight="800">${state.timeSigDen}</text>`;
       }
-      svg += `<line x1="${W - 12}" y1="${staffTop}" x2="${W - 12}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="${rowIdx === rows.length - 1 ? '1.8' : '1.2'}"/>`;
+      svg += `<line x1="${W - rightMargin}" y1="${staffTop}" x2="${W - rightMargin}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="${isLastRow ? '1.8' : '1.2'}"/>`;
     }
 
     // 2. 6-liniowa Tabulatura (TAB)
     if (showTab) {
       for (let s = 0; s < 6; s++) {
         const y = tabTop + s * tabGap;
-        svg += `<line x1="12" y1="${y}" x2="${W - 12}" y2="${y}" stroke="#524940" stroke-width="1.15"/>`;
+        svg += `<line x1="12" y1="${y}" x2="${W - rightMargin}" y2="${y}" stroke="#524940" stroke-width="1.15"/>`;
       }
       const tabMidH = 5 * tabGap;
-      svg += `<text x="20" y="${tabTop + tabMidH * 0.30}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">T</text>`;
-      svg += `<text x="20" y="${tabTop + tabMidH * 0.56}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">A</text>`;
-      svg += `<text x="20" y="${tabTop + tabMidH * 0.82}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">B</text>`;
-      svg += `<line x1="${W - 12}" y1="${tabTop}" x2="${W - 12}" y2="${tabTop + 5 * tabGap}" stroke="#6b6257" stroke-width="${rowIdx === rows.length - 1 ? '1.8' : '1.2'}"/>`;
+      svg += `<text x="18" y="${tabTop + tabMidH * 0.30}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">T</text>`;
+      svg += `<text x="18" y="${tabTop + tabMidH * 0.56}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">A</text>`;
+      svg += `<text x="18" y="${tabTop + tabMidH * 0.82}" fill="#9ca3af" font-size="${showStaff ? 13 : 14}" font-weight="800">B</text>`;
+      svg += `<line x1="${W - rightMargin}" y1="${tabTop}" x2="${W - rightMargin}" y2="${tabTop + 5 * tabGap}" stroke="#6b6257" stroke-width="${isLastRow ? '1.8' : '1.2'}"/>`;
     }
 
-    for (let idx = rowInfo.start; idx < rowInfo.end; idx++) {
-      const ev = evs[idx];
-      const localIdx = idx - rowInfo.start;
-      const x = x0 + localIdx * colW;
-      const isActive = (idx === highlightIdx);
-      const colColor = isActive ? '#4ade80' : '#e7e1d8';
-      const dur = ev.dur !== undefined ? ev.dur : 0;
+    if (rowMeasures.length === 0) return;
 
-      svg += `<g style="cursor:pointer" ${isActive ? 'data-ex-active="1"' : ''} onclick="onExerciseScoreNoteClick(${idx})">`;
-      if (isActive) {
-        svg += `<rect x="${x - 16}" y="${topVisual - 14}" width="32" height="${(endY - topVisual) + 24}" rx="6" fill="rgba(34,197,94,0.14)" stroke="rgba(74,222,128,0.45)" stroke-width="1"/>`;
-      }
-
-      if (ev.rest) {
-        const restY = showStaff ? (staffTop + 26) : (tabTop + 2.7 * tabGap);
-        svg += `<text x="${x}" y="${restY}" fill="${isActive ? '#f39237' : '#9ca3af'}" font-size="18" font-weight="700" text-anchor="middle">𝄽</text>`;
+    // 3. Wylicz szerokości poszczególnych taktów w tym wierszu (skalowane do 100% szerokości bez przelewania!)
+    const weights = rowMeasures.map(m => Math.max(2.5, m.events.length + 0.8));
+    const sumWeights = weights.reduce((a, b) => a + b, 0);
+    let barWidths;
+    if (barsPerRow > 0) {
+      // W trybie stałej liczby taktów (2/4/6/8): pełny wiersz wypełnia 100%, a niepełny ostatni zachowuje proporcje slotów
+      const fillRatio = (isLastRow && rowMeasures.length < barsPerRow)
+        ? (rowMeasures.length / barsPerRow)
+        : 1.0;
+      const allocW = Math.min(usableW, Math.max(usableW * fillRatio, rowMeasures.reduce((a, m) => a + Math.max(120, m.events.length * 26 + 18), 0)));
+      barWidths = weights.map(w => (w / sumWeights) * allocW);
+    } else {
+      // Tryb Auto: pełne wiersze wyrównane do prawej krawędzi; niepełny ostatni wiersz zachowuje naturalne odstępy
+      const prefWidths = rowMeasures.map(m => Math.max(135, Math.max(Math.round(measureBeats), m.events.length) * 38 + 20));
+      const totalPref = prefWidths.reduce((a, b) => a + b, 0);
+      if (!isLastRow || totalPref >= usableW * 0.82) {
+        barWidths = weights.map(w => (w / sumWeights) * usableW);
       } else {
-        const midi = ev.midi || 60;
-        const oct = Math.floor(midi / 12) - 1;
-        const pc = ((midi % 12) + 12) % 12;
-        const nm = ev.note || labels[pc];
-
-        if (showStaff) {
-          const dia = oct * 7 + diaPc[pc];
-          const rawNoteY = (staffTop + 40) - (dia - refDia) * 5;
-          const noteY = Math.max(yOff + 12, Math.min(staffTop + 62, rawNoteY));
-
-          for (let ly = staffTop + 50; ly <= noteY + 1 && ly <= staffTop + 62; ly += 10) {
-            svg += `<line x1="${x - 11}" y1="${ly}" x2="${x + 11}" y2="${ly}" stroke="#8c7f72" stroke-width="1.1"/>`;
-          }
-          for (let ly = staffTop - 10; ly >= noteY - 1 && ly >= yOff + 12; ly -= 10) {
-            svg += `<line x1="${x - 11}" y1="${ly}" x2="${x + 11}" y2="${ly}" stroke="#8c7f72" stroke-width="1.1"/>`;
-          }
-          if (nm.includes('#')) {
-            svg += `<text x="${x - 12}" y="${noteY + 4}" fill="${colColor}" font-size="12" font-weight="800" text-anchor="middle">#</text>`;
-          } else if (nm.includes('b')) {
-            svg += `<text x="${x - 12}" y="${noteY + 4}" fill="${colColor}" font-size="12" font-weight="800" text-anchor="middle">♭</text>`;
-          }
-          if (dur <= -1) {
-            svg += `<ellipse cx="${x}" cy="${noteY}" rx="6.5" ry="4.5" fill="none" stroke="${colColor}" stroke-width="2"/>`;
-          } else {
-            svg += `<ellipse cx="${x}" cy="${noteY}" rx="6.2" ry="4.6" fill="${colColor}"/>`;
-          }
-          if (dur > -2) {
-            const stemDown = noteY <= staffTop + 20;
-            const sx = stemDown ? (x - 5.5) : (x + 5.5);
-            const sy2 = stemDown ? (noteY + 24) : (noteY - 24);
-            svg += `<line x1="${sx}" y1="${noteY}" x2="${sx}" y2="${sy2}" stroke="${colColor}" stroke-width="1.6"/>`;
-            if (dur >= 1) {
-              const dir = stemDown ? -1 : 1;
-              svg += `<path d="M${sx},${sy2} Q${sx + 9},${sy2 + 6 * dir} ${sx + 4},${sy2 + 12 * dir}" fill="none" stroke="${colColor}" stroke-width="1.6"/>`;
-            }
-            if (dur >= 2) {
-              const dir = stemDown ? -1 : 1;
-              const sy3 = sy2 + 5 * dir;
-              svg += `<path d="M${sx},${sy3} Q${sx + 9},${sy3 + 6 * dir} ${sx + 4},${sy3 + 12 * dir}" fill="none" stroke="${colColor}" stroke-width="1.6"/>`;
-            }
-          }
-          if (ev.tuplet === 3) {
-            svg += `<text x="${x}" y="${noteY - 26}" fill="#4ade80" font-size="10" font-weight="800" text-anchor="middle">3</text>`;
-          }
-        }
-
-        const isRootPc = (pc === state.rootPc);
-        const topNoteLbl = (state.labelType === 'intervals')
-          ? computeIntervalLabel(pc, state.rootPc, false)
-          : nm;
-        if (state.showExerciseNoteNames) {
-          svg += `<text x="${x}" y="${topVisual - 6}" fill="${isRootPc ? '#f39237' : '#f5f2eb'}" font-size="10" font-weight="${isRootPc ? '800' : '700'}" text-anchor="middle">${topNoteLbl}</text>`;
-        } else if (isRootPc && showTab && !showStaff) {
-          svg += `<circle cx="${x}" cy="${topVisual - 10}" r="2.6" fill="#f39237"><title>Tonika (1)</title></circle>`;
-        }
-
-        if (showTab && ev.s !== undefined && ev.f !== undefined && ev.s >= 0 && ev.f >= 0) {
-          const row = 5 - ev.s;
-          const ty = tabTop + row * tabGap;
-          const boxW = String(ev.f).length > 1 ? 22 : 18;
-          const tabBg = isActive ? '#22c55e' : '#15110e';
-          const tabTxt = isActive ? '#05140b' : '#f5f2eb';
-          svg += `<rect x="${x - boxW / 2}" y="${ty - 7.5}" width="${boxW}" height="15" rx="3.5" fill="${tabBg}" stroke="${isActive ? '#bbf7d0' : 'none'}" stroke-width="${isActive ? '1.1' : '0'}"/>`;
-          svg += `<text x="${x}" y="${ty + 4.2}" fill="${tabTxt}" font-size="${showStaff ? 12 : 13}" font-weight="800" text-anchor="middle">${ev.f}</text>`;
-          if (ev.tech && ev.tech !== '-' && ev.tech !== '—') {
-            svg += `<text x="${x + boxW / 2 + 4}" y="${ty - 2}" fill="#4ade80" font-size="9" font-weight="800">${ev.tech}</text>`;
-          }
-        }
+        barWidths = prefWidths;
       }
-      svg += `</g>`;
+    }
 
-      if (barMeta[idx] && barMeta[idx].isBarEnd && idx < rowInfo.end - 1) {
-        const barX = x + colW * 0.5;
+    let cursorX = x0;
+    rowMeasures.forEach((m, mIdx) => {
+      const barStartX = cursorX;
+      const barW = barWidths[mIdx];
+      const barEndX = barStartX + barW;
+      const isLastMeasureOfAll = (isLastRow && mIdx === rowMeasures.length - 1);
+      const isIncompleteTail = isLastMeasureOfAll && (m.totalBeats < measureBeats - 0.001);
+
+      // Numer taktu na początku każdego taktu
+      const barNumX = (mIdx === 0) ? 14 : (barStartX + 4);
+      svg += `<text x="${barNumX}" y="${yOff + 16}" fill="#9ca3af" font-size="10" font-weight="700">${m.barNum}</text>`;
+
+      // Kreska taktowa z lewej strony dla taktów > 0 w wierszu
+      if (mIdx > 0) {
         if (showStaff) {
-          svg += `<line x1="${barX}" y1="${staffTop}" x2="${barX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.2"/>`;
+          svg += `<line x1="${barStartX}" y1="${staffTop}" x2="${barStartX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.25"/>`;
         }
         if (showTab) {
-          svg += `<line x1="${barX}" y1="${tabTop}" x2="${barX}" y2="${tabTop + 5 * tabGap}" stroke="#524940" stroke-width="1.2"/>`;
+          svg += `<line x1="${barStartX}" y1="${tabTop}" x2="${barStartX}" y2="${tabTop + 5 * tabGap}" stroke="#5c5248" stroke-width="1.25"/>`;
         }
-        svg += `<text x="${barX + 5}" y="${yOff + 18}" fill="#9ca3af" font-size="10.5" font-weight="700">${barMeta[idx].barNum + 1}</text>`;
       }
-    }
+
+      // Rozmieszczenie zdarzeń wewnątrz taktu (stabilne sloty podczas wpisywania ostatniego niepełnego taktu!)
+      const padL = Math.min(16, Math.max(7, barW * 0.07));
+      const padR = Math.min(14, Math.max(7, barW * 0.06));
+      const innerW = Math.max(20, barW - padL - padR);
+      const slotCount = isIncompleteTail
+        ? Math.max(m.events.length, Math.max(1, Math.round(measureBeats)))
+        : Math.max(1, m.events.length);
+      const slotW = innerW / slotCount;
+      const noteScale = Math.min(1.0, Math.max(0.66, slotW / 24));
+      const fretFontSize = Math.round(((showStaff ? 12 : 13) * noteScale) * 10) / 10;
+      const boxH = Math.round(15 * noteScale * 10) / 10;
+      const noteNameFontSize = Math.round(10 * noteScale * 10) / 10;
+
+      m.events.forEach(({ ev, idx }, k) => {
+        const x = barStartX + padL + (k + 0.5) * slotW;
+        const isActive = (idx === highlightIdx);
+        const colColor = isActive ? '#4ade80' : '#e7e1d8';
+        const dur = ev.dur !== undefined ? ev.dur : 0;
+
+        svg += `<g style="cursor:pointer" ${isActive ? 'data-ex-active="1"' : ''} onclick="onExerciseScoreNoteClick(${idx})">`;
+        if (isActive) {
+          const hlW = Math.max(18, Math.min(32, slotW * 0.92));
+          svg += `<rect x="${x - hlW / 2}" y="${topVisual - 14}" width="${hlW}" height="${(endY - topVisual) + 24}" rx="6" fill="rgba(34,197,94,0.14)" stroke="rgba(74,222,128,0.45)" stroke-width="1"/>`;
+        }
+
+        if (ev.rest) {
+          const restY = showStaff ? (staffTop + 26) : (tabTop + 2.7 * tabGap);
+          svg += `<text x="${x}" y="${restY}" fill="${isActive ? '#f39237' : '#9ca3af'}" font-size="${Math.round(18 * noteScale)}" font-weight="700" text-anchor="middle">𝄽</text>`;
+        } else {
+          const midi = ev.midi || 60;
+          const oct = Math.floor(midi / 12) - 1;
+          const pc = ((midi % 12) + 12) % 12;
+          const nm = ev.note || labels[pc];
+
+          if (showStaff) {
+            const dia = oct * 7 + diaPc[pc];
+            const rawNoteY = (staffTop + 40) - (dia - refDia) * 5;
+            const noteY = Math.max(yOff + 12, Math.min(staffTop + 62, rawNoteY));
+
+            for (let ly = staffTop + 50; ly <= noteY + 1 && ly <= staffTop + 62; ly += 10) {
+              svg += `<line x1="${x - 10 * noteScale}" y1="${ly}" x2="${x + 10 * noteScale}" y2="${ly}" stroke="#8c7f72" stroke-width="1.1"/>`;
+            }
+            for (let ly = staffTop - 10; ly >= noteY - 1 && ly >= yOff + 12; ly -= 10) {
+              svg += `<line x1="${x - 10 * noteScale}" y1="${ly}" x2="${x + 10 * noteScale}" y2="${ly}" stroke="#8c7f72" stroke-width="1.1"/>`;
+            }
+            if (nm.includes('#')) {
+              svg += `<text x="${x - 11 * noteScale}" y="${noteY + 4}" fill="${colColor}" font-size="${Math.round(12 * noteScale)}" font-weight="800" text-anchor="middle">#</text>`;
+            } else if (nm.includes('b')) {
+              svg += `<text x="${x - 11 * noteScale}" y="${noteY + 4}" fill="${colColor}" font-size="${Math.round(12 * noteScale)}" font-weight="800" text-anchor="middle">♭</text>`;
+            }
+            if (dur <= -1) {
+              svg += `<ellipse cx="${x}" cy="${noteY}" rx="${6.2 * noteScale}" ry="${4.3 * noteScale}" fill="none" stroke="${colColor}" stroke-width="1.9"/>`;
+            } else {
+              svg += `<ellipse cx="${x}" cy="${noteY}" rx="${6.0 * noteScale}" ry="${4.4 * noteScale}" fill="${colColor}"/>`;
+            }
+            if (dur > -2) {
+              const stemDown = noteY <= staffTop + 20;
+              const sx = stemDown ? (x - 5.2 * noteScale) : (x + 5.2 * noteScale);
+              const sy2 = stemDown ? (noteY + 23) : (noteY - 23);
+              svg += `<line x1="${sx}" y1="${noteY}" x2="${sx}" y2="${sy2}" stroke="${colColor}" stroke-width="1.5"/>`;
+              if (dur >= 1) {
+                const dir = stemDown ? -1 : 1;
+                svg += `<path d="M${sx},${sy2} Q${sx + 8 * noteScale},${sy2 + 6 * dir} ${sx + 3.5 * noteScale},${sy2 + 11 * dir}" fill="none" stroke="${colColor}" stroke-width="1.5"/>`;
+              }
+              if (dur >= 2) {
+                const dir = stemDown ? -1 : 1;
+                const sy3 = sy2 + 5 * dir;
+                svg += `<path d="M${sx},${sy3} Q${sx + 8 * noteScale},${sy3 + 6 * dir} ${sx + 3.5 * noteScale},${sy3 + 11 * dir}" fill="none" stroke="${colColor}" stroke-width="1.5"/>`;
+              }
+            }
+            if (ev.tuplet === 3) {
+              svg += `<text x="${x}" y="${noteY - 25}" fill="#4ade80" font-size="${Math.round(10 * noteScale)}" font-weight="800" text-anchor="middle">3</text>`;
+            }
+          }
+
+          const isRootPc = (pc === state.rootPc);
+          const topNoteLbl = (state.labelType === 'intervals')
+            ? computeIntervalLabel(pc, state.rootPc, false)
+            : nm;
+          if (state.showExerciseNoteNames) {
+            svg += `<text x="${x}" y="${topVisual - 6}" fill="${isRootPc ? '#f39237' : '#f5f2eb'}" font-size="${noteNameFontSize}" font-weight="${isRootPc ? '800' : '700'}" text-anchor="middle">${topNoteLbl}</text>`;
+          } else if (isRootPc && showTab && !showStaff) {
+            svg += `<circle cx="${x}" cy="${topVisual - 10}" r="2.6" fill="#f39237"><title>Tonika (1)</title></circle>`;
+          }
+
+          if (showTab && ev.s !== undefined && ev.f !== undefined && ev.s >= 0 && ev.f >= 0) {
+            const row = 5 - ev.s;
+            const ty = tabTop + row * tabGap;
+            const boxW = Math.round(((String(ev.f).length > 1 ? 22 : 17) * noteScale) * 10) / 10;
+            const tabBg = isActive ? '#22c55e' : '#15110e';
+            const tabTxt = isActive ? '#05140b' : '#f5f2eb';
+            svg += `<rect x="${x - boxW / 2}" y="${ty - boxH / 2}" width="${boxW}" height="${boxH}" rx="3.5" fill="${tabBg}" stroke="${isActive ? '#bbf7d0' : 'none'}" stroke-width="${isActive ? '1.1' : '0'}"/>`;
+            svg += `<text x="${x}" y="${ty + fretFontSize * 0.34}" fill="${tabTxt}" font-size="${fretFontSize}" font-weight="800" text-anchor="middle">${ev.f}</text>`;
+            if (ev.tech && ev.tech !== '-' && ev.tech !== '—') {
+              svg += `<text x="${x + boxW / 2 + 3}" y="${ty - 2}" fill="#4ade80" font-size="${Math.round(9 * noteScale)}" font-weight="800">${ev.tech}</text>`;
+            }
+          }
+        }
+        svg += `</g>`;
+      });
+
+      // Zamykająca kreska taktowa jeśli takt nie sięga prawej krawędzi (np. niepełny ostatni wiersz)
+      if (isLastMeasureOfAll && barEndX < W - rightMargin - 6) {
+        if (showStaff) {
+          svg += `<line x1="${barEndX}" y1="${staffTop}" x2="${barEndX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.4"/>`;
+        }
+        if (showTab) {
+          svg += `<line x1="${barEndX}" y1="${tabTop}" x2="${barEndX}" y2="${tabTop + 5 * tabGap}" stroke="#5c5248" stroke-width="1.4"/>`;
+        }
+      }
+
+      cursorX = barEndX;
+    });
   });
 
   svg += `</svg>`;
