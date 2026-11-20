@@ -1,0 +1,58 @@
+{
+  "name": "@markusstrasser/pitchplease",
+  "version": "3.1.0",
+  "description": "Polyphonic pitch and chord detection in the browser. Pick a trained model (runs in an AudioWorklet) or the tiny FFT picker. No dependencies.",
+  "type": "module",
+  "main": "./pitchplease.js",
+  "module": "./pitchplease.js",
+  "types": "./pitchplease.d.ts",
+  "exports": {
+    ".": {
+      "types": "./pitchplease.d.ts",
+      "default": "./pitchplease.js"
+    },
+    "./engine/worklet.js": "./engine/worklet.js",
+    "./engine/*.wasm": "./engine/*.wasm",
+    "./models/*": "./models/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "pitchplease.js",
+    "pitchplease.d.ts",
+    "engine/",
+    "models/"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs --check && bun test --parallel",
+    "test:ui": "node tests/ui/run.mjs",
+    "vendor": "node scripts/vendor.mjs",
+    "dev": "bun dev-testing.js"
+  },
+  "keywords": [
+    "pitch",
+    "detection",
+    "polyphonic",
+    "chord",
+    "audio",
+    "music",
+    "transcription",
+    "audioworklet",
+    "web-audio",
+    "fft"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markusstrasser/pitchplease.git"
+  },
+  "homepage": "https://github.com/markusstrasser/pitchplease#readme",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

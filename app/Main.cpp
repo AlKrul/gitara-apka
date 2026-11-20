@@ -1075,6 +1075,57 @@ std::string handleWorkshopEventsApi(std::string_view query) {
     return oss.str();
 }
 
+bool tryReadWebAsset(std::string_view urlPath, std::string& outBody, std::string_view& outMime) {
+    constexpr std::string_view kPrefix = "/web/";
+    if (urlPath.size() <= kPrefix.size() || urlPath.substr(0, kPrefix.size()) != kPrefix) {
+        return false;
+    }
+    std::string_view rel = urlPath.substr(kPrefix.size());
+    if (rel.empty() || rel.front() == '/' || rel.find("..") != std::string_view::npos ||
+        rel.find('\\') != std::string_view::npos || rel.find('\0') != std::string_view::npos) {
+        return false;
+    }
+    for (char c : rel) {
+        const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+                        c == '/' || c == '.' || c == '-' || c == '_';
+        if (!ok) return false;
+    }
+
+    auto endsWith = [&](std::string_view suffix) {
+        return rel.size() >= suffix.size() && rel.substr(rel.size() - suffix.size()) == suffix;
+    };
+    if (endsWith(".js") || endsWith(".mjs")) {
+        outMime = "application/javascript; charset=utf-8";
+    } else if (endsWith(".css")) {
+        outMime = "text/css; charset=utf-8";
+    } else if (endsWith(".html")) {
+        outMime = "text/html; charset=utf-8";
+    } else if (endsWith(".svg")) {
+        outMime = "image/svg+xml";
+    } else if (endsWith(".json")) {
+        outMime = "application/json; charset=utf-8";
+    } else if (endsWith(".wasm")) {
+        outMime = "application/wasm";
+    } else if (endsWith(".bin")) {
+        outMime = "application/octet-stream";
+    } else {
+        return false;
+    }
+
+    const std::string candidates[2] = {
+        std::string("web/") + std::string(rel),
+        std::string("../web/") + std::string(rel)
+    };
+    for (const auto& filePath : candidates) {
+        std::ifstream ifs(filePath, std::ios::binary);
+        if (ifs) {
+            outBody.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+            return true;
+        }
+    }
+    return false;
+}
+
 void openDesktopAppWindow(int port) {
     std::string url = "http://127.0.0.1:" + std::to_string(port);
     // W środowisku Windows + WSL2 otwieramy natywne okno aplikacyjne bez paska adresu (--app=...)
@@ -1093,7 +1144,18 @@ int main(int argc, char** argv) {
         if (std::string_view(argv[i]) == "--headless-check") {
             auto initJson = handleInitApi();
             auto fbJson = handleFretboardApi("rootPc=0&scaleId=major");
-            return (!initJson.empty() && !fbJson.empty()) ? 0 : 1;
+            std::string dspModule, ppModule, ppWasm, ppModel, ppBridge;
+            std::string_view dspMime, ppMime, wasmMime, binMime, bridgeMime;
+            const bool webDspOk = tryReadWebAsset("/web/js/dsp/guitarDspEngine.js", dspModule, dspMime) &&
+                                  !dspModule.empty() && dspMime.find("javascript") != std::string_view::npos;
+            const bool pitchPleaseOk =
+                tryReadWebAsset("/web/vendor/pitchplease/pitchplease.js", ppModule, ppMime) && !ppModule.empty() &&
+                tryReadWebAsset("/web/vendor/pitchplease/engine/incport.wasm", ppWasm, wasmMime) && !ppWasm.empty() &&
+                wasmMime == "application/wasm" &&
+                tryReadWebAsset("/web/vendor/pitchplease/models/piano.bin", ppModel, binMime) && !ppModel.empty() &&
+                binMime == "application/octet-stream" &&
+                tryReadWebAsset("/web/js/dsp/pitchPleaseBridge.js", ppBridge, bridgeMime) && !ppBridge.empty();
+            return (!initJson.empty() && !fbJson.empty() && webDspOk && pitchPleaseOk) ? 0 : 1;
         }
     }
 
@@ -1120,7 +1182,7 @@ int main(int argc, char** argv) {
             break;
         }
     }
-    if (!bound || ::listen(serverFd, 16) < 0) {
+    if (!bound || ::listen(serverFd, 32) < 0) {
         std::cerr << "Nie udalo sie uruchomic lokalnego serwera GUI.\n";
         ::close(serverFd);
         return 1;
@@ -1248,6 +1310,15 @@ int main(int argc, char** argv) {
             } else {
                 const char* html = gitara::app::ui::kDesktopGuiHtml;
                 sendResponse("200 OK", "text/html; charset=utf-8", html, std::strlen(html));
+            }
+        } else if (path.size() > 5 && path.substr(0, 5) == "/web/") {
+            std::string assetBody;
+            std::string_view assetMime;
+            if (tryReadWebAsset(path, assetBody, assetMime)) {
+                sendResponse("200 OK", assetMime, assetBody.data(), assetBody.size());
+            } else {
+                const char* notFound = "Not Found";
+                sendResponse("404 Not Found", "text/plain; charset=utf-8", notFound, std::strlen(notFound));
             }
         } else if (path == "/api/init") {
             std::string body = handleInitApi();

@@ -1,4 +1,5 @@
 #include "gitara/dsp/ChordDetector.h"
+#include "gitara/dsp/GuitarNoteEngine.h"
 #include "gitara/dsp/KarplusStrongSynth.h"
 #include "gitara/dsp/OnsetDetector.h"
 #include "gitara/dsp/PitchDetector.h"
@@ -18,6 +19,7 @@
 #include "gitara/theory/Scale.h"
 #include "gitara/theory/Tuning.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <numbers>
@@ -613,12 +615,267 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
     CHECK(sessionMgr.dashboardStats().firstWeekPlanDayCompleted == 1);
 }
 
+void testGuitarNoteEngineCqtFluxHpsAndSustain() {
+    using namespace gitara::dsp;
+    constexpr double kSr = 48000.0;
+
+    // Pomocnik: realistyczna harmoniczna struna gitarowa z naturalnym wygaszaniem (h1..h5)
+    auto addPluckedString = [&](std::vector<float>& buf, double startSec, int midi, double decayTauSec, float amp = 0.25f) {
+        const double f0 = 440.0 * std::pow(2.0, (midi - 69) / 12.0);
+        const std::size_t startIdx = static_cast<std::size_t>(std::llround(startSec * kSr));
+        const double hAmps[5] = {1.0, 0.72, 0.45, 0.28, 0.16};
+        for (std::size_t i = startIdx; i < buf.size(); ++i) {
+            const double t = static_cast<double>(i - startIdx) / kSr;
+            const double atk = std::min(1.0, t / 0.004);
+            double s = 0.0;
+            for (int h = 0; h < 5; ++h) {
+                const double fh = f0 * static_cast<double>(h + 1);
+                if (fh >= kSr * 0.45) break;
+                const double env = std::exp(-t / (decayTauSec / (1.0 + 0.35 * h)));
+                s += hAmps[h] * env * std::sin(2.0 * std::numbers::pi * fh * t);
+            }
+            buf[i] += static_cast<float>(amp * atk * s / 2.2);
+        }
+    };
+
+    GuitarDspConfig cfg{};
+    cfg.sampleRate = kSr;
+    GuitarNoteEngine engine(cfg);
+
+    // 1. Odrzucanie przydźwięku 50 Hz i niskiego uderzenia w pudło (< 60 Hz)
+    {
+        engine.reset();
+        std::vector<float> hum(static_cast<std::size_t>(0.4 * kSr), 0.0f);
+        for (std::size_t i = 0; i < hum.size(); ++i) {
+            const double t = static_cast<double>(i) / kSr;
+            hum[i] = 0.22f * static_cast<float>(std::sin(2.0 * std::numbers::pi * 50.0 * t)) +
+                     0.18f * static_cast<float>(std::sin(2.0 * std::numbers::pi * 35.0 * t));
+        }
+        std::vector<NoteEvent> evs;
+        engine.pushSamples(hum.data(), hum.size(), evs);
+        CHECK(evs.empty());
+    }
+
+    // 2. Pełny zakres gryfu gitary (od Eb2 = 77.8 Hz aż po A5 = 880 Hz — dowód że LPF 4800 Hz nie zabija HPS!)
+    for (int testMidi : {39, 40, 45, 50, 55, 59, 64, 76, 81}) {
+        engine.reset();
+        std::vector<float> pcm(static_cast<std::size_t>(0.35 * kSr), 0.0f);
+        addPluckedString(pcm, 0.02, testMidi, 0.9, 0.28f);
+        std::vector<NoteEvent> evs;
+        engine.pushSamples(pcm.data(), pcm.size(), evs);
+        bool sawExpectedOn = false;
+        for (const auto& e : evs) {
+            if (e.type == NoteEventType::NoteOn && e.midiNote == testMidi) {
+                sawExpectedOn = true;
+                CHECK(e.timestampMs < 110.0); // niska latencja detekcji ataku
+                break;
+            }
+        }
+        CHECK(sawExpectedOn);
+    }
+
+    // 3. KLUCZOWY SCENARIUSZ (Krok 1): Szybkie nakładające się nuty („dźwięk na dźwięku”)
+    //    E2 (40) wybrzmiewa bardzo długo (tau = 2.5 s), a na jego tle co 130 ms uderzamy G2 (43), B2 (47), D3 (50), E3 (52)!
+    {
+        engine.reset();
+        std::vector<float> pcm(static_cast<std::size_t>(1.05 * kSr), 0.0f);
+        const std::vector<int> seq = {40, 43, 47, 50, 52};
+        for (std::size_t i = 0; i < seq.size(); ++i) {
+            addPluckedString(pcm, 0.03 + static_cast<double>(i) * 0.14, seq[i], 2.5, 0.26f);
+        }
+        std::vector<NoteEvent> evs;
+        engine.pushSamples(pcm.data(), pcm.size(), evs);
+
+        std::vector<int> detectedOnOrder;
+        for (const auto& e : evs) {
+            if (e.type == NoteEventType::NoteOn) {
+                detectedOnOrder.push_back(e.midiNote);
+            }
+        }
+        for (int targetM : seq) {
+            bool found = std::find(detectedOnOrder.begin(), detectedOnOrder.end(), targetM) != detectedOnOrder.end();
+            CHECK(found);
+        }
+    }
+
+    // 4. Śledzenie podtrzymania (Sustain) oraz wygaszania -20 dB (Note Off + czas trzymania)
+    {
+        engine.reset();
+        // tau = 0.22 s -> spadek o -20 dB (do 10% amplitudy) następuje przy t = 0.22 * ln(10) ≈ 506 ms!
+        std::vector<float> pcm(static_cast<std::size_t>(1.10 * kSr), 0.0f);
+        addPluckedString(pcm, 0.03, 57, 0.22, 0.30f); // A3 (220 Hz)
+        std::vector<NoteEvent> evs;
+        engine.pushSamples(pcm.data(), pcm.size(), evs);
+
+        bool sawOn = false;
+        bool sawOff = false;
+        double heldDurationMs = 0.0;
+        for (const auto& e : evs) {
+            if (e.midiNote == 57 && e.type == NoteEventType::NoteOn) sawOn = true;
+            if (e.midiNote == 57 && e.type == NoteEventType::NoteOff) {
+                sawOff = true;
+                heldDurationMs = e.durationMs;
+            }
+        }
+        CHECK(sawOn);
+        CHECK(sawOff);
+        CHECK(heldDurationMs >= 320.0 && heldDurationMs <= 780.0);
+        CHECK(engine.activeNotes().empty());
+    }
+
+    // 5. Re-triggering: ponowne uderzenie tej samej aktywnej struny A2 (45) podczas jej wybrzmiewania
+    {
+        engine.reset();
+        std::vector<float> pcm(static_cast<std::size_t>(0.90 * kSr), 0.0f);
+        addPluckedString(pcm, 0.03, 45, 0.45, 0.22f); // 1. uderzenie A2
+        addPluckedString(pcm, 0.38, 45, 0.90, 0.32f); // 2. głośniejsze uderzenie A2 gdy 1. jeszcze wybrzmiewa!
+        std::vector<NoteEvent> evs;
+        engine.pushSamples(pcm.data(), pcm.size(), evs);
+
+        int onCount = 0;
+        bool sawRetriggerOff = false;
+        bool sawRetriggerOn = false;
+        for (const auto& e : evs) {
+            if (e.midiNote == 45 && e.type == NoteEventType::NoteOn) {
+                ++onCount;
+                if (e.isRetrigger) sawRetriggerOn = true;
+            }
+            if (e.midiNote == 45 && e.type == NoteEventType::NoteOff && e.isRetrigger) {
+                sawRetriggerOff = true;
+            }
+        }
+        CHECK(onCount >= 2);
+        CHECK(sawRetriggerOff);
+        CHECK(sawRetriggerOn);
+    }
+
+    // 6. Równoczesny dwudźwięk / akord (E2 + B2 + G3 uderzone jednocześnie)
+    {
+        engine.reset();
+        std::vector<float> pcm(static_cast<std::size_t>(0.40 * kSr), 0.0f);
+        addPluckedString(pcm, 0.03, 40, 1.5, 0.24f); // E2
+        addPluckedString(pcm, 0.03, 47, 1.5, 0.24f); // B2
+        addPluckedString(pcm, 0.03, 55, 1.5, 0.24f); // G3
+        std::vector<NoteEvent> evs;
+        engine.pushSamples(pcm.data(), pcm.size(), evs);
+
+        std::set<int> detectedSet;
+        for (const auto& e : evs) {
+            if (e.type == NoteEventType::NoteOn) detectedSet.insert(e.midiNote);
+        }
+        CHECK(detectedSet.count(40) == 1);
+        CHECK(detectedSet.count(47) == 1);
+        CHECK(detectedSet.count(55) == 1);
+    }
+
+    // 7. Kroki o półton na jednej strunie i skoki oktawowe przy tłumieniu dołu mikrofonu słuchawkowego (150 Hz HPF)
+    {
+        auto addRealMicNote = [&](std::vector<float>& buf, double startSec, double endSec, int midi, float amp) {
+            const double f0 = 440.0 * std::pow(2.0, (static_cast<double>(midi) - 69.0) / 12.0);
+            const std::size_t sIdx = static_cast<std::size_t>(std::llround(startSec * kSr));
+            const std::size_t eIdx = std::min(buf.size(), static_cast<std::size_t>(std::llround(endSec * kSr)));
+            const double hW[6] = {1.0, 1.35, 1.10, 0.75, 0.45, 0.25};
+            for (std::size_t i = sIdx; i < eIdx; ++i) {
+                const double t = static_cast<double>(i - sIdx) / kSr;
+                const double env = std::min(1.0, t / 0.005) * std::exp(-t / 1.2);
+                double s = 0.0;
+                for (int h = 0; h < 6; ++h) {
+                    const double fh = f0 * static_cast<double>(h + 1);
+                    if (fh >= kSr * 0.45) break;
+                    const double micGain = fh / std::sqrt(fh * fh + 150.0 * 150.0);
+                    s += hW[h] * micGain * std::exp(-t * 0.35 * h) * std::sin(2.0 * std::numbers::pi * fh * t);
+                }
+                buf[i] += static_cast<float>(amp * env * s);
+            }
+        };
+
+        const std::pair<int, int> semiPairs[5] = {{40, 41}, {45, 46}, {50, 51}, {55, 56}, {46, 45}};
+        for (const auto& [m1, m2] : semiPairs) {
+            engine.reset();
+            std::vector<float> pcm(static_cast<std::size_t>(1.0 * kSr), 0.0f);
+            addRealMicNote(pcm, 0.08, 0.36, m1, 0.25f);
+            addRealMicNote(pcm, 0.36, 0.85, m2, 0.25f);
+            std::vector<NoteEvent> evs;
+            engine.pushSamples(pcm.data(), pcm.size(), evs);
+            std::vector<int> ons;
+            for (const auto& e : evs) {
+                if (e.type == NoteEventType::NoteOn) ons.push_back(e.midiNote);
+            }
+            CHECK(ons.size() == 2);
+            if (ons.size() == 2) {
+                CHECK(ons[0] == m1);
+                CHECK(ons[1] == m2);
+            }
+        }
+
+        const std::array<int, 3> octSeqs[2] = {{40, 52, 64}, {64, 52, 40}};
+        for (const auto& seq : octSeqs) {
+            engine.reset();
+            std::vector<float> pcm(static_cast<std::size_t>(1.2 * kSr), 0.0f);
+            addRealMicNote(pcm, 0.08, 0.40, seq[0], 0.25f);
+            addRealMicNote(pcm, 0.40, 0.72, seq[1], 0.25f);
+            addRealMicNote(pcm, 0.72, 1.10, seq[2], 0.25f);
+            std::vector<NoteEvent> evs;
+            engine.pushSamples(pcm.data(), pcm.size(), evs);
+            std::vector<int> ons;
+            for (const auto& e : evs) {
+                if (e.type == NoteEventType::NoteOn) ons.push_back(e.midiNote);
+            }
+            CHECK(ons.size() == 3);
+            if (ons.size() == 3) {
+                CHECK(ons[0] == seq[0]);
+                CHECK(ons[1] == seq[1]);
+                CHECK(ons[2] == seq[2]);
+            }
+        }
+
+        // 8. 3-strunowe akordy brzmiące jednocześnie (Em, A5, D, G, C) — brak wirtualnej podstawy D2 i brak zrywania Sustainu!
+        const std::array<int, 3> strumChords[5] = {
+            {40, 47, 55}, {45, 52, 57}, {50, 57, 62}, {55, 59, 62}, {48, 52, 55}
+        };
+        for (const auto& ch : strumChords) {
+            engine.reset();
+            std::vector<float> pcm(static_cast<std::size_t>(0.65 * kSr), 0.0f);
+            for (std::size_t idx = 0; idx < 3; ++idx) {
+                const double f0 = 440.0 * std::pow(2.0, (static_cast<double>(ch[idx]) - 69.0) / 12.0);
+                const std::size_t sIdx = static_cast<std::size_t>(std::llround((0.08 + idx * 0.020) * kSr));
+                const double hW[6] = {1.0, 1.35, 1.10, 0.75, 0.45, 0.25};
+                const double phase0 = std::fmod(static_cast<double>(ch[idx]) * 1.732, 2.0 * std::numbers::pi);
+                for (std::size_t i = sIdx; i < pcm.size(); ++i) {
+                    const double t = static_cast<double>(i - sIdx) / kSr;
+                    const double env = std::min(1.0, t / 0.006) * std::exp(-t / 2.0);
+                    double s = 0.0;
+                    for (int h = 0; h < 6; ++h) {
+                        const double fh = f0 * static_cast<double>(h + 1) * (1.0 + 0.00015 * h * h);
+                        if (fh >= kSr * 0.45) break;
+                        const double micGain = fh / std::sqrt(fh * fh + 150.0 * 150.0);
+                        s += hW[h] * micGain * std::exp(-t * 0.35 * h) *
+                             std::sin(2.0 * std::numbers::pi * fh * t + phase0 * static_cast<double>(h + 1));
+                    }
+                    pcm[i] += static_cast<float>(0.22 * env * s);
+                }
+            }
+            std::vector<NoteEvent> evs;
+            engine.pushSamples(pcm.data(), pcm.size(), evs);
+            std::vector<int> active;
+            for (const auto& a : engine.activeNotes()) active.push_back(a.midiNote);
+            CHECK(active.size() == 3);
+            if (active.size() == 3) {
+                CHECK(active[0] == ch[0]);
+                CHECK(active[1] == ch[1]);
+                CHECK(active[2] == ch[2]);
+            }
+        }
+    }
+}
+
 } // namespace
 
 int main() {
     testTheoryConventionsAG();
     testFretboardMaskVoicingsAndHarmonics();
     testDspPitchChordAndSynth();
+    testGuitarNoteEngineCqtFluxHpsAndSustain();
     testScoreTabRecorderAndTuxGuitarExport();
     testExerciseVerifierAndMetronome();
     testArpeggioWorkshopEarTrainerProgressionsAndSessions();

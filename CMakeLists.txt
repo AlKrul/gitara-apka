@@ -45,6 +45,11 @@ add_library(gitara_dsp STATIC
     libs/dsp/src/OnsetDetector.cpp
     libs/dsp/src/ChordDetector.cpp
     libs/dsp/src/KarplusStrongSynth.cpp
+    libs/dsp/src/BandpassPreFilter.cpp
+    libs/dsp/src/CqtAnalyzer.cpp
+    libs/dsp/src/SpectralOnsetHps.cpp
+    libs/dsp/src/ActiveNoteTracker.cpp
+    libs/dsp/src/GuitarNoteEngine.cpp
 )
 target_include_directories(gitara_dsp PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/dsp/include
