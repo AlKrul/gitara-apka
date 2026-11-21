@@ -17,43 +17,11 @@ A guitar practice app in C++20: music theory, a DSP engine (pitch, chord and ons
 ## Requirements
 
 - A C++20 compiler: MSVC (Visual Studio 2022 or newer), GCC 13+ or Clang 16+
-- CMake 3.24+ (for the CMake build)
-- Git and network access, only if you build the JUCE app (JUCE 8 is downloaded at configure time)
 - Node.js 18+, only to run the JS DSP test
-
-## Building with CMake (recommended)
-
-CMake options:
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `GITARA_BUILD_TESTS` | `ON` | Build the `GitaraTests` test executable |
-| `GITARA_BUILD_JUCE_APP` | `OFF` | Download JUCE 8.0.4 and build the native `GitaraApp` GUI (Direct2D / ASIO / WASAPI) |
-
-### Core libraries and tests
-
-```sh
-cmake -B build -DGITARA_BUILD_JUCE_APP=OFF -DGITARA_BUILD_TESTS=ON
-cmake --build build --config Release
-ctest --test-dir build --output-on-failure -C Release
-```
-
-This is the same sequence CI runs on Windows and Linux (`.github/workflows/ci.yml`).
-
-### Native JUCE app (Windows)
-
-```sh
-cmake -B build-juce -DGITARA_BUILD_JUCE_APP=ON
-cmake --build build-juce --config Release
-```
-
-The first configure clones JUCE, so it takes a while. With Visual Studio generators the executable is `build-juce/GitaraApp_artefacts/Release/Apka Gitarowa.exe`.
-
-To open the project in Visual Studio, pick a generator explicitly, for example `-G "Visual Studio 17 2022"`, then open the generated solution in `build-juce/`. CLion can open the root `CMakeLists.txt` directly. Set `GITARA_BUILD_JUCE_APP=ON` in the CMake profile options to get the GUI target.
 
 ## Building with Make (Linux / WSL / macOS)
 
-The `Makefile` builds without CMake or JUCE. Without JUCE, `app/Main.cpp` uses POSIX sockets, so this route does not work with MSVC or MinGW on Windows; use WSL there.
+The `Makefile` builds without JUCE. Without JUCE, `app/Main.cpp` uses POSIX sockets, so this route does not work with MSVC or MinGW on Windows; use WSL there.
 
 ```sh
 make all     # builds build/GitaraTests and build/GitaraApp
@@ -82,9 +50,7 @@ To check that the theory API and all web assets (DSP modules, PitchPlease WASM a
 ## Tests
 
 ```sh
-# C++ unit tests (either build system)
-ctest --test-dir build --output-on-failure -C Release
-# or
+# C++ unit tests
 make test
 
 # JS DSP engine test (from the repository root)
