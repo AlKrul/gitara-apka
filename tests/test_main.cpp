@@ -588,8 +588,8 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
     CHECK(ear.completedRounds() == 2);
     CHECK(std::abs(ear.sessionAccuracyPercent() - 100.0) < 1e-6);
 
-    // 4. Zmiany / Biblioteka: 9 standardów, transpozycja, 12 tonacji, reharmonizacja, podkład (Gitara + Bas)
-    CHECK(builtinProgressions().size() == 9);
+    // 4. Zmiany / Biblioteka: 10 standardów, transpozycja, 12 tonacji, reharmonizacja, podkład (Gitara + Bas)
+    CHECK(builtinProgressions().size() == 10);
     auto blues = findBuiltinProgression("blues_12");
     CHECK(blues.has_value());
     CHECK(blues->sections.front().measures.size() == 12);

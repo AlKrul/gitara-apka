@@ -70,7 +70,7 @@ struct ChordProgression {
 };
 
 /// Zwraca bibliotekę wbudowanych standardów („Gotowe do grania”: Blues 12-taktowy, Jazz blues,
-/// ii–V–I, Molowe ii–V–i, I–V–vi–IV, vi–IV–I–V, I–vi–IV–V, Progresja z Kanonu, Kadencja andaluzyjska).
+/// ii–V–I, Molowe ii–V–i, I–V–vi–IV, vi–IV–I–V, vi–IV–I–iii, I–vi–IV–V, Progresja z Kanonu, Kadencja andaluzyjska).
 [[nodiscard]] const std::vector<ChordProgression>& builtinProgressions();
 
 /// Wyszukuje standard po identyfikatorze.
