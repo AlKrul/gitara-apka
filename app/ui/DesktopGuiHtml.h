@@ -6579,15 +6579,18 @@ function sendProgressionToChanges(degrees) {
   const chords = (state.diatonicData && state.diatonicData.chords) || [];
   if (chords.length < 7) return;
   const keyRoot = state.chordScaleRootPc;
+  const isMinorKey = (state.chordScaleId === 'natural_minor' || state.chordScaleId === 'minor');
+  // Przesunięcia w Zmianach liczone są od toniki tonacji durowej (moll = równoległa dur, np. C-moll -> Eb-dur)
+  const transposeRoot = isMinorKey ? (keyRoot + 3) % 12 : keyRoot;
   state.changesMeasures = degrees.map(dIdx => {
     const c = chords[dIdx % chords.length];
     return {
       volta: 0,
-      beats: [{ offsetSemi: (((c.rootPc - keyRoot) % 12) + 12) % 12, chordId: c.chordId, roman: c.roman }, null, null, null]
+      beats: [{ offsetSemi: (((c.rootPc - transposeRoot) % 12) + 12) % 12, chordId: c.chordId, roman: c.roman }, null, null, null]
     };
   });
   state.changesKeyRootPc = keyRoot;
-  state.changesIsMinor = (state.chordScaleId === 'natural_minor' || state.chordScaleId === 'minor');
+  state.changesIsMinor = isMinorKey;
   state.changesBpm = 100;
   state.changesFeel = 'Prosto';
   state.changesScreen = 'editor';
@@ -11021,10 +11024,16 @@ function selectChangesProgression(idx) {
   renderAll();
 }
 
+// Tonika, od której liczone są akordy progresji: w trybie moll progresja jest transponowana
+// do tonacji równoległej durowej (C-moll -> Eb-dur, A-moll -> C-dur).
+function getChangesTransposeRootPc() {
+  return (state.changesKeyRootPc + (state.changesIsMinor ? 3 : 0)) % 12;
+}
+
 function resolveChangesSlot(slot) {
   if (!slot) return null;
   const labels = getRootLabels();
-  const rootPc = ((state.changesKeyRootPc + (slot.offsetSemi || 0)) % 12 + 12) % 12;
+  const rootPc = ((getChangesTransposeRootPc() + (slot.offsetSemi || 0)) % 12 + 12) % 12;
   const rootName = labels[rootPc];
   const suffixMap = {
     'major': '',
@@ -11439,8 +11448,8 @@ function addChordToChangesMeasure(barIdx, targetBeatIdx = -1) {
   const bar = state.changesMeasures[barIdx];
   if (!bar) return;
   const palette = [
-    { offsetSemi: 0, chordId: state.changesIsMinor ? 'minor' : '7', roman: state.changesIsMinor ? 'i' : 'I7' },
-    { offsetSemi: 5, chordId: state.changesIsMinor ? 'minor' : '7', roman: state.changesIsMinor ? 'iv' : 'IV7' },
+    { offsetSemi: 0, chordId: '7', roman: 'I7' },
+    { offsetSemi: 5, chordId: '7', roman: 'IV7' },
     { offsetSemi: 7, chordId: '7', roman: 'V7' },
     { offsetSemi: 9, chordId: 'm7', roman: 'vim7' },
     { offsetSemi: 2, chordId: 'm7', roman: 'iim7' }
@@ -11469,7 +11478,7 @@ function reharmonizeChangesProgression() {
     if (!first) return;
     if (first.offsetSemi === 7 && first.chordId === '7') {
       // Wstaw ii–V lub substytucję trytonową ♭II7 w miejsce V7
-      bar.beats[0] = { offsetSemi: 2, chordId: state.changesIsMinor ? 'm7b5' : 'm7', roman: state.changesIsMinor ? 'iim7♭5' : 'iim7' };
+      bar.beats[0] = { offsetSemi: 2, chordId: 'm7', roman: 'iim7' };
       bar.beats[2] = { offsetSemi: 1, chordId: '7', roman: '♭II7 (SubV)' };
     } else if (first.chordId === 'major') {
       first.chordId = 'maj7';
@@ -11602,7 +11611,7 @@ function buildChangesLiveFretboardSvg(resolvedChord) {
   const fretW = boardW / maxFret;
   const stringH = boardH / 5;
   const targets = getActiveChangesPracticeTargetPcs();
-  const rootPc = resolvedChord ? resolvedChord.rootPc : state.changesKeyRootPc;
+  const rootPc = resolvedChord ? resolvedChord.rootPc : getChangesTransposeRootPc();
   const labels = getRootLabels();
 
   let svg = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
@@ -11649,7 +11658,13 @@ function renderChangesView(stage, insp) {
   const progs = state.initData.progressions;
   const activeProg = progs[state.selectedProgressionIdx] || progs[0];
   const labels = getRootLabels();
-  const keyName = `${labels[state.changesKeyRootPc]} ${state.changesIsMinor ? 'moll' : 'dur'}`;
+  // Nazwa tonacji z pisownią zgodną ze znakami przykluczowymi (np. Eb dur / C moll, nie D# dur)
+  const majPc = state.changesIsMinor ? (state.changesKeyRootPc + 3) % 12 : state.changesKeyRootPc;
+  const minPc = (majPc + 9) % 12;
+  const keyLabels = [1, 3, 5, 8, 10].includes(majPc)
+    ? ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
+    : (majPc === 6 ? labels : ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']);
+  const keyName = `${keyLabels[majPc]} dur / ${keyLabels[minPc]} moll`;
 
   // =========================================================================
   // EKRAN 5: SESJA ZAKOŃCZONA (Zrzut 5)
@@ -12029,7 +12044,7 @@ function renderChangesView(stage, insp) {
 
           <div style="display:flex;gap:8px;margin-top:4px;">
             <button class="chip-btn" style="padding:6px 12px;font-size:12px;"
-                    onclick="state.changesMeasures.push({volta:0,beats:[{offsetSemi:0,chordId:state.changesIsMinor?'minor':'7',roman:state.changesIsMinor?'i':'I7'},null,null,null]});renderStageAndInspector()">+ Dodaj takt</button>
+                    onclick="state.changesMeasures.push({volta:0,beats:[{offsetSemi:0,chordId:'7',roman:'I7'},null,null,null]});renderStageAndInspector()">+ Dodaj takt</button>
             <button class="chip-btn" style="padding:6px 12px;font-size:12px;"
                     onclick="if(state.changesMeasures.length>=2){state.changesMeasures[state.changesMeasures.length-2].volta=1;state.changesMeasures[state.changesMeasures.length-1].volta=2;renderStageAndInspector();}">+ Dodaj woltę</button>
           </div>
