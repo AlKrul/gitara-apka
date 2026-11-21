@@ -183,6 +183,27 @@ const std::vector<ChordProgression>& builtinProgressions() {
             v.push_back(std::move(p));
         }
 
+        // 6b. vi–IV–I–iii (C dur: Am F C Em)
+        {
+            ChordProgression p{};
+            p.id = "pop_6413";
+            p.title = "vi–IV–I–iii";
+            p.styleCategory = "Pop";
+            p.keyRoot = Note{Letter::C, Accidental::Natural};
+            p.tempoBpm = 100;
+
+            ProgressionSection secA{};
+            secA.name = "A";
+            secA.measures = {
+                singleChordBar(M6, "minor", "vi"),
+                singleChordBar(P4, "major", "IV"),
+                singleChordBar(P1, "major", "I"),
+                singleChordBar(M3, "minor", "iii")
+            };
+            p.sections.push_back(std::move(secA));
+            v.push_back(std::move(p));
+        }
+
         // 7. I–vi–IV–V (lata 50., C dur: C Am F G)
         {
             ChordProgression p{};
