@@ -260,6 +260,51 @@ void testFretboardMaskVoicingsAndHarmonics() {
         CHECK(hasC && hasE && hasBb);
     }
 
+    // Weryfikacja kapodastra (Capo 2, 5, 7, 10) dla brzmiącego akordu D dur (D=2, F#=6, A=9)
+    Chord dMajChord{Note{Letter::D, Accidental::Natural}, findChordDefinition("major")};
+    for (int capo : {2, 5, 7, 10}) {
+        auto capoMild = fb.generateChordVoicings(dMajChord, false, nullptr, VoicingSharpness::Mild, 0, capo);
+        auto capoSharp = fb.generateChordVoicings(dMajChord, true, nullptr, VoicingSharpness::Sharp, 0, capo);
+        auto capoTriad = fb.generateChordVoicings(dMajChord, false, nullptr, VoicingSharpness::Mild, 3, capo);
+        CHECK(!capoMild.empty());
+        CHECK(!capoSharp.empty());
+        CHECK(!capoTriad.empty());
+        bool hasCapoOpenFullTriad = false;
+        for (const auto& v : capoMild) {
+            bool hasD = false, hasFs = false, hasA = false, usesCapoStr = false;
+            for (int s = 0; s < fb.stringCount(); ++s) {
+                int fr = v.frets[static_cast<std::size_t>(s)];
+                if (fr >= 0) {
+                    CHECK(fr >= capo);
+                    CHECK(fr <= 24);
+                    if (fr == capo) usesCapoStr = true;
+                    int pc = fb.midiAt(s, fr) % 12;
+                    CHECK(pc == 2 || pc == 6 || pc == 9);
+                    if (pc == 2) hasD = true;
+                    if (pc == 6) hasFs = true;
+                    if (pc == 9) hasA = true;
+                }
+            }
+            CHECK(hasD && hasFs);
+            if (usesCapoStr && hasD && hasFs && hasA) hasCapoOpenFullTriad = true;
+        }
+        CHECK(hasCapoOpenFullTriad);
+        for (const auto& tv : capoTriad) {
+            bool hasD = false, hasFs = false, hasA = false;
+            for (int s = 0; s < fb.stringCount(); ++s) {
+                int fr = tv.frets[static_cast<std::size_t>(s)];
+                if (fr >= 0) {
+                    CHECK(fr >= capo);
+                    int pc = fb.midiAt(s, fr) % 12;
+                    if (pc == 2) hasD = true;
+                    if (pc == 6) hasFs = true;
+                    if (pc == 9) hasA = true;
+                }
+            }
+            CHECK(hasD && hasFs && hasA);
+        }
+    }
+
     // Flażolety naturalne na 6. strunie (E2): węzły nad progami 12 (E3), 7 (B3), 5 (E4) i tuż pod 4 (G#4)
     auto harmonics = fb.computeNaturalHarmonics(0, 0.0, 12.0, 6);
     CHECK(!harmonics.empty());
@@ -507,6 +552,98 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
         for (const auto& seg : tr5.segments) {
             CHECK(!seg.nodes.empty());
             CHECK(!seg.steps.empty());
+        }
+    }
+
+    // Regresje kanonicznych kształtów Sweep (G#m w Eb Standard i Am w Standard, bez pomijanych dźwięków)
+    {
+        auto hasExactNodeSet = [](const SweepShape& sh, std::vector<std::pair<int, int>> expected) {
+            if (sh.nodes.size() != expected.size()) return false;
+            std::vector<std::pair<int, int>> actual;
+            actual.reserve(sh.nodes.size());
+            for (const auto& n : sh.nodes) {
+                actual.emplace_back(n.position.stringIndex, n.position.fret);
+            }
+            std::sort(actual.begin(), actual.end());
+            std::sort(expected.begin(), expected.end());
+            return actual == expected;
+        };
+
+        auto hasNoSkippedChordTone = [&](const Fretboard& fbd, const Chord& ch, const SweepShape& sh) {
+            std::vector<int> midis;
+            for (const auto& n : sh.nodes) {
+                midis.push_back(fbd.midiAt(n.position.stringIndex, n.position.fret));
+            }
+            std::sort(midis.begin(), midis.end());
+            for (std::size_t i = 1; i < midis.size(); ++i) {
+                for (int mm = midis[i - 1] + 1; mm < midis[i]; ++mm) {
+                    if (ch.containsPitchClass(mm % 12)) return false;
+                }
+            }
+            return true;
+        };
+
+        Fretboard fbEb{findTuning("eb_standard"), 24};
+        Chord gSharpMin{Note{Letter::G, Accidental::Sharp}, findChordDefinition("minor")};
+        auto gs5 = generateSweepShapes(fbEb, gSharpMin, 5, 0, AccidentalMode::Sharps);
+        CHECK(!gs5.empty());
+        bool foundGs5A = false;
+        for (const auto& sh : gs5) {
+            if (hasExactNodeSet(sh, {{1, 12}, {2, 10}, {3, 9}, {4, 10}, {5, 8}, {5, 12}})) {
+                foundGs5A = true;
+                CHECK(!sh.hasFingerRoll);
+                CHECK(sh.label.find("od G# (1)") != std::string::npos);
+                CHECK(hasNoSkippedChordTone(fbEb, gSharpMin, sh));
+            }
+        }
+        CHECK(foundGs5A);
+
+        auto am5 = generateSweepShapes(fb, aMinChord, 5, 0, AccidentalMode::Sharps);
+        bool foundAm5A = false;
+        for (const auto& sh : am5) {
+            if (hasExactNodeSet(sh, {{1, 12}, {2, 10}, {3, 9}, {4, 10}, {5, 8}, {5, 12}})) {
+                foundAm5A = true;
+                CHECK(!sh.hasFingerRoll);
+                CHECK(hasNoSkippedChordTone(fb, aMinChord, sh));
+            }
+        }
+        CHECK(foundAm5A);
+
+        auto gs6 = generateSweepShapes(fbEb, gSharpMin, 6, 0, AccidentalMode::Sharps);
+        bool foundGs6E = false;
+        bool foundGs6A = false;
+        for (const auto& sh : gs6) {
+            if (hasExactNodeSet(sh, {{0, 5}, {0, 8}, {1, 7}, {2, 7}, {3, 5}, {4, 5}, {5, 5}, {5, 8}})) {
+                foundGs6E = true;
+                CHECK(hasNoSkippedChordTone(fbEb, gSharpMin, sh));
+            }
+            if (hasExactNodeSet(sh, {{0, 8}, {0, 12}, {1, 12}, {2, 10}, {3, 9}, {4, 10}, {5, 8}, {5, 12}})) {
+                foundGs6A = true;
+                CHECK(hasNoSkippedChordTone(fbEb, gSharpMin, sh));
+            }
+        }
+        CHECK(foundGs6E);
+        CHECK(foundGs6A);
+
+        // Wspinaczka diatoniczna (G# molowa naturalna w Eb Standard, 5 i 6 strun) - monotonicznie w górę gryfu
+        Scale gsMinScale{Note{Letter::G, Accidental::Sharp}, findScaleDefinition("natural_minor")};
+        for (int span : {5, 6}) {
+            auto climb = generateSweepTransition(fbEb, "diatonic_climb", 8, span, 0, &gSharpMin, &gsMinScale, AccidentalMode::Sharps, false);
+            CHECK(climb.segments.size() == 7);
+            for (std::size_t i = 1; i < climb.segments.size(); ++i) {
+                double prevC = 0.5 * (climb.segments[i - 1].minFret + climb.segments[i - 1].maxFret);
+                double curC = 0.5 * (climb.segments[i].minFret + climb.segments[i].maxFret);
+                CHECK(curC > prevC);
+            }
+        }
+
+        // startPositionIndex (1-based: 1 -> shapes[0], 2 -> shapes[1])
+        if (gs5.size() >= 2) {
+            auto c1 = generateSweepTransition(fbEb, "diatonic_climb", 8, 5, 1, &gSharpMin, &gsMinScale, AccidentalMode::Sharps, false);
+            auto c2 = generateSweepTransition(fbEb, "diatonic_climb", 8, 5, 2, &gSharpMin, &gsMinScale, AccidentalMode::Sharps, false);
+            CHECK(!c1.segments.empty() && !c2.segments.empty());
+            CHECK(c1.segments[0].minFret == gs5[0].minFret && c1.segments[0].maxFret == gs5[0].maxFret);
+            CHECK(c2.segments[0].minFret == gs5[1].minFret && c2.segments[0].maxFret == gs5[1].maxFret);
         }
     }
 

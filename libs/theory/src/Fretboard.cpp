@@ -295,10 +295,59 @@ std::vector<ChordVoicing> Fretboard::generateChordVoicings(
     bool includeTapping,
     const FretboardMask* mask,
     VoicingSharpness sharpness,
-    int maxStrings) const {
+    int maxStrings,
+    int capoFret) const {
     std::vector<ChordVoicing> voicings;
     if (!chord.definition || stringCount() < 3) {
         return voicings;
+    }
+
+    // Kapodaster na progu safeCapo: traktujemy próg kapodastra jako nowe siodełko (puste struny brzmią o +safeCapo półtonów wyżej),
+    // dzięki czemu generator odkrywa otwarte kształty oparte o kapodaster oraz wyższe pozycje na gryfie,
+    // a wynikowe progi zwracane są w bezwzględnych współrzędnych fizycznego gryfu!
+    const int safeCapo = std::clamp(capoFret, 0, std::max(0, fretCount_ - 4));
+    if (safeCapo > 0) {
+        Tuning shiftedTuning = tuning_;
+        for (auto& openP : shiftedTuning.openStrings) {
+            openP = Pitch::fromMidiNumber(openP.midiNumber() + safeCapo);
+        }
+        const int remFrets = std::max(4, fretCount_ - safeCapo);
+        Fretboard shiftedFb{std::move(shiftedTuning), remFrets};
+
+        std::optional<FretboardMask> shiftedMask;
+        if (mask) {
+            shiftedMask.emplace(stringCount(), remFrets);
+            for (int s = 0; s < stringCount(); ++s) {
+                for (int relF = 0; relF <= remFrets; ++relF) {
+                    shiftedMask->setAllowed(s, relF, mask->isAllowed(s, relF + safeCapo));
+                }
+            }
+        }
+
+        auto shiftedVoicings = shiftedFb.generateChordVoicings(
+            chord, includeTapping, shiftedMask ? &(*shiftedMask) : nullptr, sharpness, maxStrings, 0);
+        for (auto& v : shiftedVoicings) {
+            v.openStringsNote.clear();
+            for (int s = 0; s < stringCount(); ++s) {
+                int& f = v.frets[static_cast<std::size_t>(s)];
+                if (f >= 0) {
+                    const bool isCapoOpen = (f == 0);
+                    f += safeCapo;
+                    if (isCapoOpen) {
+                        if (v.openStringsNote.empty()) {
+                            v.openStringsNote = "kapo " + std::to_string(safeCapo) + " (";
+                        } else {
+                            v.openStringsNote += ",";
+                        }
+                        v.openStringsNote += pitchAt(s, f).note.toString(false);
+                    }
+                }
+            }
+            if (!v.openStringsNote.empty()) {
+                v.openStringsNote += ")";
+            }
+        }
+        return shiftedVoicings;
     }
 
     const auto requiredNotes = chord.notes();

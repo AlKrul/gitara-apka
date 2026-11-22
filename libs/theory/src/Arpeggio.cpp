@@ -178,90 +178,174 @@ std::vector<SweepShape> generateSweepShapes(
     };
     std::set<std::vector<std::pair<int, int>>> seen;
 
+    auto countSkippedChordTones = [&](int lowMidi, int highMidi) {
+        int skipped = 0;
+        for (int mm = lowMidi + 1; mm < highMidi; ++mm) {
+            if (chord.containsPitchClass(mm % 12)) ++skipped;
+        }
+        return skipped;
+    };
+
+    const int minDistinct = (reqCount <= 2) ? 2 : 3;
+    const int maxBodySpan = (span == 3) ? 4 : 5;
+
     for (std::size_t ti = 0; ti + 1 < topFrets.size(); ++ti) {
         int fTop1 = topFrets[ti];
         int fTop2 = topFrets[ti + 1];
         if (fTop2 - fTop1 < 2 || fTop2 - fTop1 > 6) continue;
         if (fTop1 > 19) continue;
 
-        // Okno pozycji lewej dłoni wokół fTop1 (dla 3 strun bardzo zwarte, dla 5-6 strun do 5 progów)
-        int boxMin = std::max(1, fTop1 - (span == 3 ? 2 : 3));
-        int boxMax = std::min(nFrets, fTop1 + (span == 3 ? 3 : 4));
+        // Okno pozycji lewej dłoni wokół fTop1 (rozszerzone na tyle, aby pomieścić kanoniczne kształty bez pominiętych składników)
+        const int boxMin = std::max(1, fTop1 - (span == 3 ? 2 : 3));
+        const int boxMax = std::min(nFrets, fTop1 + (span == 3 ? 4 : 5));
 
-        // Dobieramy po 1 nucie na każdą niższą strunę w kolejności od góry w dół, zachowując ściśle malejące MIDI
-        std::vector<ArpeggioPositionNode> picked;
-        picked.push_back(makeArpNode(fretboard, chord, topString, fTop2, mode));
-        picked.push_back(makeArpNode(fretboard, chord, topString, fTop1, mode));
-
-        int prevMidi = fretboard.midiAt(topString, fTop1);
-        int pcMask = (1 << (fretboard.midiAt(topString, fTop1) % 12)) |
-                     (1 << (fretboard.midiAt(topString, fTop2) % 12));
-        bool valid = true;
-
-        for (int s = topString - 1; s >= startString; --s) {
-            int bestFret = -1;
-            int bestScore = -9999;
-
+        std::vector<std::vector<int>> candFrets(static_cast<std::size_t>(nStrings));
+        bool allStringsHaveCand = true;
+        for (int s = startString; s < topString; ++s) {
             for (int f = boxMin; f <= boxMax; ++f) {
                 if (mask && !mask->isAllowed(s, f)) continue;
                 int m = fretboard.midiAt(s, f);
-                if (m >= prevMidi) continue;
-                int pc = m % 12;
-                if (!chord.containsPitchClass(pc)) continue;
-
-                // Preferuj brakujące składniki akordu, zwartą pozycję i unikaj skrajnych rozciągnięć
-                int score = 0;
-                bool missingEssential = ((essentialMask & (1 << pc)) != 0) && ((pcMask & (1 << pc)) == 0);
-                if (missingEssential) score += 100;
-                if ((pcMask & (1 << pc)) == 0) score += 45;
-                int distFromTop1 = std::abs(f - fTop1);
-                score -= distFromTop1 * 8;
-                // Lekki bonus za klasyczną piramidę/roll sweepową (progi blisko fTop1..fTop1+2)
-                if (f >= fTop1 - 1 && f <= fTop1 + 3) score += 15;
-                // Dla 5- i 6-strunowego sweepu preferuj prymę na najniższej strunie (E lub A)
-                if (s == startString && pc == chord.root.pitchClass()) score += 35;
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestFret = f;
+                if (chord.containsPitchClass(m % 12)) {
+                    candFrets[static_cast<std::size_t>(s)].push_back(f);
                 }
             }
-
-            if (bestFret < 0) {
-                valid = false;
+            if (candFrets[static_cast<std::size_t>(s)].empty()) {
+                allStringsHaveCand = false;
                 break;
             }
-            picked.push_back(makeArpNode(fretboard, chord, s, bestFret, mode));
-            prevMidi = fretboard.midiAt(s, bestFret);
-            pcMask |= (1 << (prevMidi % 12));
         }
+        if (!allStringsHaveCand) continue;
 
-        if (!valid) continue;
+        std::vector<int> curFrets(static_cast<std::size_t>(nStrings), -1);
+        std::vector<int> bestFrets(static_cast<std::size_t>(nStrings), -1);
+        curFrets[static_cast<std::size_t>(topString)] = fTop1;
+        bool foundBest = false;
+        int bestScore = std::numeric_limits<int>::min();
+        int bestPcMask = 0;
+
+        const int top1Midi = fretboard.midiAt(topString, fTop1);
+        const int top2Midi = fretboard.midiAt(topString, fTop2);
+        const int initPcMask = (1 << (top1Midi % 12)) | (1 << (top2Midi % 12));
+
+        // Dokładne przeszukiwanie po strunach topString-1 .. startString zamiast zachłannego wyboru na jednej strunie:
+        // premiuje kolejne składniki akordu (zero przeskoków), brak zbędnych przetoczeń palca i zwartą pozycję dłoni.
+        auto dfs = [&](auto& self, int s, int prevMidi, int prevFret, int pcMask,
+                       int bodyMinF, int bodyMaxF, int accSkipped, int accRolls, int accDist) -> void {
+            if (s < startString) {
+                int distinctCount = 0;
+                for (int b = 0; b < 12; ++b) {
+                    if (pcMask & (1 << b)) ++distinctCount;
+                }
+                if (distinctCount < minDistinct) return;
+
+                if (reqCount >= 4 && span >= 5) {
+                    int missing = 0;
+                    for (int b = 0; b < 12; ++b) {
+                        if ((essentialMask & (1 << b)) && !(pcMask & (1 << b))) ++missing;
+                    }
+                    if (missing > 1) return;
+                }
+
+                const int skipPenalty = (reqCount <= 3) ? 140 : 60;
+                int score = 0;
+                score -= accSkipped * skipPenalty;
+                score += distinctCount * 35;
+                if (reqCount >= 4 && (pcMask & essentialMask) == essentialMask) score += 170;
+                score -= accRolls * 18;
+                const int bodySpan = bodyMaxF - bodyMinF;
+                score -= bodySpan * 14;
+                if (bodySpan > 4) score -= (bodySpan - 4) * 20;
+                score -= accDist * 5;
+                const int lowPc = fretboard.midiAt(startString, curFrets[static_cast<std::size_t>(startString)]) % 12;
+                if (span >= 5 && lowPc == chord.root.pitchClass()) score += 26;
+
+                if (!foundBest || score > bestScore) {
+                    foundBest = true;
+                    bestScore = score;
+                    bestFrets = curFrets;
+                    bestPcMask = pcMask;
+                }
+                return;
+            }
+
+            for (int f : candFrets[static_cast<std::size_t>(s)]) {
+                int m = fretboard.midiAt(s, f);
+                if (m >= prevMidi) continue;
+                int nMin = std::min(bodyMinF, f);
+                int nMax = std::max(bodyMaxF, f);
+                if (nMax - nMin > maxBodySpan) continue;
+                if (std::max(nMax, fTop2) - nMin > 7) continue;
+
+                int skipped = countSkippedChordTones(m, prevMidi);
+                int roll = (f == prevFret) ? 1 : 0;
+                curFrets[static_cast<std::size_t>(s)] = f;
+                self(self, s - 1, m, f, pcMask | (1 << (m % 12)),
+                     nMin, nMax, accSkipped + skipped, accRolls + roll, accDist + std::abs(f - fTop1));
+            }
+        };
+
+        dfs(dfs, topString - 1, top1Midi, fTop1, initPcMask, fTop1, fTop1, 0, 0, 0);
+        if (!foundBest) continue;
+
+        std::vector<ArpeggioPositionNode> picked;
+        picked.push_back(makeArpNode(fretboard, chord, topString, fTop2, mode));
+        picked.push_back(makeArpNode(fretboard, chord, topString, fTop1, mode));
+        for (int s = topString - 1; s >= startString; --s) {
+            picked.push_back(makeArpNode(fretboard, chord, s, bestFrets[static_cast<std::size_t>(s)], mode));
+        }
+        int pcMask = bestPcMask;
 
         // Dla 6-strunowego sweepu sprawdź opcjonalny 2. dźwięk (hammer-on) na najgrubszej strunie E6
+        // — najpierw poniżej lowFret (np. 8-12 przy kształcie A-moll), a jeśli brak, powyżej lowFret (np. 5-8 przy E-moll).
         if (span == 6) {
-            int lowFret = picked.back().position.fret;
+            int lowFret = bestFrets[static_cast<std::size_t>(startString)];
             int lowMidi = fretboard.midiAt(startString, lowFret);
-            int nextStrMidi = fretboard.midiAt(startString + 1, picked[picked.size() - 2].position.fret);
-            for (int f2 = lowFret + 2; f2 <= std::min(nFrets, lowFret + 5); ++f2) {
-                if (mask && !mask->isAllowed(startString, f2)) continue;
-                int m2 = fretboard.midiAt(startString, f2);
-                if (m2 > lowMidi && m2 < nextStrMidi && chord.containsPitchClass(m2 % 12)) {
-                    picked.push_back(makeArpNode(fretboard, chord, startString, f2, mode));
-                    pcMask |= (1 << (m2 % 12));
-                    break;
+            int nextStrMidi = fretboard.midiAt(startString + 1, bestFrets[static_cast<std::size_t>(startString + 1)]);
+
+            int curMnF = 99, curMxF = 0;
+            for (const auto& n : picked) {
+                curMnF = std::min(curMnF, n.position.fret);
+                curMxF = std::max(curMxF, n.position.fret);
+            }
+
+            bool addedSixthExtra = false;
+            for (int f0 = lowFret - 2; f0 >= std::max(1, lowFret - 5); --f0) {
+                if (mask && !mask->isAllowed(startString, f0)) continue;
+                int m0 = fretboard.midiAt(startString, f0);
+                if (!chord.containsPitchClass(m0 % 12)) continue;
+                if (countSkippedChordTones(m0, lowMidi) != 0) continue;
+                const bool stretchOk = (lowFret - f0 <= 4) || (f0 >= 7 && lowFret - f0 <= 5);
+                if (!stretchOk) continue;
+                const int spanLimit = (f0 >= fTop1) ? 7 : 6;
+                if (std::max(curMxF, lowFret) - std::min(curMnF, f0) > spanLimit) continue;
+
+                picked.push_back(makeArpNode(fretboard, chord, startString, f0, mode));
+                pcMask |= (1 << (m0 % 12));
+                addedSixthExtra = true;
+                break;
+            }
+
+            if (!addedSixthExtra) {
+                for (int f2 = lowFret + 2; f2 <= std::min(nFrets, lowFret + 5); ++f2) {
+                    if (mask && !mask->isAllowed(startString, f2)) continue;
+                    int m2 = fretboard.midiAt(startString, f2);
+                    if (m2 > lowMidi && m2 < nextStrMidi && chord.containsPitchClass(m2 % 12) &&
+                        countSkippedChordTones(lowMidi, m2) == 0 &&
+                        countSkippedChordTones(m2, nextStrMidi) == 0 &&
+                        std::max(curMxF, f2) - std::min(curMnF, lowFret) <= 7) {
+                        picked.push_back(makeArpNode(fretboard, chord, startString, f2, mode));
+                        pcMask |= (1 << (m2 % 12));
+                        break;
+                    }
                 }
             }
         }
 
         // Wymagaj przynajmniej 3 różnych składników akordu (dla trójdźwięku: wszystkie 3; dla power chord: 2)
-        int minDistinct = (reqCount <= 2) ? 2 : 3;
         int distinctCount = 0;
         for (int b = 0; b < 12; ++b) if (pcMask & (1 << b)) ++distinctCount;
         if (distinctCount < minDistinct) continue;
-        // Dla akordów 4+ składnikowych wymagaj obecności tercji/kwarty i septymy/rozszerzenia (essentialMask)
         if (reqCount >= 4 && span >= 5 && (pcMask & essentialMask) != essentialMask) {
-            // Jeśli brakuje tylko 1 składnika w 3-strunowym, przepuść poniżej; w 5/6-strunowym pilnuj pokrycia
             int missing = 0;
             for (int b = 0; b < 12; ++b) {
                 if ((essentialMask & (1 << b)) && !(pcMask & (1 << b))) ++missing;
@@ -335,8 +419,13 @@ std::vector<SweepShape> generateSweepShapes(
 
     for (std::size_t i = 0; i < shapes.size(); ++i) {
         shapes[i].positionIndex = static_cast<int>(i);
+        std::string startTag;
+        if (!shapes[i].nodes.empty()) {
+            const auto& fn = shapes[i].nodes.front();
+            startTag = " · od " + fn.note.toString(false) + " (" + fn.intervalFromRoot.symbol(true) + ")";
+        }
         shapes[i].label = "Poz. " + std::to_string(i + 1) + " · pr. " +
-                          std::to_string(shapes[i].minFret) + "–" + std::to_string(shapes[i].maxFret);
+                          std::to_string(shapes[i].minFret) + "–" + std::to_string(shapes[i].maxFret) + startTag;
     }
 
     return shapes;
@@ -939,24 +1028,27 @@ SweepTransition generateSweepTransition(
 
         std::size_t chosenIdx = 0;
         if (prevCenterFret < 0.0) {
-            // Pierwszy akord: wybierz wg startPositionIndex (domyślnie środek gryfu ok. progów 5..12)
+            // Pierwszy akord: 0 = Auto (dobór strefy startowej), >= 1 = 1-indeksowany wybór pozycji startowej
             if (startPositionIndex > 0) {
-                chosenIdx = static_cast<std::size_t>(startPositionIndex) % shapes.size();
+                chosenIdx = static_cast<std::size_t>(startPositionIndex - 1) % shapes.size();
             } else {
+                const bool isClimbPreset = (presetId == "diatonic_climb" || presetId == "dim7_climb" || presetId == "same_chord_inversions");
+                const double idealStart = isClimbPreset ? 5.0 : 8.5;
                 double bestDiff = 1e9;
                 for (std::size_t i = 0; i < shapes.size(); ++i) {
                     double c = 0.5 * (shapes[i].minFret + shapes[i].maxFret);
-                    double d = std::abs(c - 8.5);
+                    double d = std::abs(c - idealStart);
                     if (d < bestDiff) { bestDiff = d; chosenIdx = i; }
                 }
             }
         } else if (sp.climbStep) {
-            // Wspinaczka: wybierz najbliższą pozycję ściśle powyżej poprzedniej (+1.5 .. +7 progów)
+            // Wspinaczka: wybierz najbliższą pozycję ściśle powyżej poprzedniej
+            const double minStep = (presetId == "diatonic_climb") ? 0.4 : 1.2;
             double bestScore = 1e9;
             bool foundHigher = false;
             for (std::size_t i = 0; i < shapes.size(); ++i) {
                 double c = 0.5 * (shapes[i].minFret + shapes[i].maxFret);
-                if (c > prevCenterFret + 1.2) {
+                if (c > prevCenterFret + minStep) {
                     double d = c - prevCenterFret;
                     if (d < bestScore) { bestScore = d; chosenIdx = i; foundHigher = true; }
                 }

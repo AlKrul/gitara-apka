@@ -368,6 +368,7 @@ std::string handleVoicingsApi(std::string_view query) {
     bool filterByScale = getQueryInt(query, "filterByScale", 0) != 0;
     int scaleRootPc = getQueryInt(query, "scaleRootPc", rootPc);
     std::string scaleId = getQueryParam(query, "scaleId", "major");
+    int capo = std::clamp(getQueryInt(query, "capo", 0), 0, 12);
 
     VoicingSharpness sharpness = VoicingSharpness::Mild;
     if (sharpnessStr == "sharp") sharpness = VoicingSharpness::Sharp;
@@ -437,6 +438,7 @@ std::string handleVoicingsApi(std::string_view query) {
     std::ostringstream oss;
     oss << "{\"resolvedRootPc\":" << rootPc
         << ",\"resolvedChordId\":\"" << jsonEscape(chordId) << "\""
+        << ",\"capo\":" << capo
         << ",\"matchingRootPcs\":[";
     for (std::size_t i = 0; i < matchingRootPcs.size(); ++i) {
         if (i > 0) oss << ",";
@@ -454,7 +456,13 @@ std::string handleVoicingsApi(std::string_view query) {
 
     for (const auto* d : defs) {
         Chord ch{root, d, std::nullopt};
-        auto list = fb.generateChordVoicings(ch, sharpness != VoicingSharpness::Mild, nullptr, sharpness, maxStrings);
+        std::string shapeSym;
+        if (capo > 0) {
+            Note shapeRoot = Note::fromPitchClass(((rootPc - capo) % 12 + 12) % 12, mode);
+            Chord shapeCh{shapeRoot, d, std::nullopt};
+            shapeSym = shapeCh.symbol(false, mode);
+        }
+        auto list = fb.generateChordVoicings(ch, sharpness != VoicingSharpness::Mild, nullptr, sharpness, maxStrings, capo);
         std::size_t limit = (!allTypes || defs.size() == 1)
             ? std::min<std::size_t>(28, list.size())
             : std::min<std::size_t>(defs.size() <= 4 ? 6 : 4, list.size());
@@ -465,10 +473,15 @@ std::string handleVoicingsApi(std::string_view query) {
             std::string info = v.usesTapping
                 ? "T = tapping prawą ręką"
                 : (v.isSharpVoicing ? "Chwyt ostry (rozciągnięty)" : "Chwyt łagodny");
+            if (capo > 0 && !shapeSym.empty()) {
+                info += " · kapo " + std::to_string(capo) + " (kształt " + shapeSym + ")";
+            }
             if (!v.openStringsNote.empty()) info += " · " + v.openStringsNote;
 
             oss << "{\"symbol\":\"" << jsonEscape(ch.symbol(false, mode))
-                << "\",\"rootPc\":" << rootPc
+                << "\",\"shapeSymbol\":\"" << jsonEscape(shapeSym)
+                << "\",\"capo\":" << capo
+                << ",\"rootPc\":" << rootPc
                 << ",\"activeStrings\":" << v.activeStrings
                 << ",\"fretSpan\":" << v.fretSpan
                 << ",\"info\":\"" << jsonEscape(info)
@@ -822,6 +835,16 @@ std::string handleArpeggioApi(std::string_view query) {
         << ",\"octaves\":" << octaves
         << ",\"viewMode\":\"" << jsonEscape(viewMode) << "\""
         << ",\"scaleFullName\":\"" << jsonEscape(sc.fullName(false)) << "\""
+        << ",\"scaleRootPc\":" << scaleRootPc
+        << ",\"scalePcs\":[";
+    {
+        const auto scNotes = sc.notes(mode);
+        for (std::size_t si = 0; si < scNotes.size(); ++si) {
+            if (si > 0) oss << ",";
+            oss << scNotes[si].pitchClass();
+        }
+    }
+    oss << "]"
         << ",\"formula\":[";
     for (std::size_t i = 0; i < chDef->intervals.size(); ++i) {
         if (i > 0) oss << ",";
@@ -1383,11 +1406,21 @@ int main(int argc, char** argv) {
             sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
                          "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.mid\"\r\n");
         } else if (path == "/api/export/progression_gp5") {
-            auto prog = findBuiltinProgression(getQueryParam(query, "id", "blues_12"));
-            Song song = generateBackingTrackSong(prog.value_or(builtinProgressions().front()));
+            auto progOpt = findBuiltinProgression(getQueryParam(query, "id", "blues_12"));
+            ChordProgression prog = progOpt.value_or(builtinProgressions().front());
+            int reqKey = getQueryInt(query, "keyRootPc", -1);
+            int reqBpm = getQueryInt(query, "bpm", 0);
+            if (reqKey >= 0 && reqKey < 12) {
+                prog = transposeProgression(prog, Note::fromPitchClass(reqKey));
+            }
+            if (reqBpm >= 40 && reqBpm <= 240) {
+                prog.tempoBpm = reqBpm;
+            }
+            Song song = generateBackingTrackSong(prog);
             auto bytes = exportToGp5Bytes(song);
-            sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
-                         "Content-Disposition: attachment; filename=\"blues_12_tuxguitar.gp5\"\r\n");
+            std::string fname = prog.id.empty() ? "progresja_tuxguitar.gp5" : (prog.id + "_tuxguitar.gp5");
+            std::string disp = "Content-Disposition: attachment; filename=\"" + fname + "\"\r\n";
+            sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(), disp);
         } else {
             const char* notFound = "{}";
             sendResponse("404 Not Found", "application/json", notFound, 2);

@@ -142,13 +142,14 @@ public:
         int positionIndex = 0,
         const FretboardMask* mask = nullptr) const;
 
-    /// Generuje grywalne chwyty (voicingi) akordu na gryfie (w tym z pustymi strunami, szerokimi chwytami i tappingiem T).
+    /// Generuje grywalne chwyty (voicingi) akordu na gryfie (w tym z pustymi strunami, szerokimi chwytami, tappingiem T oraz kapodastrem).
     [[nodiscard]] std::vector<ChordVoicing> generateChordVoicings(
         const Chord& chord,
         bool includeTapping = true,
         const FretboardMask* mask = nullptr,
         VoicingSharpness sharpness = VoicingSharpness::All,
-        int maxStrings = 0) const;
+        int maxStrings = 0,
+        int capoFret = 0) const;
 
     /// Wylicza wszystkie flażolety naturalne na gryfie (lub wybranej strunie) w zadanym zakresie progów.
     [[nodiscard]] std::vector<NaturalHarmonic> computeNaturalHarmonics(
