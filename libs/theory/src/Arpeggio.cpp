@@ -1128,69 +1128,106 @@ std::vector<DiatonicArpeggio> generateDiatonicArpeggios(
     }
 
     const auto scaleNotes = scale.notes(mode);
-    if (scaleNotes.size() < 7) {
+    const std::size_t nDeg = scaleNotes.size();
+    if (nDeg < 5) {
         return result;
     }
 
-    constexpr std::array<const char*, 7> upperRoman = {"I", "II", "III", "IV", "V", "VI", "VII"};
-    constexpr std::array<const char*, 7> lowerRoman = {"i", "ii", "iii", "iv", "v", "vi", "vii"};
+    constexpr std::array<const char*, 8> upperRoman = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII"};
+    constexpr std::array<const char*, 8> lowerRoman = {"i", "ii", "iii", "iv", "v", "vi", "vii", "viii"};
 
-    for (std::size_t i = 0; i < 7; ++i) {
+    auto findFirstFittingDef = [&](const Note& root, bool wantSevenths) -> const ChordDefinition* {
+        auto matchesInCategory = [&](std::string_view cat) -> const ChordDefinition* {
+            for (const auto& def : allChordDefinitions()) {
+                if (!cat.empty() && def.category != cat) continue;
+                Chord cand{root, &def, std::nullopt};
+                bool fits = true;
+                for (const auto& cn : cand.notes(mode)) {
+                    if (!scale.containsPitchClass(cn.pitchClass())) {
+                        fits = false;
+                        break;
+                    }
+                }
+                if (fits) return &def;
+            }
+            return nullptr;
+        };
+        if (wantSevenths) {
+            if (const auto* d = matchesInCategory("Septymowe")) return d;
+        }
+        if (const auto* d = matchesInCategory("Trójdźwięki")) return d;
+        if (const auto* d = matchesInCategory("Rozszerzone")) return d;
+        if (const auto* d = matchesInCategory("")) return d;
+        return findChordDefinition("5");
+    };
+
+    for (std::size_t i = 0; i < nDeg; ++i) {
         Note root = scaleNotes[i];
-        Note third = scaleNotes[(i + 2) % 7];
-        Note fifth = scaleNotes[(i + 4) % 7];
-        Note seventh = scaleNotes[(i + 6) % 7];
+        std::string chordId = "";
+        std::string numeral = upperRoman[std::min<std::size_t>(i, 7)];
 
-        int thirdSemi = (third.pitchClass() - root.pitchClass() + 12) % 12;
-        int fifthSemi = (fifth.pitchClass() - root.pitchClass() + 12) % 12;
-        int seventhSemi = (seventh.pitchClass() - root.pitchClass() + 12) % 12;
+        if (nDeg == 7) {
+            Note third = scaleNotes[(i + 2) % 7];
+            Note fifth = scaleNotes[(i + 4) % 7];
+            Note seventh = scaleNotes[(i + 6) % 7];
 
-        std::string chordId = "major";
-        std::string numeral = upperRoman[i];
+            int thirdSemi = (third.pitchClass() - root.pitchClass() + 12) % 12;
+            int fifthSemi = (fifth.pitchClass() - root.pitchClass() + 12) % 12;
+            int seventhSemi = (seventh.pitchClass() - root.pitchClass() + 12) % 12;
 
-        if (!seventhChords) {
-            if (thirdSemi == 4 && fifthSemi == 7) {
-                chordId = "major";
-                numeral = upperRoman[i];
-            } else if (thirdSemi == 3 && fifthSemi == 7) {
-                chordId = "minor";
-                numeral = lowerRoman[i];
-            } else if (thirdSemi == 3 && fifthSemi == 6) {
-                chordId = "dim";
-                numeral = std::string(lowerRoman[i]) + "°";
-            } else if (thirdSemi == 4 && fifthSemi == 8) {
-                chordId = "aug";
-                numeral = std::string(upperRoman[i]) + "+";
+            if (!seventhChords) {
+                if (thirdSemi == 4 && fifthSemi == 7) {
+                    chordId = "major";
+                    numeral = upperRoman[i];
+                } else if (thirdSemi == 3 && fifthSemi == 7) {
+                    chordId = "minor";
+                    numeral = lowerRoman[i];
+                } else if (thirdSemi == 3 && fifthSemi == 6) {
+                    chordId = "dim";
+                    numeral = std::string(lowerRoman[i]) + "°";
+                } else if (thirdSemi == 4 && fifthSemi == 8) {
+                    chordId = "aug";
+                    numeral = std::string(upperRoman[i]) + "+";
+                }
+            } else {
+                if (thirdSemi == 4 && fifthSemi == 7 && seventhSemi == 11) {
+                    chordId = "maj7";
+                    numeral = std::string(upperRoman[i]) + "maj7";
+                } else if (thirdSemi == 4 && fifthSemi == 7 && seventhSemi == 10) {
+                    chordId = "7";
+                    numeral = std::string(upperRoman[i]) + "7";
+                } else if (thirdSemi == 3 && fifthSemi == 7 && seventhSemi == 10) {
+                    chordId = "m7";
+                    numeral = std::string(lowerRoman[i]) + "m7";
+                } else if (thirdSemi == 3 && fifthSemi == 7 && seventhSemi == 11) {
+                    chordId = "mMaj7";
+                    numeral = std::string(lowerRoman[i]) + "m(maj7)";
+                } else if (thirdSemi == 3 && fifthSemi == 6 && seventhSemi == 10) {
+                    chordId = "m7b5";
+                    numeral = std::string(lowerRoman[i]) + "m7♭5";
+                } else if (thirdSemi == 3 && fifthSemi == 6 && seventhSemi == 9) {
+                    chordId = "dim7";
+                    numeral = std::string(lowerRoman[i]) + "dim7";
+                } else if (thirdSemi == 4 && fifthSemi == 8 && seventhSemi == 11) {
+                    chordId = "augMaj7";
+                    numeral = std::string(upperRoman[i]) + "maj7♯5";
+                }
             }
-        } else {
-            if (thirdSemi == 4 && fifthSemi == 7 && seventhSemi == 11) {
-                chordId = "maj7";
-                numeral = std::string(upperRoman[i]) + "maj7";
-            } else if (thirdSemi == 4 && fifthSemi == 7 && seventhSemi == 10) {
-                chordId = "7";
-                numeral = std::string(upperRoman[i]) + "7";
-            } else if (thirdSemi == 3 && fifthSemi == 7 && seventhSemi == 10) {
-                chordId = "m7";
-                numeral = std::string(lowerRoman[i]) + "m7";
-            } else if (thirdSemi == 3 && fifthSemi == 7 && seventhSemi == 11) {
-                chordId = "mMaj7";
-                numeral = std::string(lowerRoman[i]) + "m(maj7)";
-            } else if (thirdSemi == 3 && fifthSemi == 6 && seventhSemi == 10) {
-                chordId = "m7b5";
-                numeral = std::string(lowerRoman[i]) + "m7♭5";
-            } else if (thirdSemi == 3 && fifthSemi == 6 && seventhSemi == 9) {
-                chordId = "dim7";
-                numeral = std::string(lowerRoman[i]) + "dim7";
-            } else if (thirdSemi == 4 && fifthSemi == 8 && seventhSemi == 11) {
-                chordId = "augMaj7";
-                numeral = std::string(upperRoman[i]) + "maj7♯5";
-            }
+        }
+
+        const ChordDefinition* def = chordId.empty() ? findFirstFittingDef(root, seventhChords) : findChordDefinition(chordId);
+        if (!def) def = findFirstFittingDef(root, false);
+        if (chordId.empty() && def) {
+            const bool isMinFlavor = (def->id == "minor" || def->id == "m7" || def->id == "dim" || def->id == "m7b5" || def->id == "dim7" || def->id == "m6" || def->id == "madd9");
+            const std::size_t rIdx = std::min<std::size_t>(i, 7);
+            numeral = std::string(isMinFlavor ? lowerRoman[rIdx] : upperRoman[rIdx]) +
+                      (def->id == "major" || def->id == "minor" ? "" : def->symbolSuffix);
         }
 
         DiatonicArpeggio da{};
         da.degreeNumber = static_cast<int>(i + 1);
         da.romanNumeral = numeral;
-        da.chord = Chord{root, findChordDefinition(chordId), std::nullopt};
+        da.chord = Chord{root, def, std::nullopt};
         result.push_back(std::move(da));
     }
 

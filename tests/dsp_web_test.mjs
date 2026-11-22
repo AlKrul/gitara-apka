@@ -452,6 +452,47 @@ function runEngine(buf, engine) {
     }
   }
   console.log('[OK] Test 15: Wzmacniacz Crunch + EQ + cienkie struny (5/5 dwudźwięków G–B–E + 4/4 akordy 3-strunowe z 3. cienką)');
+
+  // 16. Tryb Zero-Calibration (samoadaptująca się bramka szumu wzmacniacza i czułość cienkich strun bez kalibracji)
+  {
+    const zeroSig = synthAmpAndPreEq([55, 59, 64], 4.2, 0.14); // Cienkie struny G3-B3-E4 na wzmacniaczu
+    // Dodaj realistyczny szum tła wzmacniacza w pierwszym 100 ms przed atakiem i w całym buforze
+    let zSeed = 9911;
+    const zRand = () => { zSeed = (zSeed * 1664525 + 1013904223) >>> 0; return (zSeed / 0xffffffff) * 2 - 1; };
+    for (let i = 0; i < zeroSig.length; i++) {
+      zeroSig[i] += 0.0055 * zRand();
+    }
+    const zFrames = await analyzePitchPlease(zeroSig, SR, { model: 'fast' });
+    const zTrk = new GuitarEventTracker({
+      minMidi: 38, maxMidi: 88, thresholdOn: 0.58, highThresholdOn: 0.42, noiseGateRms: 0.0020, autoAdapt: true
+    });
+    const zCounts = new Map();
+    let midCount = 0;
+    let earlySilenceFalse = 0;
+    for (const fr of zFrames) {
+      const endIdx = Math.min(zeroSig.length, Math.floor(fr.time * SR));
+      const slice = endIdx >= 2048 ? zeroSig.subarray(endIdx - 2048, endIdx) : null;
+      const rmsWin = endIdx >= 256 ? zeroSig.subarray(Math.max(0, endIdx - 512), endIdx) : null;
+      let rms = null;
+      if (rmsWin) {
+        let s = 0;
+        for (let k = 0; k < rmsWin.length; k++) s += rmsWin[k] * rmsWin[k];
+        rms = Math.sqrt(s / rmsWin.length);
+      }
+      const { activeNotes, events } = zTrk.step(fr.probs, fr.notes, fr.emitTime * 1000, rms, slice, SR);
+      if (fr.time < 0.08 && events.some(e => e.type === 'noteOn')) earlySilenceFalse++;
+      if (fr.time >= 0.18 && fr.time <= 0.55) {
+        midCount++;
+        for (const n of activeNotes) zCounts.set(n.midiNote, (zCounts.get(n.midiNote) || 0) + 1);
+      }
+    }
+    assert.equal(earlySilenceFalse, 0, 'Zero-Calibration noise floor must reject amp hum before attack');
+    const zGot = [...zCounts.entries()].filter(([, c]) => c >= midCount * 0.30).map(([m]) => m);
+    for (const m of [55, 59, 64]) {
+      assert.ok(zGot.includes(m), `Zero-Calibration missed thin string MIDI ${m}, got [${zGot.sort((a,b)=>a-b)}]`);
+    }
+    console.log('[OK] Test 16: Silnik Zero-Calibration (szum wzmacniacza + cienkie struny G3-B3-E4 bez kalibracji)');
+  }
 }
 
-console.log('Wszystkie 15 testow Web DSP (ES6 + PitchPlease WASM) zaliczone!');
+console.log('Wszystkie 16 testow Web DSP (ES6 + PitchPlease WASM) zaliczone!');

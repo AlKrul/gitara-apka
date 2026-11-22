@@ -91,6 +91,7 @@ export class GuitarEventTracker {
     this.maxActiveNotes = options.maxActiveNotes ?? 6;
     this.retriggerCooldownMs = options.retriggerCooldownMs ?? 85;
     this.enableThinHybridBoost = options.enableThinHybridBoost ?? true;
+    this.autoAdapt = options.autoAdapt !== false;
     this.reset();
   }
 
@@ -117,28 +118,59 @@ export class GuitarEventTracker {
     if (typeof cfg.enableThinHybridBoost === 'boolean') {
       this.enableThinHybridBoost = cfg.enableThinHybridBoost;
     }
+    if (typeof cfg.autoAdapt === 'boolean') {
+      this.autoAdapt = cfg.autoAdapt;
+    }
+    if (!this.emaLowPeak) this.emaLowPeak = this.thresholdOn / 0.68;
+    if (!this.emaHighPeak) this.emaHighPeak = this.highThresholdOn / 0.58;
   }
 
   reset() {
     this.activeMap = new Map(); // midi -> noteState
     this.prevProbs = new Float32Array(PP_KEY_COUNT);
     this.quietFrames = 0;
+    this.rmsSampleFrames = 0;
     this.prevRms = 0;
     this.emaRms = 0;
+    this.autoNoiseFloorRms = this.noiseGateRms * 0.45;
+    this.emaLowPeak = this.thresholdOn / 0.68;
+    this.emaHighPeak = this.highThresholdOn / 0.58;
+    this.adaptLowFrames = 0;
+    this.adaptHighFrames = 0;
   }
 
   midiToHz(midi) {
     return this.a4Hz * Math.pow(2, (midi - 69) / 12);
   }
 
+  effectiveThresholds() {
+    if (!this.autoAdapt) {
+      return { lowOn: this.thresholdOn, highOn: this.highThresholdOn };
+    }
+    const lowOn = (this.adaptLowFrames >= 6)
+      ? Math.max(
+          Math.max(0.42, this.thresholdOn - 0.12),
+          Math.min(Math.min(0.68, this.thresholdOn + 0.06), this.emaLowPeak * 0.68)
+        )
+      : this.thresholdOn;
+    const highOn = (this.adaptHighFrames >= 6)
+      ? Math.max(
+          Math.max(0.30, this.highThresholdOn - 0.10),
+          Math.min(lowOn - 0.08, this.emaHighPeak * 0.58)
+        )
+      : Math.min(lowOn - 0.06, this.highThresholdOn);
+    return { lowOn, highOn };
+  }
+
   /**
    * Płynna krzywa progu wg rejestru gitary:
-   *  - grube struny (<= 52): pełny próg `thresholdOn` (chroni przed buczeniem i IMD),
-   *  - cienkie struny (>= 62): niższy próg `highThresholdOn` (kompensuje mniejszą moc cienkich strun na wzmacniaczu/mikrofonie).
+   *  - grube struny (<= 52): próg lowOn (chroni przed buczeniem i IMD),
+   *  - cienkie struny (>= 62): niższy próg highOn (samoadaptujący się lub z kalibracji).
    */
   thresholdOnForMidi(midi) {
+    const { lowOn, highOn } = this.effectiveThresholds();
     const t = Math.max(0, Math.min(1, (midi - 52) / 10));
-    return this.thresholdOn - t * (this.thresholdOn - this.highThresholdOn);
+    return lowOn - t * (lowOn - highOn);
   }
 
   thresholdOffForMidi(midi) {
@@ -165,49 +197,12 @@ export class GuitarEventTracker {
    */
   step(probs, fallbackNotes, timestampMs, currentRms = null, pcmBuf = null, sampleRate = 48000) {
     const events = [];
-
-    // 1. Bramka ciszy RMS
-    let isQuiet = false;
-    let rmsJumpRatio = 1.0;
-    if (currentRms !== null && Number.isFinite(currentRms)) {
-      const refRms = Math.max(this.emaRms, this.prevRms, this.noiseGateRms * 0.5, 1e-5);
-      rmsJumpRatio = currentRms / refRms;
-      this.prevRms = currentRms;
-      this.emaRms = this.emaRms === 0 ? currentRms : (0.82 * this.emaRms + 0.18 * currentRms);
-
-      if (currentRms < this.noiseGateRms) {
-        this.quietFrames++;
-        if (this.quietFrames >= 2) isQuiet = true;
-      } else {
-        this.quietFrames = 0;
-      }
-    }
-
-    if (isQuiet) {
-      for (const note of this.activeMap.values()) {
-        events.push({
-          type: 'noteOff',
-          midiNote: note.midiNote,
-          exactMidi: note.exactMidi,
-          frequencyHz: note.frequencyHz,
-          centsOffset: 0,
-          velocity: 0,
-          timestampMs,
-          durationMs: Math.max(0, timestampMs - note.onsetTimeMs),
-          isRetrigger: false
-        });
-      }
-      this.activeMap.clear();
-      return { events, activeNotes: [], maxGuitarProb: 0, maxLowProb: 0, maxHighProb: 0 };
-    }
-
     const loIdx = Math.max(0, this.minMidi - LOWEST_PP_MIDI);
     const hiIdx = Math.min(PP_KEY_COUNT - 1, this.maxMidi - LOWEST_PP_MIDI);
+
     let maxGuitarProb = 0;
     let maxLowProb = 0;
     let maxHighProb = 0;
-
-    // Lista silnych nut w tej ramce (do precyzyjnego odsiewania wyłącznie wysokich alikwotów 5./6./8. z grubych strun)
     const strongNotes = [];
     let noteProbMap = null;
     if (probs) {
@@ -235,6 +230,82 @@ export class GuitarEventTracker {
             if (p > maxHighProb) maxHighProb = p;
           }
         }
+      }
+    }
+
+    // 1. Samoadaptacyjna bramka ciszy RMS (Minimum-Statistics Noise Floor Tracker)
+    let isQuiet = false;
+    let rmsJumpRatio = 1.0;
+    let effNoiseGate = this.noiseGateRms;
+    if (currentRms !== null && Number.isFinite(currentRms)) {
+      this.rmsSampleFrames++;
+      if (this.autoAdapt) {
+        const preGate = Math.max(this.noiseGateRms * 0.65, this.autoNoiseFloorRms * 2.25);
+        const preRef = Math.max(this.emaRms, this.prevRms, preGate * 0.5, 1e-5);
+        const preJump = currentRms / preRef;
+        const steadyLowFloor =
+          this.activeMap.size === 0 &&
+          this.rmsSampleFrames <= 8 &&
+          currentRms < 0.022 &&
+          preJump < 1.35 &&
+          maxGuitarProb < 0.65;
+        if (steadyLowFloor) {
+          this.autoNoiseFloorRms = (this.rmsSampleFrames <= 1)
+            ? currentRms
+            : (0.50 * this.autoNoiseFloorRms + 0.50 * currentRms);
+        } else if (maxGuitarProb < 0.22) {
+          this.autoNoiseFloorRms = (currentRms < this.autoNoiseFloorRms)
+            ? (0.80 * this.autoNoiseFloorRms + 0.20 * currentRms)
+            : (0.988 * this.autoNoiseFloorRms + 0.012 * currentRms);
+        }
+        effNoiseGate = (this.noiseGateRms <= 0)
+          ? 0
+          : Math.max(0.0008, Math.min(0.025, Math.max(this.noiseGateRms * 0.65, this.autoNoiseFloorRms * 2.25)));
+      }
+      const refRms = Math.max(this.emaRms, this.prevRms, effNoiseGate * 0.5, 1e-5);
+      rmsJumpRatio = currentRms / refRms;
+      this.prevRms = currentRms;
+      this.emaRms = this.emaRms === 0 ? currentRms : (0.82 * this.emaRms + 0.18 * currentRms);
+
+      if (currentRms < effNoiseGate) {
+        this.quietFrames++;
+        if (this.quietFrames >= 2 || (this.autoAdapt && this.activeMap.size === 0 && this.rmsSampleFrames <= 3)) {
+          isQuiet = true;
+        }
+      } else {
+        this.quietFrames = 0;
+      }
+    }
+
+    if (isQuiet) {
+      if (probs) this.prevProbs.set(probs);
+      for (const note of this.activeMap.values()) {
+        events.push({
+          type: 'noteOff',
+          midiNote: note.midiNote,
+          exactMidi: note.exactMidi,
+          frequencyHz: note.frequencyHz,
+          centsOffset: 0,
+          velocity: 0,
+          timestampMs,
+          durationMs: Math.max(0, timestampMs - note.onsetTimeMs),
+          isRetrigger: false
+        });
+      }
+      this.activeMap.clear();
+      return { events, activeNotes: [], maxGuitarProb: 0, maxLowProb: 0, maxHighProb: 0 };
+    }
+
+    // Samopoziomowanie obwiedni grubych i cienkich strun podczas ataku kostką
+    // (nie obniżaj adaptacyjnego progu cienkich strun na podstawie słabego alikwotu głośnej grubej struny)
+    if (this.autoAdapt && (rmsJumpRatio >= 1.30 || maxGuitarProb >= 0.48)) {
+      if (maxLowProb >= 0.48) {
+        this.emaLowPeak = 0.88 * this.emaLowPeak + 0.12 * maxLowProb;
+        this.adaptLowFrames++;
+      }
+      if (maxHighProb >= 0.34 && (maxLowProb < 0.45 || maxHighProb >= maxLowProb * 0.85)) {
+        this.emaHighPeak = 0.85 * this.emaHighPeak + 0.15 * maxHighProb;
+        this.adaptHighFrames++;
       }
     }
 
@@ -385,8 +456,12 @@ export class GuitarEventTracker {
         if (isHighOvertoneGhost(midi)) effThr = Math.max(effThr, 0.93);
 
         let accepted = p >= effThr;
-        if (!accepted && isLocalMax && midi >= THIN_STRING_SPLIT_MIDI && isThinConfirmedByGoertzel(midi, p)) {
-          accepted = true;
+        const deltaP = p - this.prevProbs[idx];
+        if (!accepted && isLocalMax && midi >= THIN_STRING_SPLIT_MIDI &&
+            ((deltaP >= 0.18 && p >= 0.26) || isThinConfirmedByGoertzel(midi, p))) {
+          if (!isHighOvertoneGhost(midi) && isThinConfirmedByGoertzel(midi, p)) {
+            accepted = true;
+          }
         }
         if (accepted) {
           newCandidates.push({ midi, prob: p });
@@ -509,11 +584,21 @@ export function createGuitarPitchDetector(options = {}) {
     if (condLeveler) condLeveler.ratio.value = ampPreEqEnabled ? 3.0 : 1.0;
   };
 
-  const readShortRms = () => {
+  let cachedPcmStamp = -1;
+  const refreshFramePcm = (stamp) => {
     const an = condAnalyserNode || tunerAnalyserNode;
     const buf = condAnalyserNode ? condPcmBuf : tunerPcmBuf;
     if (!an) return null;
-    an.getFloatTimeDomainData(buf);
+    if (stamp === undefined || stamp === null || stamp !== cachedPcmStamp) {
+      an.getFloatTimeDomainData(buf);
+      if (stamp !== undefined && stamp !== null) cachedPcmStamp = stamp;
+    }
+    return buf;
+  };
+
+  const readShortRms = (stamp) => {
+    const buf = refreshFramePcm(stamp);
+    if (!buf) return null;
     const start = buf.length - 512;
     let sum = 0;
     for (let i = start; i < buf.length; i++) {
@@ -529,9 +614,11 @@ export function createGuitarPitchDetector(options = {}) {
     stabilityFrames: 1,
     clearAfterMs: 180,
     onNotes: (notes, frame) => {
-      const rms = readShortRms();
-      const tsMs = frame && typeof frame.emitTime === 'number' ? frame.emitTime * 1000 : performance.now();
-      const hybridPcm = (condAnalyserNode && ampPreEqEnabled) ? condPcmBuf : (tunerAnalyserNode ? tunerPcmBuf : null);
+      const stamp = frame && typeof frame.emitTime === 'number' ? frame.emitTime : performance.now();
+      const buf = refreshFramePcm(stamp);
+      const rms = readShortRms(stamp);
+      const tsMs = frame && typeof frame.emitTime === 'number' ? frame.emitTime * 1000 : stamp;
+      const hybridPcm = (condAnalyserNode && ampPreEqEnabled) ? buf : (tunerAnalyserNode ? tunerPcmBuf : null);
       const res = tracker.step(frame ? frame.probs : null, notes, tsMs, rms, hybridPcm, analyserSampleRate);
       lastMaxGuitarProb = res.maxGuitarProb;
       lastMaxLowProb = res.maxLowProb;

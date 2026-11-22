@@ -75,6 +75,7 @@ START_JUCE_APPLICATION(gitara::app::GitaraApplication)
 #include <cctype>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -647,6 +648,33 @@ std::string handleSearchApi(std::string_view query) {
     return oss.str();
 }
 
+void writePossibleChordsInScaleJson(
+    std::ostringstream& oss,
+    const Scale& sc,
+    const Note& root,
+    AccidentalMode mode) {
+    oss << "[";
+    bool first = true;
+    for (const auto& def : allChordDefinitions()) {
+        Chord cand{root, &def, std::nullopt};
+        bool fits = true;
+        for (const auto& cn : cand.notes(mode)) {
+            if (!sc.containsPitchClass(cn.pitchClass())) {
+                fits = false;
+                break;
+            }
+        }
+        if (!fits) continue;
+        if (!first) oss << ",";
+        first = false;
+        oss << "{\"id\":\"" << jsonEscape(def.id) << "\""
+            << ",\"symbol\":\"" << jsonEscape(cand.symbol(false, mode)) << "\""
+            << ",\"name\":\"" << jsonEscape(def.polishName) << "\""
+            << ",\"category\":\"" << jsonEscape(def.category) << "\"}";
+    }
+    oss << "]";
+}
+
 std::string handleDiatonicApi(std::string_view query) {
     int rootPc = getQueryInt(query, "rootPc", 0);
     std::string scaleId = getQueryParam(query, "scaleId", "major");
@@ -674,8 +702,11 @@ std::string handleDiatonicApi(std::string_view query) {
             << ",\"roman\":\"" << jsonEscape(d.romanNumeral) << "\""
             << ",\"symbol\":\"" << jsonEscape(d.chord.symbol(false, mode)) << "\""
             << ",\"rootPc\":" << d.chord.root.pitchClass()
-            << ",\"chordId\":\"" << jsonEscape(d.chord.definition->id) << "\""
-            << ",\"pcs\":[" << pcs.str() << "]}";
+            << ",\"chordId\":\"" << jsonEscape(d.chord.definition ? d.chord.definition->id : "major") << "\""
+            << ",\"pcs\":[" << pcs.str() << "]"
+            << ",\"possible\":";
+        writePossibleChordsInScaleJson(oss, sc, d.chord.root, mode);
+        oss << "}";
     }
     oss << "]}";
     return oss.str();
@@ -743,8 +774,7 @@ std::string handleArpeggioApi(std::string_view query) {
     if (pat == ArpeggioPattern::Sweep) {
         auto shapes = generateSweepShapes(fb, ch, sweepStrings, direction, mode, nullptr);
         if (!shapes.empty()) {
-            resolvedPosIdx = ((posIdx % static_cast<int>(shapes.size())) + static_cast<int>(shapes.size())) %
-                             static_cast<int>(shapes.size());
+            resolvedPosIdx = std::clamp(posIdx, 0, static_cast<int>(shapes.size()) - 1);
             for (const auto& sh : shapes) {
                 positions.push_back({sh.positionIndex, sh.label, sh.minFret, sh.maxFret, sh.hasFingerRoll});
             }
@@ -755,7 +785,7 @@ std::string handleArpeggioApi(std::string_view query) {
         }
     } else if (pat == ArpeggioPattern::RootOctave) {
         constexpr std::array<const char*, 4> octNames = {"Od str. E6 (niska)", "Od str. A5", "Od str. D4", "Od str. E6 (wysoka)"};
-        resolvedPosIdx = ((posIdx % 4) + 4) % 4;
+        resolvedPosIdx = std::clamp(posIdx, 0, 3);
         for (int i = 0; i < 4; ++i) {
             auto ns = generateRootOctaveArpeggio(fb, ch, i, octaves, mode, nullptr);
             int mn = 99, mx = 0;
@@ -784,15 +814,14 @@ std::string handleArpeggioApi(std::string_view query) {
                     }
                 }
             } else {
-                resolvedPosIdx = ((posIdx % static_cast<int>(invs.size())) + static_cast<int>(invs.size())) %
-                                 static_cast<int>(invs.size());
+                resolvedPosIdx = std::clamp(posIdx, 0, static_cast<int>(invs.size()) - 1);
                 activeNodes = invs[static_cast<std::size_t>(resolvedPosIdx)].nodes;
                 activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
             }
         }
     } else if (pat == ArpeggioPattern::CAGED) {
         constexpr std::array<const char*, 5> cagedNames = {"Kształt C", "Kształt A", "Kształt G", "Kształt E", "Kształt D"};
-        resolvedPosIdx = ((posIdx % 5) + 5) % 5;
+        resolvedPosIdx = std::clamp(posIdx, 0, 4);
         for (int i = 0; i < 5; ++i) {
             auto ns = generateArpeggio(fb, ch, ArpeggioPattern::CAGED, i, mode, nullptr);
             int mn = 99, mx = 0;
@@ -804,7 +833,7 @@ std::string handleArpeggioApi(std::string_view query) {
         activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
     } else if (pat == ArpeggioPattern::TwoNPS || pat == ArpeggioPattern::ThreeNPS) {
         int countPos = std::max<int>(3, static_cast<int>(ch.notes(mode).size()));
-        resolvedPosIdx = ((posIdx % countPos) + countPos) % countPos;
+        resolvedPosIdx = std::clamp(posIdx, 0, countPos - 1);
         for (int i = 0; i < countPos; ++i) {
             auto ns = generateArpeggio(fb, ch, pat, i, mode, nullptr);
             int mn = 99, mx = 0;
@@ -882,13 +911,32 @@ std::string handleArpeggioApi(std::string_view query) {
         if (i > 0) oss << ",";
         writeStepJson(oss, activeSteps[i]);
     }
-    oss << "],\"diatonic\":[";
+    oss << "],\"scaleDegrees\":[";
+    {
+        const auto scNotes = sc.notes(mode);
+        for (std::size_t si = 0; si < scNotes.size(); ++si) {
+            if (si > 0) oss << ",";
+            std::string roman = (si < diatonic.size())
+                ? diatonic[si].romanNumeral
+                : std::to_string(si + 1);
+            oss << "{\"degree\":" << (si + 1)
+                << ",\"pc\":" << scNotes[si].pitchClass()
+                << ",\"note\":\"" << jsonEscape(scNotes[si].toString(false)) << "\""
+                << ",\"roman\":\"" << jsonEscape(roman) << "\"}";
+        }
+    }
+    oss << "],\"possibleForRoot\":";
+    writePossibleChordsInScaleJson(oss, sc, Note::fromPitchClass(rootPc, mode), mode);
+    oss << ",\"diatonic\":[";
     for (std::size_t i = 0; i < diatonic.size(); ++i) {
         if (i > 0) oss << ",";
         oss << "{\"roman\":\"" << jsonEscape(diatonic[i].romanNumeral) << "\""
             << ",\"symbol\":\"" << jsonEscape(diatonic[i].chord.symbol(false, mode)) << "\""
             << ",\"rootPc\":" << diatonic[i].chord.root.pitchClass()
-            << ",\"chordId\":\"" << jsonEscape(diatonic[i].chord.definition->id) << "\"}";
+            << ",\"chordId\":\"" << jsonEscape(diatonic[i].chord.definition ? diatonic[i].chord.definition->id : "major") << "\""
+            << ",\"possible\":";
+        writePossibleChordsInScaleJson(oss, sc, diatonic[i].chord.root, mode);
+        oss << "}";
     }
     oss << "],\"transitionPresets\":[";
     const auto& presets = allSweepTransitionPresets();
@@ -1303,9 +1351,11 @@ int main(int argc, char** argv) {
             std::ostringstream hdr;
             hdr << "HTTP/1.1 " << status << "\r\n"
                 << "Content-Type: " << contentType << "\r\n"
-                << "Content-Length: " << size << "\r\n"
-                << "Cache-Control: no-store\r\n"
-                << extraHeaders
+                << "Content-Length: " << size << "\r\n";
+            if (extraHeaders.find("Cache-Control:") == std::string_view::npos) {
+                hdr << "Cache-Control: no-store\r\n";
+            }
+            hdr << extraHeaders
                 << "Connection: close\r\n\r\n";
             std::string hStr = hdr.str();
             writeAll(hStr.data(), hStr.size());
@@ -1315,21 +1365,27 @@ int main(int argc, char** argv) {
         };
 
         if (path == "/" || path == "/index.html") {
-            std::string liveHtml;
-            std::ifstream ifs("app/ui/DesktopGuiHtml.h", std::ios::binary);
-            if (ifs) {
-                std::string fileContent((std::istreambuf_iterator<char>(ifs)),
-                                        std::istreambuf_iterator<char>());
-                const std::string startTag = "R\"HTML(";
-                const std::string endTag = ")HTML\"";
-                auto p1 = fileContent.find(startTag);
-                auto p2 = fileContent.rfind(endTag);
-                if (p1 != std::string::npos && p2 != std::string::npos && p2 > p1 + startTag.size()) {
-                    liveHtml = fileContent.substr(p1 + startTag.size(), p2 - (p1 + startTag.size()));
+            static std::string cachedLiveHtml;
+            static time_t cachedHtmlMtime = 0;
+            struct stat htmlSt{};
+            if (::stat("app/ui/DesktopGuiHtml.h", &htmlSt) == 0 &&
+                (cachedLiveHtml.empty() || htmlSt.st_mtime != cachedHtmlMtime)) {
+                std::ifstream ifs("app/ui/DesktopGuiHtml.h", std::ios::binary);
+                if (ifs) {
+                    std::string fileContent((std::istreambuf_iterator<char>(ifs)),
+                                            std::istreambuf_iterator<char>());
+                    const std::string startTag = "R\"HTML(";
+                    const std::string endTag = ")HTML\"";
+                    auto p1 = fileContent.find(startTag);
+                    auto p2 = fileContent.rfind(endTag);
+                    if (p1 != std::string::npos && p2 != std::string::npos && p2 > p1 + startTag.size()) {
+                        cachedLiveHtml = fileContent.substr(p1 + startTag.size(), p2 - (p1 + startTag.size()));
+                        cachedHtmlMtime = htmlSt.st_mtime;
+                    }
                 }
             }
-            if (!liveHtml.empty()) {
-                sendResponse("200 OK", "text/html; charset=utf-8", liveHtml.data(), liveHtml.size());
+            if (!cachedLiveHtml.empty()) {
+                sendResponse("200 OK", "text/html; charset=utf-8", cachedLiveHtml.data(), cachedLiveHtml.size());
             } else {
                 const char* html = gitara::app::ui::kDesktopGuiHtml;
                 sendResponse("200 OK", "text/html; charset=utf-8", html, std::strlen(html));
@@ -1338,7 +1394,11 @@ int main(int argc, char** argv) {
             std::string assetBody;
             std::string_view assetMime;
             if (tryReadWebAsset(path, assetBody, assetMime)) {
-                sendResponse("200 OK", assetMime, assetBody.data(), assetBody.size());
+                const bool isHeavyModelOrWasm =
+                    (path.size() >= 4 && path.substr(path.size() - 4) == ".bin") ||
+                    (path.size() >= 5 && path.substr(path.size() - 5) == ".wasm");
+                sendResponse("200 OK", assetMime, assetBody.data(), assetBody.size(),
+                             isHeavyModelOrWasm ? "Cache-Control: public, max-age=3600\r\n" : "");
             } else {
                 const char* notFound = "Not Found";
                 sendResponse("404 Not Found", "text/plain; charset=utf-8", notFound, std::strlen(notFound));

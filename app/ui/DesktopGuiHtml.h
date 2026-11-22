@@ -1559,6 +1559,315 @@ body.ui-mode-fhd .sp-card {
 }
 
 /* =========================================================
+   ZWIĘZŁE PRZYCISKI POZYCJI + STYLE WIZUALNE CAŁEJ APLIKACJI
+   (Klasyczny Studio / Neo-Glass Studio / Hardware Amp Rack)
+   ========================================================= */
+.pos-pill-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.pos-pill-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.pos-pill-btn {
+  height: 28px;
+  padding: 0 9px;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+
+/* --- STYL 1 (ALTERNATYWA): NEO-GLASS STUDIO --- */
+:root[data-ui-style="modern"] {
+  --bg-main: #090d16;
+  --bg-panel: rgba(16, 22, 36, 0.82);
+  --bg-card: rgba(24, 34, 54, 0.78);
+  --bg-hover: rgba(39, 54, 84, 0.88);
+  --border: rgba(148, 163, 184, 0.18);
+  --accent: #38bdf8;
+  --accent-glow: rgba(56, 189, 248, 0.22);
+  --green: #34d399;
+  --yellow: #fbbf24;
+  --red: #fb7185;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+}
+:root[data-ui-style="modern"] body {
+  font-family: 'Inter', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+  background:
+    radial-gradient(900px 480px at 12% -8%, rgba(56, 189, 248, 0.14), transparent 60%),
+    radial-gradient(820px 520px at 88% 8%, rgba(99, 102, 241, 0.13), transparent 60%),
+    linear-gradient(180deg, #090d16 0%, #0d1322 100%);
+}
+:root[data-ui-style="modern"] .sidebar,
+:root[data-ui-style="modern"] .topbar,
+:root[data-ui-style="modern"] .right-inspector {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(14, 20, 34, 0.78);
+}
+:root[data-ui-style="modern"] .fretboard-card,
+:root[data-ui-style="modern"] .sp-card,
+:root[data-ui-style="modern"] .sp-summary-card,
+:root[data-ui-style="modern"] .tuner-stage-card,
+:root[data-ui-style="modern"] .changes-player-card,
+:root[data-ui-style="modern"] .changes-section-box,
+:root[data-ui-style="modern"] .changes-cta-card {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 16px;
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+:root[data-ui-style="modern"] .chip-btn,
+:root[data-ui-style="modern"] .subtab-btn,
+:root[data-ui-style="modern"] .ear-seg-btn,
+:root[data-ui-style="modern"] .action-btn,
+:root[data-ui-style="modern"] .settings-back-btn {
+  border-radius: 999px;
+}
+:root[data-ui-style="modern"] .subtabs {
+  border-radius: 999px;
+  padding: 4px;
+  background: rgba(10, 15, 28, 0.72);
+}
+:root[data-ui-style="modern"] .nav-btn {
+  border-radius: 12px;
+}
+:root[data-ui-style="modern"] .nav-btn.active {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.22), rgba(99, 102, 241, 0.10));
+  border-left: 3px solid #38bdf8;
+}
+:root[data-ui-style="modern"] .chip-btn.active,
+:root[data-ui-style="modern"] .subtab-btn.active,
+:root[data-ui-style="modern"] .ear-seg-btn.active,
+:root[data-ui-style="modern"] .round-pill.active,
+:root[data-ui-style="modern"] .action-btn {
+  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.28);
+}
+:root[data-ui-style="modern"] .chord-box-card,
+:root[data-ui-style="modern"] .list-row,
+:root[data-ui-style="modern"] select,
+:root[data-ui-style="modern"] input[type="number"] {
+  border-radius: 12px;
+  background: rgba(20, 29, 48, 0.75);
+  border-color: rgba(148, 163, 184, 0.20);
+}
+:root[data-ui-style="modern"] .fretboard-resizable-wrap,
+:root[data-ui-style="modern"] #arpTabSvgWrap,
+:root[data-ui-style="modern"] #sweepCompTabSvgWrap {
+  background: linear-gradient(180deg, rgba(13, 19, 34, 0.96) 0%, rgba(9, 13, 24, 0.98) 100%) !important;
+  border-color: rgba(56, 189, 248, 0.22) !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 24px rgba(2, 6, 23, 0.45);
+}
+:root[data-ui-style="modern"] * { scrollbar-color: #334155 #090d16; }
+:root[data-ui-style="modern"] ::-webkit-scrollbar-track { background: #090d16; }
+:root[data-ui-style="modern"] ::-webkit-scrollbar-thumb { background: #334155; border-color: #090d16; }
+
+/* Neo-Glass Studio w trybie Jasnym */
+:root[data-theme="light"][data-ui-style="modern"] {
+  --bg-main: #edf2f8;
+  --bg-panel: rgba(255, 255, 255, 0.80);
+  --bg-card: rgba(244, 247, 252, 0.90);
+  --bg-hover: rgba(226, 236, 248, 0.96);
+  --border: rgba(15, 23, 42, 0.11);
+  --accent: #0284c7;
+  --accent-glow: rgba(2, 132, 199, 0.16);
+  --text: #0f172a;
+  --text-muted: #475569;
+}
+:root[data-theme="light"][data-ui-style="modern"] body {
+  background:
+    radial-gradient(900px 460px at 10% -6%, rgba(56, 189, 248, 0.18), transparent 60%),
+    radial-gradient(820px 520px at 90% 10%, rgba(99, 102, 241, 0.14), transparent 60%),
+    linear-gradient(180deg, #edf2f8 0%, #e4ebf5 100%);
+}
+:root[data-theme="light"][data-ui-style="modern"] .sidebar,
+:root[data-theme="light"][data-ui-style="modern"] .topbar,
+:root[data-theme="light"][data-ui-style="modern"] .right-inspector {
+  background: rgba(255, 255, 255, 0.76);
+}
+:root[data-theme="light"][data-ui-style="modern"] .fretboard-card,
+:root[data-theme="light"][data-ui-style="modern"] .sp-card,
+:root[data-theme="light"][data-ui-style="modern"] .tuner-stage-card {
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+:root[data-theme="light"][data-ui-style="modern"] .subtabs {
+  background: rgba(226, 234, 245, 0.85);
+}
+:root[data-theme="light"][data-ui-style="modern"] .chip-btn,
+:root[data-theme="light"][data-ui-style="modern"] .chord-box-card,
+:root[data-theme="light"][data-ui-style="modern"] .list-row,
+:root[data-theme="light"][data-ui-style="modern"] select,
+:root[data-theme="light"][data-ui-style="modern"] input[type="number"] {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+:root[data-theme="light"][data-ui-style="modern"] .chip-btn.active,
+:root[data-theme="light"][data-ui-style="modern"] .subtab-btn.active,
+:root[data-theme="light"][data-ui-style="modern"] .ear-seg-btn.active,
+:root[data-theme="light"][data-ui-style="modern"] .round-pill.active,
+:root[data-theme="light"][data-ui-style="modern"] .action-btn {
+  background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+  color: #ffffff;
+}
+:root[data-theme="light"][data-ui-style="modern"] .fretboard-resizable-wrap,
+:root[data-theme="light"][data-ui-style="modern"] #arpTabSvgWrap,
+:root[data-theme="light"][data-ui-style="modern"] #sweepCompTabSvgWrap {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef4fb 100%) !important;
+  border-color: rgba(2, 132, 199, 0.24) !important;
+  box-shadow: inset 0 1px 0 #ffffff, 0 6px 20px rgba(15, 23, 42, 0.08);
+}
+
+/* --- STYL 2 (ALTERNATYWA): HARDWARE AMP RACK --- */
+:root[data-ui-style="rack"] {
+  --bg-main: #0c0d0f;
+  --bg-panel: #14161a;
+  --bg-card: #1d2026;
+  --bg-hover: #272b33;
+  --border: #3a404c;
+  --accent: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.20);
+  --green: #4ade80;
+  --yellow: #fde047;
+  --red: #ef4444;
+  --text: #f3f4f6;
+  --text-muted: #9ca3af;
+}
+:root[data-ui-style="rack"] body {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 6px),
+    linear-gradient(180deg, #0c0d0f 0%, #121418 100%);
+  letter-spacing: -0.01em;
+}
+:root[data-ui-style="rack"] .fretboard-card,
+:root[data-ui-style="rack"] .sp-card,
+:root[data-ui-style="rack"] .tuner-stage-card,
+:root[data-ui-style="rack"] .changes-player-card,
+:root[data-ui-style="rack"] .changes-section-box,
+:root[data-ui-style="rack"] .changes-cta-card,
+:root[data-ui-style="rack"] .chord-box-card,
+:root[data-ui-style="rack"] .list-row,
+:root[data-ui-style="rack"] .audio-status-box {
+  border-radius: 3px;
+  border: 1px solid #3f4654;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+:root[data-ui-style="rack"] .section-label {
+  letter-spacing: 0.12em;
+  color: #eab308;
+}
+:root[data-ui-style="rack"] .chip-btn,
+:root[data-ui-style="rack"] .subtab-btn,
+:root[data-ui-style="rack"] .ear-seg-btn,
+:root[data-ui-style="rack"] .nav-btn,
+:root[data-ui-style="rack"] .action-btn,
+:root[data-ui-style="rack"] .settings-back-btn,
+:root[data-ui-style="rack"] select,
+:root[data-ui-style="rack"] input[type="number"] {
+  border-radius: 2px;
+}
+:root[data-ui-style="rack"] .chip-btn,
+:root[data-ui-style="rack"] .subtab-btn {
+  background: linear-gradient(180deg, #252932 0%, #1a1d24 100%);
+  border: 1px solid #3b414e;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+:root[data-ui-style="rack"] .chip-btn.active,
+:root[data-ui-style="rack"] .subtab-btn.active,
+:root[data-ui-style="rack"] .ear-seg-btn.active,
+:root[data-ui-style="rack"] .round-pill.active,
+:root[data-ui-style="rack"] .action-btn {
+  background: linear-gradient(180deg, #322c1b 0%, #1f1b10 100%);
+  color: #fde047;
+  border-color: #fbbf24;
+  box-shadow: inset 0 3px 0 #fbbf24, 0 0 10px rgba(251, 191, 36, 0.24);
+}
+:root[data-ui-style="rack"] .nav-btn.active {
+  background: rgba(251, 191, 36, 0.14);
+  color: #fde047;
+  border-left: 4px solid #fbbf24;
+}
+:root[data-ui-style="rack"] .fretboard-resizable-wrap,
+:root[data-ui-style="rack"] #arpTabSvgWrap,
+:root[data-ui-style="rack"] #sweepCompTabSvgWrap {
+  background: #0a0b0d !important;
+  border: 2px solid #353b47 !important;
+  border-radius: 3px !important;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.75);
+}
+:root[data-ui-style="rack"] * { scrollbar-color: #4b5563 #0c0d0f; }
+:root[data-ui-style="rack"] ::-webkit-scrollbar-track { background: #0c0d0f; }
+:root[data-ui-style="rack"] ::-webkit-scrollbar-thumb { background: #4b5563; border-color: #0c0d0f; }
+
+/* Hardware Amp Rack w trybie Jasnym (Silverface Aluminum Panel) */
+:root[data-theme="light"][data-ui-style="rack"] {
+  --bg-main: #d8dce2;
+  --bg-panel: #e4e7ec;
+  --bg-card: #f1f3f6;
+  --bg-hover: #d1d6df;
+  --border: #9ca3af;
+  --accent: #b45309;
+  --accent-glow: rgba(180, 83, 9, 0.16);
+  --text: #111827;
+  --text-muted: #4b5563;
+}
+:root[data-theme="light"][data-ui-style="rack"] body {
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.018) 0px, rgba(0,0,0,0.018) 1px, transparent 1px, transparent 5px),
+    linear-gradient(180deg, #d8dce2 0%, #cdd2da 100%);
+}
+:root[data-theme="light"][data-ui-style="rack"] .fretboard-card,
+:root[data-theme="light"][data-ui-style="rack"] .sp-card,
+:root[data-theme="light"][data-ui-style="rack"] .tuner-stage-card,
+:root[data-theme="light"][data-ui-style="rack"] .chord-box-card,
+:root[data-theme="light"][data-ui-style="rack"] .list-row {
+  border-color: #8f98a6;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+:root[data-theme="light"][data-ui-style="rack"] .section-label {
+  color: #92400e;
+}
+:root[data-theme="light"][data-ui-style="rack"] .chip-btn,
+:root[data-theme="light"][data-ui-style="rack"] .subtab-btn {
+  background: linear-gradient(180deg, #f9fafb 0%, #e5e7eb 100%);
+  border-color: #9ca3af;
+  color: #111827;
+}
+:root[data-theme="light"][data-ui-style="rack"] .chip-btn.active,
+:root[data-theme="light"][data-ui-style="rack"] .subtab-btn.active,
+:root[data-theme="light"][data-ui-style="rack"] .ear-seg-btn.active,
+:root[data-theme="light"][data-ui-style="rack"] .round-pill.active,
+:root[data-theme="light"][data-ui-style="rack"] .action-btn {
+  background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
+  color: #78350f;
+  border-color: #b45309;
+  box-shadow: inset 0 3px 0 #d97706, 0 2px 6px rgba(180, 83, 9, 0.20);
+}
+:root[data-theme="light"][data-ui-style="rack"] .fretboard-resizable-wrap,
+:root[data-theme="light"][data-ui-style="rack"] #arpTabSvgWrap,
+:root[data-theme="light"][data-ui-style="rack"] #sweepCompTabSvgWrap {
+  background: #eceff4 !important;
+  border: 2px solid #8f98a6 !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.14);
+}
+
+/* =========================================================
    TRYB ŚCIEŻKI SKALI (ZDJĘCIE 3 — POZIOMA WSTĘGA NUT + WOLNY GRYF)
    ========================================================= */
 .scale-ribbon-stage {
@@ -2047,6 +2356,7 @@ const state = {
   tunerLockedString: -1, // -1 = auto, 0..5 = zablokowana struna
   // Stan Ustawień i Wyglądu (bez grywalizacji / celu dziennego)
   themeMode: 'dark', // 'dark' | 'light' | 'system'
+  uiStyle: 'classic', // 'classic' | 'modern' | 'rack'
   uiLang: 'pl', // 'pl' | 'en'
   fretMarkersMode: 'numbers', // 'dots' | 'numbers'
   numberAllFrets: false, // Pokaż numery wszystkich progów (1..24)
@@ -2078,6 +2388,11 @@ const state = {
   sweepPosIdx: 0,
   sweepTransPosIdx: 0,
   arpSweepStrings: 3, // 3 | 5 | 6
+  sweepMetricFit: 'sextuplets', // 'sixteenths' | 'sextuplets'
+  sweepComposition: [], // Ułożone własne ogniwa Sweep w trybie Pojedynczy kształt
+  sweepCompActiveIdx: 0,
+  sweepCompactTabs: false, // Zmniejsza rozmiar tabulatur, by obie mieściły się jednocześnie
+  sweepPlaybackTarget: 'single', // 'single' | 'comp'
   arpDirection: 0, // 0=W górę i w dół, 1=W górę, 2=W dół
   arpSeqStyle: 0, // 0=Prosto (1-3-5), 1=Grupy po 3, 2=Skoki (1-5-3)
   arpStringSet: 0, // 0=G-B-e/D-G-B-e, 1=D-G-B/A-D-G-B, 2=A-D-G/E-A-D-G
@@ -2085,11 +2400,15 @@ const state = {
   arpTransitionId: 'neoclassical_minor',
   arpActiveSegIdx: 0,
   arpDiatonicSevenths: true,
+  arpDiatonicCategory: 'all', // 'all' | 'triad' | 'seventh' | 'sus_add_6' | 'extended'
+  arpFilterByScale: false,
+  arpAutoTempo: false,
+  savedSweepCompositions: [],
   arpDiatonicScaleId: 'major',
   arpDiatonicScaleRootPc: 0,
   arpBpm: 90,
   arpLoop: false,
-  sweepLoop: false, // W Sweep Picking pętla domyślnie WYŁĄCZONA!
+  sweepSequential: false, // W Sweep Picking domyślnie odtwarza wybrany sweep osobno; Wł. = wszystkie ogniwa po kolei
   arpShowScaleOnFretboard: false,
   arpPlaying: false,
   arpPlayStepIdx: -1,
@@ -2116,6 +2435,11 @@ const state = {
   exercisePlayerView: 'tab', // 'tab' (Partytura TAB + Gryf) | 'ribbon' (Ścieżka skali / wolny gryf — Zdjęcie 3)
   exercisePlayerPaused: false,
   exercisePlayerStepIdx: 0,
+  exerciseBaseBpm: 120,
+  exerciseCompletedSet: new Set(),
+  exerciseLastHitIdx: -1,
+  exerciseLastHitTime: 0,
+  exerciseLastHitLabel: '',
   selectedHarmonicExerciseId: 'harm_ballad_intro_em',
   // Stan zakładki Praktyka skal
   scalePracticeMode: 'scale', // 'scale' | 'arpeggio' | 'arpeggio_pattern'
@@ -4098,23 +4422,37 @@ function t(pl, en) {
   return (state.uiLang === 'en') ? en : pl;
 }
 
-function isLightTheme() {
+function resolveEffectiveTheme() {
   const m = state.themeMode || 'dark';
-  if (m === 'light') return true;
-  if (m === 'system' && typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: light)').matches;
+  if (m === 'system') {
+    const isLightSys = (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+    return isLightSys ? 'light' : 'dark';
   }
-  return false;
+  return (m === 'light') ? 'light' : 'dark';
+}
+
+function isLightTheme() {
+  return resolveEffectiveTheme() === 'light';
 }
 
 function applyTheme() {
-  const light = isLightTheme();
-  document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+  const effStyle = ['classic', 'modern', 'rack'].includes(state.uiStyle) ? state.uiStyle : 'classic';
+  document.documentElement.setAttribute('data-theme', resolveEffectiveTheme());
+  document.documentElement.setAttribute('data-ui-style', effStyle);
 }
 
 function setThemeMode(mode) {
-  if (mode !== 'dark' && mode !== 'light' && mode !== 'system') mode = 'dark';
+  if (!['dark', 'light', 'system'].includes(mode)) mode = 'dark';
   state.themeMode = mode;
+  applyTheme();
+  saveSettings();
+  drawFretboard();
+  renderStageAndInspector();
+}
+
+function setUiStyle(style) {
+  if (!['classic', 'modern', 'rack'].includes(style)) style = 'classic';
+  state.uiStyle = style;
   applyTheme();
   saveSettings();
   drawFretboard();
@@ -4162,6 +4500,7 @@ function setUiLanguage(lang) {
 
 function resetAppSettings() {
   state.themeMode = 'dark';
+  state.uiStyle = 'classic';
   state.uiLang = 'pl';
   state.fretMarkersMode = 'numbers';
   state.numberAllFrets = false;
@@ -5725,16 +6064,36 @@ function drawFretboard() {
       </linearGradient>
     </defs>`;
 
-  // Tło podstrunnicy (ciemny palisander w trybie Ciemnym, jasny klon w trybie Jasnym)
-  const lightMode = isLightTheme();
-  const boardBg = lightMode ? '#f6f1e9' : '#14100d';
-  const fretWireCol = lightMode ? '#cfc6b8' : '#2b231d';
-  const inlayCol = lightMode ? 'rgba(120,105,90,0.22)' : 'rgba(255,255,255,0.14)';
-  const numBaseCol = lightMode ? '#57534e' : '#9c9288';
-  const stringCol = lightMode ? '#8c7e70' : '#574b40';
-  const nutCol = lightMode ? '#6b5e50' : '#8c8175';
+  // Tło podstrunnicy dopasowane do motywu (Ciemny / Jasny) oraz stylu aplikacji (Klasyczny / Neo-Glass / Rack)
+  const effTheme = resolveEffectiveTheme();
+  const effStyle = ['classic', 'modern', 'rack'].includes(state.uiStyle) ? state.uiStyle : 'classic';
+  const lightMode = (effTheme === 'light');
+  let boardBg = lightMode ? '#f6f1e9' : '#14100d';
+  let fretWireCol = lightMode ? '#cfc6b8' : '#2b231d';
+  let inlayCol = lightMode ? 'rgba(120,105,90,0.22)' : 'rgba(255,255,255,0.14)';
+  let numBaseCol = lightMode ? '#57534e' : '#9c9288';
+  let stringCol = lightMode ? '#8c7e70' : '#574b40';
+  let nutCol = lightMode ? '#6b5e50' : '#8c8175';
+  let boardStroke = lightMode ? '#d6cec2' : 'none';
+  if (effStyle === 'modern') {
+    boardBg = lightMode ? '#f5f8fd' : '#0b1120';
+    fretWireCol = lightMode ? '#c8d6e8' : '#1e293b';
+    inlayCol = lightMode ? 'rgba(2,132,199,0.20)' : 'rgba(56,189,248,0.16)';
+    numBaseCol = lightMode ? '#475569' : '#7dd3fc';
+    stringCol = lightMode ? '#64748b' : '#475569';
+    nutCol = lightMode ? '#334155' : '#94a3b8';
+    boardStroke = lightMode ? '#cbd5e1' : '#1e293b';
+  } else if (effStyle === 'rack') {
+    boardBg = lightMode ? '#eceff4' : '#0a0b0e';
+    fretWireCol = lightMode ? '#b0b8c4' : '#323844';
+    inlayCol = lightMode ? 'rgba(180,83,9,0.24)' : 'rgba(251,191,36,0.20)';
+    numBaseCol = lightMode ? '#374151' : '#cbd5e1';
+    stringCol = lightMode ? '#6b7280' : '#4b5563';
+    nutCol = lightMode ? '#1f2937' : '#d1d5db';
+    boardStroke = lightMode ? '#9ca3af' : '#353b47';
+  }
 
-  svg += `<rect x="${leftNutX}" y="${topPad - 10}" width="${boardW}" height="${boardH + 20}" fill="${boardBg}" rx="4" stroke="${lightMode ? '#d6cec2' : 'none'}" stroke-width="1"/>`;
+  svg += `<rect x="${leftNutX}" y="${topPad - 10}" width="${boardW}" height="${boardH + 20}" fill="${boardBg}" rx="4" stroke="${boardStroke}" stroke-width="1"/>`;
 
   const markerFrets = [3,5,7,9,12,15,17,19,21,24];
   const dotsMode = (state.fretMarkersMode === 'dots');
@@ -5880,6 +6239,12 @@ function drawFretboard() {
     let activeNodes = state.arpData.nodes || [];
     let activeSteps = state.arpData.steps || [];
     const isSweepTrans = isSweepTab && (state.sweepViewMode === 'transition');
+    const isSweepCompPlay = isSweepTab && !isSweepTrans &&
+      state.sweepPlaybackTarget === 'comp' &&
+      Array.isArray(state.sweepComposition) &&
+      state.sweepComposition.length > 0 &&
+      (state.arpPlaying || state.arpPlayStepIdx >= 0);
+
     if (state.arpData.rootPc !== undefined) arpActiveRootPc = state.arpData.rootPc;
     if (isSweepTrans && state.arpData.transition && state.arpData.transition.segments && state.arpData.transition.segments.length > 0) {
       const segs = state.arpData.transition.segments;
@@ -5897,7 +6262,49 @@ function drawFretboard() {
       if (state.arpPlayStepIdx >= 0 && allSteps[state.arpPlayStepIdx]) {
         arpActiveStepObj = allSteps[state.arpPlayStepIdx];
       }
+    } else if (isSweepCompPlay) {
+      const segs = state.sweepComposition;
+      const segIdx = Math.max(0, Math.min(state.sweepCompActiveIdx || 0, segs.length - 1));
+      const curSeg = segs[segIdx];
+      activeSteps = curSeg.steps || [];
+      const playedKeys = new Set(activeSteps.map(st => `${st.s}:${st.f}`));
+      activeNodes = (curSeg.nodes || []).filter(n => playedKeys.has(`${n.s}:${n.f}`));
+      if (curSeg.rootPc !== undefined) arpActiveRootPc = curSeg.rootPc;
+      const nextSeg = (segIdx + 1 < segs.length) ? segs[segIdx + 1] : null;
+      if (nextSeg && nextSeg !== curSeg) {
+        const nextPlayed = new Set((nextSeg.steps || []).map(st => `${st.s}:${st.f}`));
+        arpNextRootPc = (nextSeg.rootPc !== undefined) ? nextSeg.rootPc : arpActiveRootPc;
+        for (const nn of (nextSeg.nodes || [])) {
+          if (nextPlayed.has(`${nn.s}:${nn.f}`)) arpNextSegMap.set(`${nn.s}:${nn.f}`, nn);
+        }
+      }
+      const allSteps = getSweepCompositionSteps();
+      if (state.arpPlayStepIdx >= 0 && allSteps[state.arpPlayStepIdx]) {
+        arpActiveStepObj = allSteps[state.arpPlayStepIdx];
+      }
     } else {
+      if (isSweepTab) {
+        activeSteps = getActiveArpeggioSteps();
+        if (activeSteps.length > 0 && !isSweepTransitionActive()) {
+          const existingMap = new Map(activeNodes.map(n => [`${n.s}:${n.f}`, n]));
+          const seenN = new Set();
+          const syncedNodes = [];
+          for (const st of activeSteps) {
+            const k = `${st.s}:${st.f}`;
+            if (seenN.has(k)) continue;
+            seenN.add(k);
+            if (existingMap.has(k)) {
+              syncedNodes.push(existingMap.get(k));
+            } else {
+              syncedNodes.push({
+                s: st.s, f: st.f, midi: st.midi, freq: st.freq,
+                note: st.note, interval: st.interval, isRoot: !!st.isRoot
+              });
+            }
+          }
+          activeNodes = syncedNodes;
+        }
+      }
       // Jeśli wybrano Cały gryf, w trakcie odtwarzania/ćwiczenia pokazuj WYŁĄCZNIE dźwięki granej sekwencji!
       if (!isSweepTab && state.arpPattern === 0 && (state.arpPlaying || state.arpPlayStepIdx >= 0) && activeSteps.length > 0) {
         const playedKeys = new Set(activeSteps.map(st => `${st.s}:${st.f}`));
@@ -7471,7 +7878,6 @@ async function renderStageAndInspector() {
   const stage = document.getElementById('dynamicStagePanel');
   const insp = document.getElementById('rightInspector');
   if (!state.initData) return;
-  if (!state.changesIsPlaying) saveSettings();
 
   // =========================================================================
   // WIDOK: STROIK (TUNER) — BEZ GRYFU, PÓŁKOLISTY ZEGAR + 6 STRUN (Screenshot 5)
@@ -8388,11 +8794,21 @@ async function renderStageAndInspector() {
           <div style="display:flex;flex-direction:column;gap:18px;">
             <div>
               <div class="section-label">${t('Motyw', 'Theme')}</div>
-              <div class="ear-seg-row">
-                <button class="ear-seg-btn ${curTheme==='dark'?'active':''}" onclick="setThemeMode('dark')">${t('Ciemny', 'Dark')}</button>
-                <button class="ear-seg-btn ${curTheme==='light'?'active':''}" onclick="setThemeMode('light')">${t('Jasny', 'Light')}</button>
-                <button class="ear-seg-btn ${curTheme==='system'?'active':''}" onclick="setThemeMode('system')">${t('Systemowy', 'System')}</button>
+              <div class="btn-grid-3">
+                <button class="chip-btn ${curTheme==='dark'?'active':''}" style="padding:7px 6px;font-size:12px;" onclick="setThemeMode('dark')">${t('Ciemny', 'Dark')}</button>
+                <button class="chip-btn ${curTheme==='light'?'active':''}" style="padding:7px 6px;font-size:12px;" onclick="setThemeMode('light')">${t('Jasny', 'Light')}</button>
+                <button class="chip-btn ${curTheme==='system'?'active':''}" style="padding:7px 6px;font-size:12px;" onclick="setThemeMode('system')">${t('Systemowy', 'System')}</button>
               </div>
+            </div>
+
+            <div>
+              <div class="section-label">${t('Styl wizualny aplikacji', 'Application Visual Style')}</div>
+              <div class="btn-grid-3">
+                <button class="chip-btn ${(state.uiStyle||'classic')==='classic'?'active':''}" style="padding:7px 6px;font-size:11.5px;" onclick="setUiStyle('classic')">${t('Klasyczny Studio', 'Classic Studio')}</button>
+                <button class="chip-btn ${state.uiStyle==='modern'?'active':''}" style="padding:7px 6px;font-size:11.5px;" onclick="setUiStyle('modern')">Neo-Glass Studio</button>
+                <button class="chip-btn ${state.uiStyle==='rack'?'active':''}" style="padding:7px 6px;font-size:11.5px;" onclick="setUiStyle('rack')">Hardware Amp Rack</button>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${t('Zmienia wygląd całej aplikacji (panele, przyciski, typografię i gryf) zarówno w trybie Ciemnym, jak i Jasnym.', 'Changes the entire app appearance (panels, controls, typography, fretboard) in both Dark and Light mode.')}</div>
             </div>
 
             <div>
@@ -8508,18 +8924,20 @@ async function renderStageAndInspector() {
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
                     <span style="color:var(--text-muted);">${t('Próg grubych (E6–D4)', 'Thick strings (E6–D4)')}</span>
-                    <strong style="color:var(--accent);">${Math.round((state.dspThresholdOn || 0.58) * 100)}%</strong>
+                    <strong id="dspThresholdOnLbl" style="color:var(--accent);">${Math.round((state.dspThresholdOn || 0.58) * 100)}%</strong>
                   </div>
                   <input type="range" min="40" max="78" step="2" value="${Math.round((state.dspThresholdOn || 0.58) * 100)}" style="width:100%;"
-                         oninput="setDspThresholdOn(parseInt(this.value,10)/100)">
+                         oninput="const v=Math.max(40,Math.min(78,parseInt(this.value,10)||58));state.dspThresholdOn=v/100;const lbl=document.getElementById('dspThresholdOnLbl');if(lbl)lbl.textContent=v+'%';if(livePitchPleaseDetector)livePitchPleaseDetector.updateConfig({thresholdOn:state.dspThresholdOn});"
+                         onchange="setDspThresholdOn(parseInt(this.value,10)/100)">
                 </div>
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
                     <span style="color:var(--text-muted);">${t('Próg cienkich (G3–E1)', 'Thin strings (G3–E1)')}</span>
-                    <strong style="color:var(--accent);">${Math.round((state.dspHighThresholdOn || 0.42) * 100)}%</strong>
+                    <strong id="dspHighThresholdOnLbl" style="color:var(--accent);">${Math.round((state.dspHighThresholdOn || 0.42) * 100)}%</strong>
                   </div>
                   <input type="range" min="30" max="72" step="2" value="${Math.round((state.dspHighThresholdOn || 0.42) * 100)}" style="width:100%;"
-                         oninput="setDspHighThresholdOn(parseInt(this.value,10)/100)">
+                         oninput="const v=Math.max(30,Math.min(72,parseInt(this.value,10)||42));state.dspHighThresholdOn=v/100;const lbl=document.getElementById('dspHighThresholdOnLbl');if(lbl)lbl.textContent=v+'%';if(livePitchPleaseDetector)livePitchPleaseDetector.updateConfig({highThresholdOn:state.dspHighThresholdOn});"
+                         onchange="setDspHighThresholdOn(parseInt(this.value,10)/100)">
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -8527,7 +8945,7 @@ async function renderStageAndInspector() {
                   🎸 ${state.dspCalibrating ? t('Kalibracja w toku...', 'Calibrating...') : t('Kalibruj z gitary (5s)', 'Calibrate from guitar (5s)')}
                 </button>
                 <span id="dspCalibStatusLabel" style="font-size:11.5px;color:${state.dspCalibrated ? '#4ade80' : 'var(--text-muted)'};">
-                  ${state.dspCalibStatus || (state.dspCalibrated ? t('Skalibrowano pod Twoją gitarę', 'Calibrated for your guitar') : t('Cisza → grube struny → cienkie struny', 'Silence → thick strings → thin strings'))}
+                  ${state.dspCalibStatus || (state.dspCalibrated ? t('Skalibrowano pod Twoją gitarę', 'Calibrated for your guitar') : t('Samoadaptacja Zero-Calibration aktywna (opcjonalna kalibracja 5s)', 'Zero-Calibration auto-adapt active (optional 5s calibration)'))}
                 </span>
               </div>
             </div>
@@ -8536,18 +8954,20 @@ async function renderStageAndInspector() {
             <div>
               <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
                 <span class="section-label" style="margin:0;">${t('Głośność syntezatora', 'Synth volume')}</span>
-                <strong style="color:var(--accent);">${synthVolPct}%</strong>
+                <strong id="synthVolLbl" style="color:var(--accent);">${synthVolPct}%</strong>
               </div>
               <input type="range" min="10" max="100" step="5" value="${synthVolPct}" style="width:100%;"
-                     oninput="state.synthVolume=parseInt(this.value,10)/100;saveSettings();renderStageAndInspector()">
+                     oninput="const p=parseInt(this.value,10)||85;state.synthVolume=p/100;const l=document.getElementById('synthVolLbl');if(l)l.textContent=p+'%';"
+                     onchange="state.synthVolume=parseInt(this.value,10)/100;saveSettings();">
             </div>
             <div>
               <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
                 <span class="section-label" style="margin:0;">${t('Głośność metronomu', 'Metronome volume')}</span>
-                <strong style="color:var(--accent);">${metroVolPct}%</strong>
+                <strong id="metroVolLbl" style="color:var(--accent);">${metroVolPct}%</strong>
               </div>
               <input type="range" min="10" max="100" step="5" value="${metroVolPct}" style="width:100%;"
-                     oninput="state.metronomeVolume=parseInt(this.value,10)/100;saveSettings();renderStageAndInspector()">
+                     oninput="const p=parseInt(this.value,10)||75;state.metronomeVolume=p/100;const l=document.getElementById('metroVolLbl');if(l)l.textContent=p+'%';"
+                     onchange="state.metronomeVolume=parseInt(this.value,10)/100;saveSettings();">
             </div>
             <button id="settingsToggleMicBtn" class="action-btn" style="width:100%;padding:10px;font-size:13px;background:${micStream ? 'var(--red)' : 'var(--accent)'};color:${micStream ? '#ffffff' : '#120e0a'};" onclick="toggleLiveAudio()">
               ${micStream ? t('🔇 Wyłącz mikrofon', '🔇 Turn off microphone') : t('🎤 Włącz mikrofon', '🎤 Turn on microphone')}
@@ -9191,6 +9611,8 @@ async function renderStageAndInspector() {
     const isSweepTab = (state.subtab === 'sweep');
     const isTrans = isSweepTab && (state.sweepViewMode === 'transition');
     if (!isSweepTab && state.arpPattern === 4) state.arpPattern = 6;
+    const curChordId = normalizeChordId(state.chordId);
+    state.chordId = curChordId;
     const reqPattern = isSweepTab ? 4 : state.arpPattern;
     const reqPosIdx = isSweepTab ? (isTrans ? (state.sweepTransPosIdx || 0) : (state.sweepPosIdx || 0)) : (state.arpPosIdx || 0);
     const reqViewMode = isTrans ? 'transition' : 'single';
@@ -9198,13 +9620,24 @@ async function renderStageAndInspector() {
     const effDiatRootPc = (isTrans && state.arpTransitionId !== 'same_chord_inversions')
       ? state.rootPc
       : state.arpDiatonicScaleRootPc;
-    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${reqPattern}&posIdx=${reqPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=${encodeURIComponent(reqViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
+    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(curChordId)}&pattern=${reqPattern}&posIdx=${reqPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=${encodeURIComponent(reqViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
     let data = await fetchJson(arpUrl);
     if (state._matchSweepSegBounds) {
       const mb = state._matchSweepSegBounds;
       state._matchSweepSegBounds = null;
-      if (isSweepTab && !isTrans && Array.isArray(data.positions)) {
-        const match = data.positions.find(p => p.minFret === mb.minFret && p.maxFret === mb.maxFret);
+      if (isSweepTab && !isTrans && Array.isArray(data.positions) && data.positions.length > 0) {
+        const targetMid = (mb.minFret + mb.maxFret) * 0.5;
+        let match = data.positions[0];
+        let bestDist = Infinity;
+        for (const p of data.positions) {
+          const dist = Math.abs((p.minFret + p.maxFret) * 0.5 - targetMid) * 2
+                     + Math.abs(p.minFret - mb.minFret) * 0.25
+                     + Math.abs(p.maxFret - mb.maxFret) * 0.25;
+          if (dist < bestDist) {
+            bestDist = dist;
+            match = p;
+          }
+        }
         if (match && match.idx !== data.posIdx) {
           state.sweepPosIdx = match.idx;
           const retryUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${reqPattern}&posIdx=${state.sweepPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=${encodeURIComponent(reqViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
@@ -9213,29 +9646,76 @@ async function renderStageAndInspector() {
       }
     }
     state.arpData = data;
-    if (data.posIdx !== undefined) {
-      if (isSweepTab) {
-        if (!isTrans) state.sweepPosIdx = data.posIdx;
-      } else {
-        state.arpPosIdx = data.posIdx;
-      }
-    }
+    const effSweepPosIdx = (data.posIdx !== undefined) ? data.posIdx : (state.sweepPosIdx || 0);
+    const effArpPosIdx = (data.posIdx !== undefined) ? data.posIdx : (state.arpPosIdx || 0);
     const tr = data.transition || { segments: [] };
     if (isTrans && tr.segments && state.arpActiveSegIdx >= tr.segments.length) {
       state.arpActiveSegIdx = 0;
     }
 
+    const isSweepSingle = isSweepTab && !isTrans;
+    const compactOn = isSweepSingle && !!state.sweepCompactTabs;
     const activeSteps = getActiveArpeggioSteps();
-    const tabSvg = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, state.arpPlayStepIdx, isTrans);
+    const mainPlayStepIdx = (isSweepSingle && state.sweepPlaybackTarget === 'comp') ? -1 : state.arpPlayStepIdx;
+    const tabSvg = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, mainPlayStepIdx, isTrans, {
+      compact: compactOn,
+      svgId: 'arpTabSvg',
+      playheadId: 'arpPlayheadBg',
+      onStepClickFn: 'playSingleArpeggioStep',
+      activeSegIdx: state.arpActiveSegIdx
+    });
+    const compList = Array.isArray(state.sweepComposition) ? state.sweepComposition : [];
+    if (state.sweepCompActiveIdx >= compList.length) state.sweepCompActiveIdx = Math.max(0, compList.length - 1);
+    const compSteps = (isSweepSingle && compList.length > 0) ? getSweepCompositionSteps() : [];
+    const compSegments = compList.map((c, idx) => ({
+      symbol: `${idx + 1}. ${c.symbol}`,
+      roman: c.rangeLabel || `Poz. ${(c.posIdx || 0) + 1}`
+    }));
+    const compPlayStepIdx = (isSweepSingle && state.sweepPlaybackTarget === 'comp') ? state.arpPlayStepIdx : -1;
+    const compTabSvg = (isSweepSingle && compList.length > 0)
+      ? buildArpeggioTabSvg(compSteps, compSegments, compPlayStepIdx, true, {
+          compact: compactOn,
+          svgId: 'sweepCompTabSvg',
+          playheadId: 'sweepCompPlayheadBg',
+          onStepClickFn: 'playSingleSweepCompStep',
+          activeSegIdx: state.sweepCompActiveIdx
+        })
+      : '';
+    const isMainPlayActive = state.arpPlaying && (!isSweepSingle || state.sweepPlaybackTarget !== 'comp' || (!!state.sweepSequential && compList.length > 0));
+    const isCompPlayActive = state.arpPlaying && isSweepSingle && state.sweepPlaybackTarget === 'comp';
     const hasRollAny = activeSteps.some(st => st.roll);
     const rootLabels = getRootLabels();
-    const curLoopOn = isSweepTab ? !!state.sweepLoop : !!state.arpLoop;
+    const curLoopOn = !!state.arpLoop;
+    const curSeqOn = !!state.sweepSequential;
     const quickArpTypes = [
       { id: 'major', lbl: 'maj' }, { id: 'minor', lbl: 'm' }, { id: 'dim', lbl: 'dim' },
       { id: 'aug', lbl: 'aug' }, { id: 'maj7', lbl: 'maj7' }, { id: '7', lbl: '7' },
       { id: 'm7', lbl: 'm7' }, { id: 'm7b5', lbl: 'm7♭5' }, { id: 'dim7', lbl: 'dim7' }
     ];
-    const chordOptHtml = (c) => `<option value="${c.id}" ${c.id===state.chordId?'selected':''}>${c.id} (${c.name})</option>`;
+    const scaleDegMap = new Map();
+    (data.scaleDegrees || []).forEach(sd => {
+      if (!scaleDegMap.has(sd.pc)) scaleDegMap.set(sd.pc, sd.roman);
+    });
+    const possibleForRootList = Array.isArray(data.possibleForRoot) ? data.possibleForRoot : [];
+    const possibleIdSet = new Set(possibleForRootList.map(p => normalizeChordId(p.id)));
+    const savedPresets = Array.isArray(state.savedSweepCompositions) ? state.savedSweepCompositions : [];
+    const savedPresetsBarHtml = (isSweepSingle && savedPresets.length > 0)
+      ? `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-top:4px;border-top:1px dashed var(--border);">
+           <span style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;">💾 Zapisane układy (${savedPresets.length}):</span>
+           ${savedPresets.map((pr, pIdx) => `
+             <div style="display:inline-flex;align-items:center;gap:2px;background:var(--bg-card);border:1px solid var(--border);border-radius:7px;padding:2px 4px;">
+               <button class="chip-btn" style="border:none;background:transparent;padding:2px 6px;font-size:11px;"
+                       onclick="loadSweepCompositionPreset(${pIdx})" title="Wczytaj zapisaną kompozycję">${pr.name}</button>
+               <button class="chip-btn" style="border:none;background:transparent;padding:2px 5px;font-size:10px;color:#f87171;"
+                       onclick="deleteSweepCompositionPreset(${pIdx})" title="Usuń zapisany układ">✕</button>
+             </div>
+           `).join('')}
+         </div>`
+      : '';
+    const chordOptHtml = (c) => {
+      const inSc = possibleIdSet.has(normalizeChordId(c.id));
+      return `<option value="${c.id}" ${normalizeChordId(c.id)===curChordId?'selected':''}>${inSc ? '✓ ' : ''}${c.id} (${c.name})${inSc ? ' · w skali' : ''}</option>`;
+    };
     const groupedChordsHtml = ['Trójdźwięki', 'Dwudźwięki', 'Septymowe', 'Rozszerzone', 'Alterowane'].map(cat => {
       const items = (state.initData.chords || []).filter(c => c.category === cat);
       return items.length ? `<optgroup label="${cat}">${items.map(chordOptHtml).join('')}</optgroup>` : '';
@@ -9265,14 +9745,6 @@ async function renderStageAndInspector() {
           : `Arpeggio: ${data.chordSymbol} <span style="color:var(--text-muted);font-weight:600;font-size:13px;">(${data.chordName})</span>`);
 
     const curTransSeg = (isTrans && tr.segments && tr.segments[state.arpActiveSegIdx]) ? tr.segments[state.arpActiveSegIdx] : null;
-    const sweepTabLegendHtml = `
-      <div style="display:flex;gap:10px;align-items:center;font-size:11px;color:var(--text-muted);white-space:nowrap;">
-        <span><b style="color:#fb923c;">↓</b> w dół</span>
-        <span><b style="color:#38bdf8;">↑</b> w górę</span>
-        <span><b style="color:#4ade80;">H/P</b> legato</span>
-        <span><b style="color:#facc15;">S</b> slide</span>
-        <span><b style="color:#fde047;">R</b> roll</span>
-      </div>`;
     stage.innerHTML = `
       <div class="fretboard-card" style="gap:10px;padding:12px 14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -9281,19 +9753,27 @@ async function renderStageAndInspector() {
             ${formulaHtml || `<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">${tr.description}</div>`}
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            ${sweepTabLegendHtml}
             ${!isTrans ? `<button class="chip-btn" style="padding:6px 10px;font-size:12px;" onclick="playArpeggioChordPreview()" title="Posłuchaj akordu bazowego">🎸 Akord</button>` : ''}
-            <button id="arpPlayBtn" class="chip-btn ${state.arpPlaying?'active':''}" style="padding:6px 13px;font-weight:700;"
+            <button id="arpPlayBtn" class="chip-btn ${isMainPlayActive?'active':''}" style="padding:6px 13px;font-weight:700;"
                     onclick="toggleArpeggioPlayback()">
-              ${state.arpPlaying ? '⏹ Stop' : '▶ Odsłuchaj'}
+              ${isMainPlayActive ? '⏹ Stop' : '▶ Odsłuchaj'}
             </button>
-            <button class="chip-btn ${curLoopOn?'active':''}" style="padding:6px 10px;font-size:12px;"
-                    onclick="toggleArpOrSweepLoop()">🔁 Pętla: ${curLoopOn ? 'Wł.' : 'Wył.'}</button>
+            ${isSweepTab ? `
+              <button class="chip-btn ${curSeqOn?'active':''}" style="padding:6px 10px;font-size:12px;"
+                      onclick="toggleArpOrSweepLoop()"
+                      title="Wł.: odtwarza wszystkie sweepy po kolei od początku. Wył.: odtwarza tylko aktualnie wybrany sweep.">⏭️ Po kolei: ${curSeqOn ? 'Wł.' : 'Wył.'}</button>
+            ` : `
+              <button class="chip-btn ${curLoopOn?'active':''}" style="padding:6px 10px;font-size:12px;"
+                      onclick="toggleArpOrSweepLoop()">🔁 Pętla: ${curLoopOn ? 'Wł.' : 'Wył.'}</button>
+            `}
             <div style="display:flex;align-items:center;gap:5px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:3px 7px;font-size:12px;">
               <button class="chip-btn" style="padding:2px 6px;" onclick="setArpeggioBpm(state.arpBpm - 10)">−10</button>
               <strong id="arpBpmVal" style="min-width:52px;text-align:center;color:var(--accent);">${state.arpBpm} BPM</strong>
               <button class="chip-btn" style="padding:2px 6px;" onclick="setArpeggioBpm(state.arpBpm + 10)">+10</button>
             </div>
+            <button id="arpAutoTempoBtn" class="chip-btn ${state.arpAutoTempo?'active':''}" style="padding:6px 10px;font-size:12px;"
+                    onclick="toggleArpAutoTempo()"
+                    title="Po każdym pełnym odegraniu podnosi tempo o +4 BPM">🚀 Auto-Tempo: ${state.arpAutoTempo ? '+4 BPM' : 'Wył.'}</button>
             <button class="chip-btn" style="padding:6px 11px;font-size:12px;border-color:var(--accent);color:var(--accent);"
                     onclick="sendArpeggioToExerciseTab()" title="Przenieś sekwencję do Edytora Ćwiczeń (ćwiczenie z mikrofonem i eksport GP5/MIDI)">
               ✏️ Ćwicz w TAB / GP5
@@ -9301,9 +9781,130 @@ async function renderStageAndInspector() {
           </div>
         </div>
 
-        <div id="arpTabSvgWrap" style="background:#14100d;border:1px solid #2b231d;border-radius:10px;padding:8px 12px;overflow-x:auto;">
-          ${tabSvg}
-        </div>
+        ${isSweepSingle ? `
+          <div style="display:flex;align-items:stretch;gap:8px;">
+            <div id="arpTabSvgWrap" style="flex:1;min-width:0;background:#14100d;border:1px solid #2b231d;border-radius:10px;padding:${compactOn ? '6px 10px' : '8px 12px'};overflow-x:auto;">
+              ${tabSvg}
+            </div>
+            <div style="flex-shrink:0;display:flex;flex-direction:column;gap:5px;justify-content:center;">
+              <button class="chip-btn" style="flex:1;min-width:52px;min-height:46px;padding:6px 10px;font-size:21px;font-weight:900;line-height:1;border-color:var(--accent);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"
+                      onclick="addCurrentSweepToComposition()"
+                      title="Dodaj ten kształt Sweep do kompozycji poniżej">
+                <span>+</span>
+                <span style="font-size:9.5px;font-weight:700;">Dodaj</span>
+              </button>
+              <button class="chip-btn ${state.sweepCompactTabs?'active':''}" style="padding:4px 8px;font-size:10.5px;white-space:nowrap;"
+                      onclick="toggleSweepCompactTabs()"
+                      title="Zmniejsz lub przywróć rozmiar obu tabulatur (żeby zmieściły się jednocześnie)">
+                🔍 ${state.sweepCompactTabs ? '100%' : 'Zmniejsz'}
+              </button>
+            </div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.02);border:1px solid #2b231d;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;">
+                <span style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;margin-right:2px;">Ruch:</span>
+                <button class="chip-btn ${(state.arpDirection||0)===0?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="setSweepDirectionAndFit(0)">↕ Pełny (Dół-Góra)</button>
+                <button class="chip-btn ${(state.arpDirection||0)===1?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="setSweepDirectionAndFit(1)">↓ Tylko w dół</button>
+                <button class="chip-btn ${(state.arpDirection||0)===2?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="setSweepDirectionAndFit(2)">↑ Tylko w górę</button>
+                <span style="width:1px;height:16px;background:#3a2f26;margin:0 4px;"></span>
+                <span style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;margin-right:2px;">Rytm:</span>
+                <button class="chip-btn ${state.sweepMetricFit==='sixteenths'?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="setSweepMetricFit('sixteenths')" title="Podział szesnastkowy (4 nuty na ćwierćnutę)">🎵 Szesnastki</button>
+                <button class="chip-btn ${state.sweepMetricFit!=='sixteenths'?'active':''}" style="padding:3px 9px;font-size:11px;"
+                        onclick="setSweepMetricFit('sextuplets')" title="Podział sekstolowy / triolowy (6 nut na ćwierćnutę)">🎶 Sekstole</button>
+              </div>
+              <div style="font-size:11px;font-weight:700;color:#d6cec2;background:rgba(255,255,255,0.04);border:1px solid #352a20;border-radius:6px;padding:3px 8px;white-space:nowrap;">
+                ${formatSweepMetricSummary(activeSteps, state.sweepMetricFit)}
+              </div>
+            </div>
+
+            ${(data.positions && data.positions.length > 0) ? `
+              <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+                <span style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;">Pozycje kształtu (${data.positions.length}):</span>
+                <div class="pos-pill-grid">
+                  ${data.positions.map((pos, pIdx) => `
+                    <button class="chip-btn pos-pill-btn ${effSweepPosIdx===pos.idx?'active':''}"
+                            title="${String(pos.label || '').replace(/"/g, '&quot;')}"
+                            onclick="stopArpeggioPlayback(false);state.sweepPosIdx=${pos.idx};saveSettings();renderStageAndInspector()">
+                      ${formatCompactPositionLabel(pos, pIdx)}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            ${buildArpDiatonicSectionHtml(data, true, true)}
+            ${compList.length === 0 ? savedPresetsBarHtml : ''}
+          </div>
+        ` : `
+          <div id="arpTabSvgWrap" style="background:#14100d;border:1px solid #2b231d;border-radius:10px;padding:8px 12px;overflow-x:auto;">
+            ${tabSvg}
+          </div>
+        `}
+
+        ${(isSweepSingle && compList.length > 0) ? `
+          <div style="background:rgba(255,255,255,0.02);border:1px solid #352a20;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+              <div class="section-label" style="margin:0;">🧩 UKŁADANIE SWEEPÓW — TWOJA KOMPOZYCJA (${compList.length} ogniw · ${compSteps.length} nut${getSweepBarFillText(compList, compSteps.length)})</div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <button id="sweepCompPlayBtn" class="chip-btn ${isCompPlayActive?'active':''}" style="padding:5px 11px;font-size:11.5px;font-weight:700;"
+                        onclick="toggleSweepCompositionPlayback()">
+                  ${isCompPlayActive ? '⏹ Stop' : '▶ Odsłuchaj kompozycję'}
+                </button>
+                <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;"
+                        onclick="saveCurrentSweepCompositionPreset()" title="Zapisz bieżący układ sweepów do pamięci podręcznej">
+                  💾 Zapisz układ
+                </button>
+                <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;border-color:var(--accent);color:var(--accent);"
+                        onclick="sendSweepCompositionToExerciseTab()">
+                  ✏️ Ćwicz kompozycję w TAB / GP5
+                </button>
+                <button class="chip-btn" style="padding:5px 9px;font-size:11px;color:#f87171;border-color:#7f1d1d;"
+                        onclick="clearSweepComposition()">
+                  🗑️ Wyczyść
+                </button>
+              </div>
+            </div>
+            ${savedPresetsBarHtml}
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px;">
+              ${compList.map((seg, idx) => `
+                <div class="chord-box-card ${idx===state.sweepCompActiveIdx?'selected':''}" data-sweep-comp-seg="${idx}"
+                     style="align-items:flex-start;text-align:left;padding:7px 9px;gap:2px;"
+                     onclick="selectSweepCompItem(${idx})">
+                  <div style="display:flex;justify-content:space-between;width:100%;font-size:10px;color:var(--text-muted);">
+                    <span>${idx + 1}.</span>
+                    <span>${seg.sweepStrings} str. · pr. ${seg.minFret}–${seg.maxFret}</span>
+                  </div>
+                  <div style="font-size:16px;font-weight:800;color:var(--accent);">${seg.symbol}</div>
+                  <div style="font-size:10.5px;color:#d6cec2;line-height:1.25;">Poz. ${(seg.posIdx || 0) + 1} · ${seg.rangeLabel || ''}</div>
+                  <div style="display:flex;gap:4px;margin-top:4px;width:100%;" onclick="event.stopPropagation()">
+                    <button class="chip-btn" style="padding:2px 6px;font-size:10px;opacity:${idx===0?'0.4':'1'};" ${idx===0?'disabled':''}
+                            onclick="moveSweepCompItem(${idx}, -1)" title="Przesuń w lewo">◀</button>
+                    <button class="chip-btn" style="padding:2px 6px;font-size:10px;opacity:${idx===compList.length-1?'0.4':'1'};" ${idx===compList.length-1?'disabled':''}
+                            onclick="moveSweepCompItem(${idx}, 1)" title="Przesuń w prawo">▶</button>
+                    <button class="chip-btn" style="padding:2px 6px;font-size:10px;margin-left:auto;"
+                            onclick="replaceSweepCompItemWithCurrent(${idx})" title="Podmień na aktualnie ustawiony Sweep z góry">↻</button>
+                    <button class="chip-btn" style="padding:2px 6px;font-size:10px;color:#f87171;border-color:#7f1d1d;"
+                            onclick="removeSweepCompItem(${idx})" title="Usuń z kompozycji">✕</button>
+                  </div>
+                </div>
+              `).join('')}
+              <div class="chord-box-card" style="border-style:dashed;border-color:#57412e;justify-content:center;align-items:center;min-height:86px;gap:4px;"
+                   onclick="addCurrentSweepToComposition()" title="Dodaj aktualny kształt Sweep na koniec kompozycji">
+                <div style="font-size:20px;font-weight:900;color:var(--accent);">+</div>
+                <div style="font-size:11px;color:var(--text-muted);font-weight:700;">Dodaj aktualny</div>
+              </div>
+            </div>
+            <div id="sweepCompTabSvgWrap" style="background:#14100d;border:1px solid #2b231d;border-radius:10px;padding:${state.sweepCompactTabs ? '6px 10px' : '8px 12px'};overflow-x:auto;">
+              ${compTabSvg}
+            </div>
+          </div>
+        ` : ''}
 
         ${isTrans ? `
           <div>
@@ -9339,44 +9940,7 @@ async function renderStageAndInspector() {
               `).join('')}
             </div>
           </div>
-        ` : `
-          ${(isSweepTab && data.positions && data.positions.length > 0) ? `
-            <div>
-              <div class="section-label" style="margin-bottom:5px;">POZYCJE KSZTAŁTU SWEEP NA GRYFIE (${data.positions.length})</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                ${data.positions.map(pos => `
-                  <button class="chip-btn ${state.sweepPosIdx===pos.idx?'active':''}" style="padding:4px 10px;font-size:11.5px;"
-                          onclick="stopArpeggioPlayback(false);state.sweepPosIdx=${pos.idx};saveSettings();renderStageAndInspector()">
-                    ${pos.label}${pos.hasRoll ? ' · R' : ''}
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-              <div class="section-label" style="margin:0;">${isSweepTab ? 'AKORDY DIATONICZNE DO SWEEP' : 'ARPEGGIO DIATONICZNE'} W SKALI (${data.scaleFullName}) — KLIKNIJ, ABY ZAŁADOWAĆ</div>
-              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-                ${isSweepTab ? `<button class="chip-btn" style="padding:3px 10px;font-size:11px;border-color:var(--accent);color:var(--accent);" onclick="launchDiatonicScaleSweep()">⚡ Wspinaczka po skali</button>` : ''}
-                <button class="chip-btn ${!state.arpDiatonicSevenths?'active':''}" style="padding:3px 9px;font-size:11px;"
-                        onclick="state.arpDiatonicSevenths=false;saveSettings();renderStageAndInspector()">Trójdźwięki</button>
-                <button class="chip-btn ${state.arpDiatonicSevenths?'active':''}" style="padding:3px 9px;font-size:11px;"
-                        onclick="state.arpDiatonicSevenths=true;saveSettings();renderStageAndInspector()">Septymowe</button>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;">
-              ${(data.diatonic || []).map(d => {
-                const isCur = (d.rootPc === state.rootPc && d.chordId === state.chordId);
-                return `
-                  <div class="chord-box-card ${isCur?'selected':''}" style="padding:8px 10px;gap:3px;"
-                       onclick="selectDiatonicArpeggio(${d.rootPc}, '${d.chordId}')">
-                    <div style="font-size:11px;color:var(--text-muted);">Stopień ${d.roman}</div>
-                    <div style="font-size:17px;font-weight:800;color:var(--accent);">${d.symbol}</div>
-                  </div>`;
-              }).join('')}
-            </div>
-          </div>
-        `}
+        ` : (isSweepSingle ? '' : buildArpDiatonicSectionHtml(data, isSweepTab, false))}
       </div>`;
 
     if (isSweepTab) {
@@ -9391,26 +9955,26 @@ async function renderStageAndInspector() {
           </div>
         </div>
 
-        <div>
-          <div class="section-label">${isTrans ? 'TONACJA PRZEJŚCIA' : 'PRYMA KSZTAŁTU SWEEP'}</div>
-          <div class="btn-grid-6">
-            ${rootLabels.map((lbl, pc) => `
-              <button class="chip-btn ${state.rootPc===pc?'active':''}"
-                      onclick="stopArpeggioPlayback(false);state.rootPc=${pc};state.arpDiatonicScaleRootPc=${pc};state.sweepPosIdx=0;state.sweepTransPosIdx=0;saveSettings();renderAll()">${lbl}</button>
-            `).join('')}
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">LICZBA STRUN SWEEP</div>
-          <div class="btn-grid-3">
-            <button class="chip-btn ${state.arpSweepStrings===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=3;state.sweepPosIdx=0;state.sweepTransPosIdx=0;saveSettings();renderStageAndInspector()">3 struny</button>
-            <button class="chip-btn ${state.arpSweepStrings===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=5;state.sweepPosIdx=0;state.sweepTransPosIdx=0;saveSettings();renderStageAndInspector()">5 strun</button>
-            <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;state.sweepPosIdx=0;state.sweepTransPosIdx=0;saveSettings();renderStageAndInspector()">6 strun</button>
-          </div>
-        </div>
-
         ${isTrans ? `
+          <div>
+            <div class="section-label">TONACJA PRZEJŚCIA</div>
+            <div class="btn-grid-6">
+              ${rootLabels.map((lbl, pc) => `
+                <button class="chip-btn ${state.rootPc===pc?'active':''}"
+                        onclick="stopArpeggioPlayback(false);state.rootPc=${pc};state.arpDiatonicScaleRootPc=${pc};saveSettings();renderAll()">${lbl}</button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div>
+            <div class="section-label">LICZBA STRUN SWEEP</div>
+            <div class="btn-grid-3">
+              <button class="chip-btn ${state.arpSweepStrings===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=3;saveSettings();renderStageAndInspector()">3 struny</button>
+              <button class="chip-btn ${state.arpSweepStrings===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=5;saveSettings();renderStageAndInspector()">5 strun</button>
+              <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;saveSettings();renderStageAndInspector()">6 strun</button>
+            </div>
+          </div>
+
           <div>
             <div class="section-label">SKALA DLA SWEEP PICKING</div>
             <select onchange="stopArpeggioPlayback(false);state.arpDiatonicScaleId=this.value;saveSettings();renderStageAndInspector();">
@@ -9430,7 +9994,7 @@ async function renderStageAndInspector() {
           ${state.arpTransitionId === 'same_chord_inversions' ? `
             <div>
               <div class="section-label">AKORD DLA INWERSJI</div>
-              <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;state.sweepTransPosIdx=0;saveSettings();renderStageAndInspector();">
+              <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;saveSettings();renderStageAndInspector();">
                 ${groupedChordsHtml}
               </select>
             </div>
@@ -9440,7 +10004,7 @@ async function renderStageAndInspector() {
             <div style="display:flex;flex-direction:column;gap:6px;">
               ${(data.transitionPresets || []).map(p => `
                 <button class="chip-btn ${state.arpTransitionId===p.id?'active':''}" style="text-align:left;padding:8px 10px;display:flex;flex-direction:column;gap:2px;"
-                        onclick="stopArpeggioPlayback(false);state.arpTransitionId='${p.id}';state.arpActiveSegIdx=0;state.sweepTransPosIdx=0;saveSettings();renderStageAndInspector()">
+                        onclick="stopArpeggioPlayback(false);state.arpTransitionId='${p.id}';state.arpActiveSegIdx=0;saveSettings();renderStageAndInspector()">
                   <div style="display:flex;justify-content:space-between;width:100%;align-items:center;gap:6px;">
                     <strong style="font-size:12px;">${p.name}</strong>
                     <span style="font-size:10px;opacity:0.75;white-space:nowrap;">${p.category}</span>
@@ -9451,85 +10015,52 @@ async function renderStageAndInspector() {
             </div>
           </div>
         ` : `
+          ${buildArpScaleCohesionInspectorHtml({ data, rootLabels, quickArpTypes, groupedChordsHtml, possibleForRootList, possibleIdSet, scaleDegMap, isSweepMode: true })}
           <div>
-            <div class="section-label">TYP AKORDU SWEEP</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;">
-              ${quickArpTypes.map(qt => `
-                <button class="chip-btn ${state.chordId===qt.id?'active':''}" style="padding:5px 4px;font-size:11.5px;"
-                        onclick="stopArpeggioPlayback(false);state.chordId='${qt.id}';state.sweepPosIdx=0;renderStageAndInspector()">${qt.lbl}</button>
-              `).join('')}
+            <div class="section-label">LICZBA STRUN SWEEP</div>
+            <div class="btn-grid-3">
+              <button class="chip-btn ${state.arpSweepStrings===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=3;saveSettings();renderStageAndInspector()">3 struny</button>
+              <button class="chip-btn ${state.arpSweepStrings===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=5;saveSettings();renderStageAndInspector()">5 strun</button>
+              <button class="chip-btn ${state.arpSweepStrings===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpSweepStrings=6;saveSettings();renderStageAndInspector()">6 strun</button>
             </div>
-            <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;state.sweepPosIdx=0;renderStageAndInspector();">
-              ${groupedChordsHtml}
-            </select>
           </div>
           ${(data.positions && data.positions.length > 0) ? `
             <div>
               <div class="section-label">POZYCJA KSZTAŁTU SWEEP (${data.positions.length})</div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                ${data.positions.map(pos => `
-                  <button class="chip-btn ${state.sweepPosIdx===pos.idx?'active':''}" style="padding:5px 8px;font-size:11px;"
-                          onclick="stopArpeggioPlayback(false);state.sweepPosIdx=${pos.idx};renderStageAndInspector()">
-                    ${pos.label}${pos.hasRoll ? ' · R' : ''}
+              <div class="pos-pill-grid-2col">
+                ${data.positions.map((pos, pIdx) => `
+                  <button class="chip-btn pos-pill-btn ${effSweepPosIdx===pos.idx?'active':''}"
+                          title="${String(pos.label || '').replace(/"/g, '&quot;')}"
+                          onclick="stopArpeggioPlayback(false);state.sweepPosIdx=${pos.idx};saveSettings();renderStageAndInspector()">
+                    ${formatCompactPositionLabel(pos, pIdx)}
                   </button>
                 `).join('')}
               </div>
             </div>
           ` : ''}
           <div>
-            <div class="section-label">SEKWENCJA I KIERUNEK</div>
-            <div class="btn-grid-3" style="margin-bottom:6px;">
-              <button class="chip-btn ${state.arpSeqStyle===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=0;renderStageAndInspector()">Prosto</button>
-              <button class="chip-btn ${state.arpSeqStyle===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=1;renderStageAndInspector()">Grupy po 3</button>
-              <button class="chip-btn ${state.arpSeqStyle===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=2;renderStageAndInspector()">Skoki 1–5</button>
-            </div>
+            <div class="section-label">SEKWENCJA</div>
             <div class="btn-grid-3">
-              <button class="chip-btn ${state.arpDirection===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=0;renderStageAndInspector()">↕ Góra-dół</button>
-              <button class="chip-btn ${state.arpDirection===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=1;renderStageAndInspector()">↓ W górę</button>
-              <button class="chip-btn ${state.arpDirection===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=2;renderStageAndInspector()">↑ W dół</button>
+              <button class="chip-btn ${state.arpSeqStyle===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=0;saveSettings();renderStageAndInspector()">Prosto</button>
+              <button class="chip-btn ${state.arpSeqStyle===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=1;saveSettings();renderStageAndInspector()">Grupy po 3</button>
+              <button class="chip-btn ${state.arpSeqStyle===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=2;saveSettings();renderStageAndInspector()">Skoki 1–5</button>
             </div>
           </div>
-          <div>
-            <div class="section-label">SKALA DLA KART DIATONICZNYCH</div>
-            <select onchange="state.arpDiatonicScaleId=this.value;saveSettings();renderStageAndInspector();">
-              ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
-            </select>
-          </div>
+          ${buildArpReferenceScaleInspectorHtml(rootLabels)}
         `}`;
     } else {
       insp.innerHTML = `
-        <div>
-          <div class="section-label">PRYMA ARPEGGIO</div>
-          <div class="btn-grid-6">
-            ${rootLabels.map((lbl, pc) => `
-              <button class="chip-btn ${state.rootPc===pc?'active':''}"
-                      onclick="stopArpeggioPlayback(false);state.rootPc=${pc};state.arpDiatonicScaleRootPc=${pc};state.arpPosIdx=0;renderAll()">${lbl}</button>
-            `).join('')}
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TYP ARPEGGIO (SZYBKI WYBÓR)</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;">
-            ${quickArpTypes.map(qt => `
-              <button class="chip-btn ${state.chordId===qt.id?'active':''}" style="padding:5px 4px;font-size:11.5px;"
-                      onclick="stopArpeggioPlayback(false);state.chordId='${qt.id}';state.arpPosIdx=0;renderStageAndInspector()">${qt.lbl}</button>
-            `).join('')}
-          </div>
-          <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;state.arpPosIdx=0;renderStageAndInspector();">
-            ${groupedChordsHtml}
-          </select>
-        </div>
+        ${buildArpScaleCohesionInspectorHtml({ data, rootLabels, quickArpTypes, groupedChordsHtml, possibleForRootList, possibleIdSet, scaleDegMap, isSweepMode: false })}
 
         <div>
           <div class="section-label">UKŁAD NA GRYFIE</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <button class="chip-btn ${state.arpPattern===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=6;state.arpPosIdx=0;renderStageAndInspector()">🎯 Od prymy</button>
-            <button class="chip-btn ${state.arpPattern===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=1;state.arpPosIdx=0;renderStageAndInspector()">📦 CAGED (5 kszt.)</button>
-            <button class="chip-btn ${state.arpPattern===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=5;state.arpPosIdx=0;renderStageAndInspector()">↔ Inwersje</button>
-            <button class="chip-btn ${state.arpPattern===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=2;state.arpPosIdx=0;renderStageAndInspector()">2NPS (2/str.)</button>
-            <button class="chip-btn ${state.arpPattern===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=3;state.arpPosIdx=0;renderStageAndInspector()">3NPS (legato)</button>
-            <button class="chip-btn ${state.arpPattern===0?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=0;state.arpPosIdx=0;renderStageAndInspector()">Mapa gryfu</button>
+            <button class="chip-btn ${state.arpPattern===6?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=6;state.arpPosIdx=0;saveSettings();renderStageAndInspector()">🎯 Od prymy</button>
+            <button class="chip-btn ${state.arpPattern===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=1;state.arpPosIdx=0;saveSettings();renderStageAndInspector()">📦 CAGED (5 kszt.)</button>
+            <button class="chip-btn ${state.arpPattern===5?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=5;state.arpPosIdx=0;saveSettings();renderStageAndInspector()">↔ Inwersje</button>
+            <button class="chip-btn ${state.arpPattern===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=2;state.arpPosIdx=0;saveSettings();renderStageAndInspector()">2NPS (2/str.)</button>
+            <button class="chip-btn ${state.arpPattern===3?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=3;state.arpPosIdx=0;saveSettings();renderStageAndInspector()">3NPS (legato)</button>
+            <button class="chip-btn ${state.arpPattern===0?'active':''}" onclick="stopArpeggioPlayback(false);state.arpPattern=0;state.arpPosIdx=0;saveSettings();renderStageAndInspector()">Mapa gryfu</button>
           </div>
         </div>
 
@@ -9537,8 +10068,8 @@ async function renderStageAndInspector() {
           <div>
             <div class="section-label">ZAKRES OKTAW</div>
             <div class="btn-grid-2">
-              <button class="chip-btn ${state.arpOctaves===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpOctaves=1;renderStageAndInspector()">1 oktawa</button>
-              <button class="chip-btn ${state.arpOctaves===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpOctaves=2;renderStageAndInspector()">2 oktawy</button>
+              <button class="chip-btn ${state.arpOctaves===1?'active':''}" onclick="stopArpeggioPlayback(false);state.arpOctaves=1;saveSettings();renderStageAndInspector()">1 oktawa</button>
+              <button class="chip-btn ${state.arpOctaves===2?'active':''}" onclick="stopArpeggioPlayback(false);state.arpOctaves=2;saveSettings();renderStageAndInspector()">2 oktawy</button>
             </div>
           </div>
         ` : ''}
@@ -9549,7 +10080,7 @@ async function renderStageAndInspector() {
             <div style="display:flex;flex-direction:column;gap:5px;">
               ${stringSetLabels.map((lbl, idx) => `
                 <button class="chip-btn ${state.arpStringSet===idx?'active':''}" style="padding:5px 8px;font-size:11.5px;"
-                        onclick="stopArpeggioPlayback(false);state.arpStringSet=${idx};state.arpPosIdx=0;renderStageAndInspector()">${lbl}</button>
+                        onclick="stopArpeggioPlayback(false);state.arpStringSet=${idx};saveSettings();renderStageAndInspector()">${lbl}</button>
               `).join('')}
             </div>
           </div>
@@ -9558,11 +10089,12 @@ async function renderStageAndInspector() {
         ${(data.positions && data.positions.length > 0) ? `
           <div>
             <div class="section-label">POZYCJA / PRZEWRÓT (${data.positions.length})</div>
-            <div style="display:flex;flex-wrap:wrap;gap:5px;">
-              ${data.positions.map(pos => `
-                <button class="chip-btn ${state.arpPosIdx===pos.idx?'active':''}" style="padding:5px 8px;font-size:11px;"
-                        onclick="stopArpeggioPlayback(false);state.arpPosIdx=${pos.idx};renderStageAndInspector()">
-                  ${pos.label}${pos.hasRoll ? ' · R' : ''}
+            <div class="pos-pill-grid-2col">
+              ${data.positions.map((pos, pIdx) => `
+                <button class="chip-btn pos-pill-btn ${effArpPosIdx===pos.idx?'active':''}"
+                        title="${String(pos.label || '').replace(/"/g, '&quot;')}"
+                        onclick="stopArpeggioPlayback(false);state.arpPosIdx=${pos.idx};saveSettings();renderStageAndInspector()">
+                  ${formatCompactPositionLabel(pos, pIdx)}
                 </button>
               `).join('')}
             </div>
@@ -9572,23 +10104,32 @@ async function renderStageAndInspector() {
         <div>
           <div class="section-label">SEKWENCJA I KIERUNEK</div>
           <div class="btn-grid-3" style="margin-bottom:6px;">
-            <button class="chip-btn ${state.arpSeqStyle===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=0;renderStageAndInspector()">Prosto</button>
-            <button class="chip-btn ${state.arpSeqStyle===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=1;renderStageAndInspector()">Grupy po 3</button>
-            <button class="chip-btn ${state.arpSeqStyle===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=2;renderStageAndInspector()">Skoki 1–5</button>
+            <button class="chip-btn ${state.arpSeqStyle===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=0;saveSettings();renderStageAndInspector()">Prosto</button>
+            <button class="chip-btn ${state.arpSeqStyle===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=1;saveSettings();renderStageAndInspector()">Grupy po 3</button>
+            <button class="chip-btn ${state.arpSeqStyle===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpSeqStyle=2;saveSettings();renderStageAndInspector()">Skoki 1–5</button>
           </div>
           <div class="btn-grid-3">
-            <button class="chip-btn ${state.arpDirection===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=0;renderStageAndInspector()">↕ Góra-dół</button>
-            <button class="chip-btn ${state.arpDirection===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=1;renderStageAndInspector()">↓ W górę</button>
-            <button class="chip-btn ${state.arpDirection===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=2;renderStageAndInspector()">↑ W dół</button>
+            <button class="chip-btn ${state.arpDirection===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=0;saveSettings();renderStageAndInspector()">↕ Góra-dół</button>
+            <button class="chip-btn ${state.arpDirection===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=1;saveSettings();renderStageAndInspector()">↓ W górę</button>
+            <button class="chip-btn ${state.arpDirection===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=2;saveSettings();renderStageAndInspector()">↑ W dół</button>
           </div>
         </div>
 
-        <div>
-          <div class="section-label">SKALA DLA KART DIATONICZNYCH</div>
-          <select onchange="state.arpDiatonicScaleId=this.value;renderStageAndInspector();">
-            ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
-          </select>
-        </div>`;
+        ${buildArpReferenceScaleInspectorHtml(rootLabels)}`;
+    }
+
+    if (isTrans) {
+      if (state.arpPlayStepIdx >= 0) {
+        updateArpTabHighlightAndScroll(state.arpPlayStepIdx, false);
+      } else {
+        scrollArpTabToSegment(state.arpActiveSegIdx || 0, false);
+      }
+    } else if (isSweepSingle && compList.length > 0) {
+      if (isCompPlayActive && state.arpPlayStepIdx >= 0) {
+        updateSweepCompTabHighlightAndScroll(state.arpPlayStepIdx, false);
+      } else {
+        scrollSweepCompTabToSegment(state.sweepCompActiveIdx || 0, false);
+      }
     }
 
     renderFretboardToolbarForActiveTab();
@@ -10164,11 +10705,26 @@ async function renderStageAndInspector() {
                 </div>
                 ${buildExerciseBarsPerRowControlHtml(true)}
               ` : ''}
+              <div class="ear-seg-row" style="width:auto;">
+                <button type="button" class="ear-seg-btn ${state.exercisePlayerMode==='play'?'active':''}" style="padding:5px 9px;font-size:11.5px;white-space:nowrap;"
+                        onclick="switchExercisePlayerMode('play')">🎤 ${t('Graj', 'Play')}</button>
+                <button type="button" class="ear-seg-btn ${state.exercisePlayerMode==='listen'?'active':''}" style="padding:5px 9px;font-size:11.5px;white-space:nowrap;"
+                        onclick="switchExercisePlayerMode('listen')">🔊 ${t('Odsłuch', 'Listen')}</button>
+              </div>
               <button class="chip-btn ${state.spMetronome?'active':''}" style="padding:6px 10px;font-size:12px;"
                       onclick="toggleExerciseMetronome()" title="Metronom">
                 🥁 ${state.spMetronome ? t('Wł.', 'On') : t('Wył.', 'Off')}
               </button>
-              <span style="font-size:12px;color:var(--text-muted);">${state.tempoBpm} BPM</span>
+              <div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:3px 6px;font-size:12px;">
+                <button class="chip-btn" style="padding:3px 7px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)" title="-10 BPM">−10</button>
+                <button class="chip-btn" style="padding:3px 7px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)" title="-5 BPM">−5</button>
+                <input id="exPlayerBpmInput" type="number" min="30" max="260" value="${state.tempoBpm}"
+                       style="width:54px;padding:2px 4px;text-align:center;font-weight:800;color:var(--accent);font-size:12.5px;"
+                       onchange="setExercisePlayerBpm(this.value)" title="Prędkość (BPM)">
+                <span style="font-size:11px;color:var(--text-muted);font-weight:700;">BPM</span>
+                <button class="chip-btn" style="padding:3px 7px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)" title="+5 BPM">+5</button>
+                <button class="chip-btn" style="padding:3px 7px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)" title="+10 BPM">+10</button>
+              </div>
               <span style="font-family:monospace;font-size:14.5px;font-weight:700;color:var(--text);background:var(--bg-card);padding:5px 11px;border-radius:8px;border:1px solid var(--border);">
                 ${stepIdx + 1} / ${totalSteps}
               </span>
@@ -10178,20 +10734,25 @@ async function renderStageAndInspector() {
           ${(() => {
             if (state.exercisePlayerMode !== 'play') return '';
             const heard = (state.detectedMidi !== null && state.detectedMidi !== undefined)
-              ? `${labels[((Math.round(state.detectedMidi) % 12) + 12) % 12]} ${Math.floor(Math.round(state.detectedMidi) / 12) - 1}`
+              ? `${labels[((Math.round(state.detectedMidi) % 12) + 12) % 12]}${Math.floor(Math.round(state.detectedMidi) / 12) - 1}`
               : null;
-            if (!micStream) {
-              return `<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:9px 14px;border-radius:10px;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.4);color:var(--red);font-weight:700;font-size:13px;">
-                🎤 ${t('Mikrofon wyłączony — włącz go lub klikaj progi na gryfie poniżej', 'Microphone off — turn it on or click frets below')}
-                <button class="chip-btn" style="padding:5px 12px;" onclick="toggleLiveAudio().then(()=>renderStageAndInspector())">${t('Włącz mikrofon', 'Turn on mic')}</button>
-              </div>`;
-            }
+            const justHit = (typeof performance !== 'undefined' && (performance.now() - (state.exerciseLastHitTime || 0)) < 1100 && state.exerciseLastHitLabel);
+            const curPosTxt = (curEv && !curEv.rest && curEv.s >= 0 && curEv.f >= 0)
+              ? `str. ${6 - curEv.s} · pr. ${curEv.f}`
+              : '';
+            const shapeName = (curEv && curEv.chordSymbol) ? ` · kształt ${curEv.chordSymbol}` : '';
             if (state.exercisePlayerPaused) {
               return `<div style="text-align:center;padding:9px 14px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-muted);font-weight:700;">⏸ ${t('Wstrzymano', 'Paused')}</div>`;
             }
-            return `<div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 14px;border-radius:10px;background:var(--accent-glow);border:1px solid var(--accent);color:var(--accent);font-weight:800;">
-              🎤 ${t('Zagraj', 'Play')} <span style="font-size:18px;">${targetLabel}</span>
-              ${`<span id="exerciseHeardBadge" style="color:var(--text-muted);font-weight:600;font-size:12.5px;">${heard ? `(${t('słyszę', 'heard')}: ${heard})` : ''}</span>`}
+            const bannerBg = justHit ? 'rgba(34,197,94,0.16)' : (micStream ? 'var(--accent-glow)' : 'rgba(243,146,55,0.08)');
+            const bannerBorder = justHit ? '#22c55e' : 'var(--accent)';
+            const bannerColor = justHit ? '#4ade80' : 'var(--accent)';
+            return `<div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:9px 14px;border-radius:10px;background:${bannerBg};border:1px solid ${bannerBorder};color:${bannerColor};font-weight:800;">
+              ${justHit ? `<span style="background:#22c55e;color:#052e16;padding:2px 9px;border-radius:6px;font-size:12px;font-weight:900;">✓ Trafiono: ${state.exerciseLastHitLabel}</span>` : ''}
+              <span>🎯 ${t('Oczekiwana nuta', 'Expected')}: <strong style="font-size:18px;">${targetLabel}</strong>${curPosTxt ? ` <span style="font-size:12px;opacity:0.85;font-weight:600;">(${curPosTxt}${shapeName})</span>` : ''}</span>
+              ${micStream
+                ? `<span id="exerciseHeardBadge" style="color:var(--text-muted);font-weight:600;font-size:12.5px;">${heard ? `(${t('słyszę', 'heard')}: ${heard})` : `(${t('mikrofon aktywny', 'mic active')})`}</span>`
+                : `<button class="chip-btn" style="padding:4px 10px;font-size:11.5px;" onclick="toggleLiveAudio().then(()=>renderStageAndInspector())">🎤 ${t('Włącz mikrofon', 'Turn on mic')}</button>`}
             </div>`;
           })()}
 
@@ -10232,6 +10793,55 @@ async function renderStageAndInspector() {
           actRect.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
       }
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
       return;
     }
 
@@ -10259,7 +10869,8 @@ async function renderStageAndInspector() {
       { code: '-', label: '—' },
       { code: 'H', label: 'H (Hammer-on)' },
       { code: 'P', label: 'P (Pull-off)' },
-      { code: '/', label: '/ (Slide)' },
+      { code: 'S', label: 'S (Slide)' },
+      { code: '/', label: '/ (Slide alt.)' },
       { code: 'B', label: 'B (Podciągnięcie)' },
       { code: '~', label: '~ (Wibrato)' },
       { code: 'PM', label: 'PM (Tłumienie)' },
@@ -10295,7 +10906,17 @@ async function renderStageAndInspector() {
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:2px;">
           <h3 style="font-size:20px;font-weight:800;margin:0;">Twoje ćwiczenie</h3>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:3px 6px;font-size:12px;">
+              <button class="chip-btn" style="padding:3px 7px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+              <input id="exComposerBpmInput" type="number" min="30" max="260" value="${state.tempoBpm}"
+                     style="width:52px;padding:2px 4px;text-align:center;font-weight:800;color:var(--accent);font-size:12px;"
+                     onchange="setExercisePlayerBpm(this.value)" title="Prędkość (BPM)">
+              <span style="font-size:11px;color:var(--text-muted);font-weight:700;">BPM</span>
+              <button class="chip-btn" style="padding:3px 7px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+            </div>
             ${hasNotes ? `
+              <button class="action-btn" style="padding:5px 11px;font-size:12px;" onclick="startExercisePlayer('play')">🎤 Graj</button>
+              <button class="chip-btn" style="padding:5px 10px;font-size:12px;" onclick="startExercisePlayer('listen')">🔊 Posłuchaj</button>
               <button class="chip-btn" style="padding:4px 9px;font-size:11px;" onclick="scrollExerciseTabTo('top')" title="Przewiń tabulaturę do początku (takt 1)">⬆ Początek</button>
               <button class="chip-btn" style="padding:4px 9px;font-size:11px;" onclick="scrollExerciseTabTo('bottom')" title="Przewiń do najnowszych taktów">⬇ Najnowsze</button>
             ` : ''}
@@ -10726,12 +11347,680 @@ function isSweepTransitionActive() {
   return (state.subtab === 'sweep' && state.sweepViewMode === 'transition');
 }
 
+function syncSweepSegCardSelection() {
+  document.querySelectorAll('#dynamicStagePanel [data-sweep-seg]').forEach(card => {
+    const cardSeg = parseInt(card.getAttribute('data-sweep-seg'), 10);
+    card.classList.toggle('selected', cardSeg === state.arpActiveSegIdx);
+  });
+}
+
+function syncSweepCompCardSelection() {
+  document.querySelectorAll('#dynamicStagePanel [data-sweep-comp-seg]').forEach(card => {
+    const cardSeg = parseInt(card.getAttribute('data-sweep-comp-seg'), 10);
+    card.classList.toggle('selected', cardSeg === state.sweepCompActiveIdx);
+  });
+}
+
+function scrollSvgTabWrapToSegment(wrapId, steps, segIdx, smooth = false) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap || !Array.isArray(steps)) return;
+  const firstIdx = steps.findIndex(st => st.seg === segIdx);
+  if (firstIdx < 0) return;
+  const svg = wrap.querySelector('svg');
+  const g = svg ? svg.querySelector(`g[data-step-g="${firstIdx}"]`) : null;
+  if (!g) return;
+  const nx = parseFloat(g.getAttribute('data-step-x')) || 0;
+  scrollTabContainerToX(wrap, nx, smooth);
+}
+
+function scrollArpTabToSegment(segIdx, smooth = false) {
+  scrollSvgTabWrapToSegment('arpTabSvgWrap', getActiveArpeggioSteps(), segIdx, smooth);
+}
+
+function scrollSweepCompTabToSegment(segIdx, smooth = false) {
+  scrollSvgTabWrapToSegment('sweepCompTabSvgWrap', getSweepCompositionSteps(), segIdx, smooth);
+}
+
 function toggleArpOrSweepLoop() {
   if (state.subtab === 'sweep') {
-    state.sweepLoop = !state.sweepLoop;
+    state.sweepSequential = !state.sweepSequential;
   } else {
     state.arpLoop = !state.arpLoop;
   }
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function stringLabelShort(s) {
+  return ['6(E)', '5(A)', '4(D)', '3(G)', '2(B)', '1(e)'][s] || String(6 - s);
+}
+
+function normalizeChordId(id) {
+  if (id === 'maj') return 'major';
+  if (id === 'min' || id === 'm') return 'minor';
+  return id || 'major';
+}
+
+const ARP_DIATONIC_CATEGORY_SETS = {
+  triad: new Set(['major', 'minor', 'dim', 'aug']),
+  seventh: new Set(['maj7', '7', 'm7', 'mMaj7', 'm7b5', 'dim7', 'aug7', 'augMaj7']),
+  sus_add_6: new Set(['sus2', 'sus4', '5', '6', 'm6', 'add9', 'madd9', '7sus4']),
+  extended: new Set(['9', 'maj9', 'm9', '11', 'm11', 'maj7#11', '13', 'maj13', 'm13'])
+};
+
+function filterPossibleByArpCategory(possibleList, cat = 'all') {
+  const list = Array.isArray(possibleList) ? possibleList : [];
+  if (!cat || cat === 'all') return list;
+  const set = ARP_DIATONIC_CATEGORY_SETS[cat];
+  if (!set) return list;
+  return list.filter(p => set.has(normalizeChordId(p.id)));
+}
+
+function setArpDiatonicCategory(cat) {
+  const allowed = ['all', 'triad', 'seventh', 'sus_add_6', 'extended'];
+  state.arpDiatonicCategory = allowed.includes(cat) ? cat : 'all';
+  if (state.arpDiatonicCategory === 'triad') state.arpDiatonicSevenths = false;
+  else if (state.arpDiatonicCategory === 'seventh') state.arpDiatonicSevenths = true;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function syncArpScaleFromMainScaleTab() {
+  state.arpDiatonicScaleRootPc = state.rootPc;
+  state.arpDiatonicScaleId = state.scaleId || 'major';
+  saveSettings();
+  renderAll();
+}
+
+function toggleArpAutoTempo() {
+  state.arpAutoTempo = !state.arpAutoTempo;
+  const btn = document.getElementById('arpAutoTempoBtn');
+  if (btn) {
+    btn.classList.toggle('active', !!state.arpAutoTempo);
+    btn.textContent = `🚀 Auto-Tempo: ${state.arpAutoTempo ? '+4 BPM' : 'Wył.'}`;
+  }
+  saveSettings();
+}
+
+function bumpArpeggioAutoTempo() {
+  if (!state.arpAutoTempo) return false;
+  state.arpBpm = Math.min(240, (state.arpBpm || 90) + 4);
+  const el = document.getElementById('arpBpmVal');
+  if (el) el.textContent = `${state.arpBpm} BPM`;
+  return true;
+}
+
+function saveCurrentSweepCompositionPreset(customName) {
+  const compList = Array.isArray(state.sweepComposition) ? state.sweepComposition : [];
+  if (!compList.length) return null;
+  if (!Array.isArray(state.savedSweepCompositions)) state.savedSweepCompositions = [];
+  const defaultTitle = `${compList.map(c => c.symbol).join(' → ')} (${compList.length})`;
+  const title = (typeof customName === 'string' && customName.trim()) ? customName.trim() : defaultTitle;
+  const preset = {
+    id: 'swp_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    name: title,
+    createdAt: Date.now(),
+    items: compList.map(seg => Object.assign({}, seg, {
+      nodes: Array.isArray(seg.nodes) ? seg.nodes.map(n => Object.assign({}, n)) : [],
+      steps: Array.isArray(seg.steps) ? seg.steps.map(st => Object.assign({}, st)) : []
+    }))
+  };
+  state.savedSweepCompositions.unshift(preset);
+  if (state.savedSweepCompositions.length > 16) state.savedSweepCompositions.length = 16;
+  saveSettings();
+  renderStageAndInspector();
+  return preset;
+}
+
+function rebuildSweepSegmentSteps(seg) {
+  if (!seg || !Array.isArray(seg.nodes) || !seg.nodes.length || (seg.seqStyle || 0) !== 0) return seg;
+  const prevDir = state.arpDirection;
+  const prevFit = state.sweepMetricFit;
+  const prevSeq = state.arpSeqStyle;
+  state.arpDirection = seg.direction || 0;
+  state.sweepMetricFit = normalizeSweepMetricFit(seg.metricFit);
+  state.arpSeqStyle = 0;
+  try {
+    const newSteps = buildCustomSingleSweepSteps(seg.nodes, seg.steps || []);
+    if (Array.isArray(newSteps) && newSteps.length > 0) {
+      seg.steps = newSteps;
+      seg.metricFit = state.sweepMetricFit;
+      seg.isSextuplet = isSweepSextupletCount(newSteps.length, state.sweepMetricFit);
+      seg.rangeLabel = formatSweepRangeLabel(newSteps, state.sweepMetricFit, state.arpDirection);
+    }
+  } finally {
+    state.arpDirection = prevDir;
+    state.sweepMetricFit = prevFit;
+    state.arpSeqStyle = prevSeq;
+  }
+  return seg;
+}
+
+function loadSweepCompositionPreset(idx) {
+  const list = Array.isArray(state.savedSweepCompositions) ? state.savedSweepCompositions : [];
+  const preset = list[idx];
+  if (!preset || !Array.isArray(preset.items) || !preset.items.length) return;
+  stopArpeggioPlayback(false);
+  state.sweepComposition = preset.items.map(seg => rebuildSweepSegmentSteps(Object.assign({}, seg, {
+    nodes: Array.isArray(seg.nodes) ? seg.nodes.map(n => Object.assign({}, n)) : [],
+    steps: Array.isArray(seg.steps) ? seg.steps.map(st => Object.assign({}, st)) : []
+  })));
+  state.sweepCompActiveIdx = 0;
+  state.sweepCompactTabs = true;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function deleteSweepCompositionPreset(idx) {
+  if (!Array.isArray(state.savedSweepCompositions) || idx < 0 || idx >= state.savedSweepCompositions.length) return;
+  state.savedSweepCompositions.splice(idx, 1);
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function buildArpDiatonicSectionHtml(data, isSweepMode, isSweepSingleMode) {
+  const cat = state.arpDiatonicCategory || 'all';
+  const curChordNorm = normalizeChordId(state.chordId);
+  const cats = [
+    { id: 'all', lbl: 'Wszystkie w skali' },
+    { id: 'triad', lbl: 'Trójdźwięki' },
+    { id: 'seventh', lbl: 'Septymowe' },
+    { id: 'sus_add_6', lbl: 'Sus / 6 / Add' },
+    { id: 'extended', lbl: 'Rozszerzone (9–13)' }
+  ];
+  const headingTxt = isSweepMode
+    ? `AKORDY DIATONICZNE DO SWEEP W SKALI (${data.scaleFullName}) — ${isSweepSingleMode ? 'KLIKNIJ LUB DODAJ +' : 'KLIKNIJ, ABY ZAŁADOWAĆ'}`
+    : `ARPEGGIO DIATONICZNE W SKALI (${data.scaleFullName}) — WSZYSTKIE MOŻLIWE NA STOPNIACH`;
+
+  return `
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+        <div class="section-label" style="margin:0;">${headingTxt}</div>
+        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
+          ${isSweepMode ? `<button class="chip-btn" style="padding:3px 10px;font-size:11px;border-color:var(--accent);color:var(--accent);" onclick="launchDiatonicScaleSweep()">⚡ Wspinaczka po skali</button>` : ''}
+          ${cats.map(c => `
+            <button class="chip-btn ${cat===c.id?'active':''}" style="padding:3px 8px;font-size:11px;"
+                    onclick="setArpDiatonicCategory('${c.id}')">${c.lbl}</button>
+          `).join('')}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px;">
+        ${(data.diatonic || []).map(d => {
+          const fallbackObj = { id: normalizeChordId(d.chordId), symbol: d.symbol, name: '', category: '' };
+          const allPossible = (Array.isArray(d.possible) && d.possible.length > 0) ? d.possible : [fallbackObj];
+          const filtered = filterPossibleByArpCategory(allPossible, cat);
+          let primary = filtered[0] || null;
+          if (cat === 'all') {
+            primary = filtered.find(p => normalizeChordId(p.id) === normalizeChordId(d.chordId)) || primary;
+          }
+          const isCurDeg = (d.rootPc === state.rootPc);
+          const isCurPrimary = isCurDeg && primary && (normalizeChordId(primary.id) === curChordNorm);
+          const isAnyOnDegSelected = isCurDeg && filtered.some(p => normalizeChordId(p.id) === curChordNorm);
+          const clickPrimaryId = primary ? primary.id : d.chordId;
+          const secondaryPills = primary ? filtered.filter(p => p !== primary) : [];
+
+          return `
+            <div class="chord-box-card ${isAnyOnDegSelected?'selected':''}" style="padding:8px 9px;gap:4px;align-items:flex-start;text-align:left;"
+                 onclick="selectDiatonicArpeggio(${d.rootPc}, '${clickPrimaryId}')">
+              <div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:4px;">
+                <span style="font-size:10.5px;color:var(--text-muted);">Stopień ${d.roman}</span>
+                ${(isSweepSingleMode && primary) ? `
+                  <button class="chip-btn" style="padding:1px 7px;font-size:12px;font-weight:900;line-height:1.15;border-color:var(--accent);color:var(--accent);"
+                          onclick="event.stopPropagation();quickAddDiatonicSweepToComposition(${d.rootPc}, '${isAnyOnDegSelected ? curChordNorm : primary.id}')"
+                          title="Dodaj do kompozycji poniżej">+</button>
+                ` : ''}
+              </div>
+              <div style="font-size:16px;font-weight:800;color:${isCurPrimary?'var(--accent)':'var(--text)'};">
+                ${primary ? primary.symbol : '—'}
+              </div>
+              ${secondaryPills.length > 0 ? `
+                <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;margin-top:2px;" onclick="event.stopPropagation()">
+                  ${secondaryPills.map(p => {
+                    const pAct = isCurDeg && (normalizeChordId(p.id) === curChordNorm);
+                    return `<button class="chip-btn ${pAct?'active':''}" style="padding:1.5px 6px;font-size:10px;line-height:1.25;"
+                                    onclick="selectDiatonicArpeggio(${d.rootPc}, '${p.id}')"
+                                    title="${p.name || p.id}">${p.symbol}</button>`;
+                  }).join('')}
+                </div>
+              ` : `<div style="font-size:10px;color:var(--text-muted);">${primary ? (primary.name || '') : 'Brak w tej kategorii'}</div>`}
+            </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+function buildArpScaleCohesionInspectorHtml({ data, rootLabels, quickArpTypes, groupedChordsHtml, possibleForRootList, possibleIdSet, scaleDegMap, isSweepMode }) {
+  const curChordNorm = normalizeChordId(state.chordId);
+  const rootBtnTitle = isSweepMode ? 'PRYMA KSZTAŁTU SWEEP' : 'PRYMA ARPEGGIO';
+  const typeTitle = isSweepMode ? 'TYP AKORDU SWEEP' : 'TYP ARPEGGIO (SZYBKI WYBÓR)';
+  const list = Array.isArray(possibleForRootList) ? possibleForRootList : [];
+
+  return `
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+        <div class="section-label" style="margin:0;">${rootBtnTitle}</div>
+        <span style="font-size:10px;color:var(--green);font-weight:600;">zielone = w skali</span>
+      </div>
+      <div class="btn-grid-6">
+        ${rootLabels.map((lbl, pc) => {
+          const degRoman = scaleDegMap.get(pc);
+          const inScale = !!degRoman;
+          const isAct = (state.rootPc === pc);
+          const dimStyle = (state.arpFilterByScale && !inScale) ? 'opacity:0.32;' : '';
+          const borderStyle = (inScale && !isAct) ? 'border-color:rgba(74,222,128,0.48);' : '';
+          return `
+            <button class="chip-btn ${isAct?'active':''}" style="padding:5px 2px;line-height:1.15;display:flex;flex-direction:column;align-items:center;gap:1px;${dimStyle}${borderStyle}"
+                    onclick="stopArpeggioPlayback(false);state.rootPc=${pc};saveSettings();renderAll()"
+                    title="${inScale ? `Stopień ${degRoman} w skali ${data.scaleFullName}` : `Spoza skali ${data.scaleFullName}`}">
+              <span style="font-size:12px;font-weight:700;">${lbl}</span>
+              ${inScale ? `<span style="font-size:9px;font-weight:700;color:${isAct?'inherit':'var(--green)'};">${degRoman}</span>` : `<span style="font-size:9px;opacity:0.35;">·</span>`}
+            </button>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">${typeTitle}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;">
+        ${quickArpTypes.map(qt => {
+          const isFit = possibleIdSet.has(qt.id);
+          const isAct = (curChordNorm === normalizeChordId(qt.id));
+          const dimStyle = (!isFit && state.arpFilterByScale) ? 'opacity:0.36;' : (!isFit ? 'opacity:0.65;' : '');
+          return `
+            <button class="chip-btn ${isAct?'active':''}" style="padding:5px 4px;font-size:11.5px;${dimStyle}"
+                    onclick="stopArpeggioPlayback(false);state.chordId='${qt.id}';saveSettings();renderStageAndInspector()">
+              ${qt.lbl}${isFit ? ' <span style="font-size:9.5px;color:' + (isAct ? 'inherit' : 'var(--green)') + ';">✓</span>' : ''}
+            </button>`;
+        }).join('')}
+      </div>
+      <select onchange="stopArpeggioPlayback(false);state.chordId=this.value;saveSettings();renderStageAndInspector();">
+        ${groupedChordsHtml}
+      </select>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:9px;padding:8px 9px;display:flex;flex-direction:column;gap:6px;">
+      <div class="section-label" style="margin:0;color:var(--green);">
+        💡 MOŻLIWE ARPEGGIA W SKALI (${list.length}) — ${rootLabels[state.rootPc]}
+      </div>
+      ${list.length > 0 ? `
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          ${list.map(p => {
+            const pAct = (normalizeChordId(p.id) === curChordNorm);
+            return `
+              <button class="chip-btn ${pAct?'active':''}" style="padding:3px 7px;font-size:11px;"
+                      onclick="stopArpeggioPlayback(false);state.chordId='${p.id}';saveSettings();renderStageAndInspector()"
+                      title="${p.name} (${p.category})">
+                ${p.symbol}
+              </button>`;
+          }).join('')}
+        </div>
+      ` : `
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.35;">
+          Pryma <strong>${rootLabels[state.rootPc]}</strong> nie należy do skali <strong>${data.scaleFullName}</strong> — wybierz stopień oznaczony na zielono powyżej.
+        </div>
+      `}
+    </div>`;
+}
+
+function buildArpReferenceScaleInspectorHtml(rootLabels) {
+  return `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:9px;padding:9px 10px;display:flex;flex-direction:column;gap:7px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+        <div class="section-label" style="margin:0;">SKALA ODNIESIENIA (PODPOWIEDZI)</div>
+        <button class="chip-btn" style="padding:2px 7px;font-size:10px;border-color:var(--accent);color:var(--accent);"
+                onclick="syncArpScaleFromMainScaleTab()" title="Ustaw skalę i tonikę z aktualnego wyboru">
+          🔗 Z zakładki Skala
+        </button>
+      </div>
+      <div class="btn-grid-6">
+        ${rootLabels.map((lbl, pc) => `
+          <button class="chip-btn ${state.arpDiatonicScaleRootPc===pc?'active':''}" style="padding:4px 2px;font-size:11px;"
+                  onclick="stopArpeggioPlayback(false);state.arpDiatonicScaleRootPc=${pc};saveSettings();renderAll()">${lbl}</button>
+        `).join('')}
+      </div>
+      <select onchange="stopArpeggioPlayback(false);state.arpDiatonicScaleId=this.value;saveSettings();renderAll();">
+        ${(state.initData.scales || []).map(s => `<option value="${s.id}" ${s.id===state.arpDiatonicScaleId?'selected':''}>${s.name}</option>`).join('')}
+      </select>
+      <button class="chip-btn ${state.arpFilterByScale?'active':''}" style="width:100%;font-size:11px;padding:5px 8px;"
+              onclick="state.arpFilterByScale=!state.arpFilterByScale;saveSettings();renderStageAndInspector()">
+        🔍 Przyciemnij akordy spoza skali: ${state.arpFilterByScale ? 'WŁ.' : 'WYŁ.'}
+      </button>
+    </div>`;
+}
+
+function normalizeSweepMetricFit(fit) {
+  return (fit === 'sixteenths') ? 'sixteenths' : 'sextuplets';
+}
+
+function isSweepSextupletCount(count, metricFit = 'sextuplets') {
+  const n = count | 0;
+  if (n <= 0) return false;
+  return normalizeSweepMetricFit(metricFit) === 'sextuplets' && (n % 3 === 0);
+}
+
+function formatCompactPositionLabel(pos, idx = 0) {
+  if (!pos) return `Poz. ${idx + 1}`;
+  const raw = String(pos.label || '');
+  const rangeTxt = `pr. ${pos.minFret ?? 0}–${pos.maxFret ?? 0}`;
+  const rollTxt = pos.hasRoll ? ' · R' : '';
+  if (pos.idx < 0 || raw.startsWith('Wszystkie')) {
+    return `Wszystkie · ${rangeTxt}`;
+  }
+  const cagedMatch = raw.match(/^(Kształt\s+[A-G])/i);
+  if (cagedMatch) {
+    return `${cagedMatch[1]} · ${rangeTxt}`;
+  }
+  if (raw.startsWith('Od str.')) {
+    const strMatch = raw.match(/Od str\.\s*([EADGBe][0-9]?)/);
+    const highTag = raw.includes('wysoka') ? '↑' : '';
+    const tag = strMatch ? `${strMatch[1]}${highTag}` : `Poz. ${idx + 1}`;
+    return `${tag} · ${rangeTxt}`;
+  }
+  const num = (typeof pos.idx === 'number' && pos.idx >= 0) ? (pos.idx + 1) : (idx + 1);
+  return `Poz. ${num} · ${rangeTxt}${rollTxt}`;
+}
+
+function formatPlNoteWord(n) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (n === 1) return 'nuta';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'nuty';
+  return 'nut';
+}
+
+function formatSweepRangeLabel(steps, metricFit = 'sextuplets', dir = 0) {
+  if (!Array.isArray(steps) || steps.length === 0) return '—';
+  const n = steps.length;
+  const isSext = isSweepSextupletCount(n, metricFit);
+  const dirSym = (dir === 1) ? '↓' : (dir === 2 ? '↑' : '↕');
+  const divLbl = isSext ? (n === 3 ? 'Triola' : 'Sekstole') : 'Szesnastki';
+  return `${n} ${formatPlNoteWord(n)} · ${divLbl} ${dirSym}`;
+}
+
+function formatSweepMetricSummary(steps, metricFit = 'sextuplets') {
+  if (!Array.isArray(steps) || !steps.length) return 'Brak nut';
+  const n = steps.length;
+  const isSext = isSweepSextupletCount(n, metricFit);
+  const beats = isSext ? (n / 6) : (n / 4);
+  const beatTxt = Math.abs(beats - 4) < 0.01 ? '1 pełny takt 4/4'
+    : Math.abs(beats - 3) < 0.01 ? '3 ćwierćnuty'
+    : Math.abs(beats - 2) < 0.01 ? '1/2 taktu 4/4'
+    : Math.abs(beats - 1.5) < 0.01 ? '1.5 ćwierćnuty'
+    : Math.abs(beats - 1) < 0.01 ? '1 ćwierćnuta'
+    : Math.abs(beats - 0.5) < 0.01 ? '1/2 ćwierćnuty'
+    : `${Math.round(beats * 100) / 100} ćwierćnuty`;
+  const divTxt = isSext ? (n === 3 ? 'triola' : 'sekstole') : 'szesnastki';
+  return `${n} ${formatPlNoteWord(n)} · ${divTxt} (${beatTxt})`;
+}
+
+function getSweepBarFillText(compList, totalNotes) {
+  const list = Array.isArray(compList) ? compList : [];
+  if (!list.length || !totalNotes) return '';
+  let totalBeats = 0;
+  for (const seg of list) {
+    const segLen = Array.isArray(seg.steps) ? seg.steps.length : 0;
+    const isSext = (typeof seg.isSextuplet === 'boolean')
+      ? seg.isSextuplet
+      : isSweepSextupletCount(segLen, seg.metricFit || 'sextuplets');
+    totalBeats += isSext ? (segLen / 6) : (segLen / 4);
+  }
+  const rounded = Math.round(totalBeats * 100) / 100;
+  const bars = rounded / 4;
+  if (Math.abs(bars - Math.round(bars)) < 0.01 && Math.round(bars) >= 1) {
+    const b = Math.round(bars);
+    return ` · ${b} ${b === 1 ? 'pełny takt' : (b < 5 ? 'pełne takty' : 'pełnych taktów')} 4/4`;
+  }
+  if (Math.abs(rounded - 2) < 0.01) return ' · 1/2 taktu 4/4';
+  if (Math.abs(rounded - 1) < 0.01) return ' · 1 ćwierćnuta';
+  return ` · ${rounded} miar 4/4`;
+}
+
+function recalcSweepStepTechniques(orderedNodes, dirHint = 0, isSext = false) {
+  const tup = isSext ? 3 : 0;
+  const out = [];
+  for (let i = 0; i < orderedNodes.length; i++) {
+    const curr = orderedNodes[i];
+    const currF = (curr.f !== undefined) ? curr.f : curr.fret;
+    const prev = i > 0 ? orderedNodes[i - 1] : null;
+    const prevF = prev ? ((prev.f !== undefined) ? prev.f : prev.fret) : 0;
+    const next = (i + 1 < orderedNodes.length) ? orderedNodes[i + 1] : null;
+    let tech = 'D';
+    let roll = false;
+    if (!prev) {
+      if (next && next.s < curr.s) tech = 'U';
+      else if (dirHint === 2 && (!next || next.s <= curr.s)) tech = 'U';
+      else tech = 'D';
+    } else if (curr.s === prev.s) {
+      if (currF > prevF) tech = 'H';
+      else if (currF < prevF) tech = 'P';
+      else tech = (next && next.s < curr.s) ? 'U' : 'D';
+    } else if (curr.s > prev.s) {
+      tech = 'D';
+      roll = (currF > 0 && currF === prevF && curr.s === prev.s + 1);
+    } else {
+      tech = 'U';
+      roll = (currF > 0 && currF === prevF && prev.s === curr.s + 1);
+    }
+    out.push({
+      s: curr.s,
+      f: currF,
+      midi: curr.midi,
+      freq: (curr.freq !== undefined) ? curr.freq : curr.frequencyHz,
+      note: (curr.note !== undefined) ? curr.note : curr.noteName,
+      interval: curr.interval,
+      isRoot: !!curr.isRoot,
+      tech,
+      roll,
+      tuplet: tup,
+      seg: 0
+    });
+  }
+  return out;
+}
+
+function findExtraChordToneOnString(anchorNode, prevMidiLimit, nextMidiLimit, pcInfoMap, curMinF, curMaxF, preferHigher = false) {
+  if (!anchorNode || !pcInfoMap || pcInfoMap.size === 0) return null;
+  const fAnchor = (anchorNode.f !== undefined) ? anchorNode.f : anchorNode.fret;
+  const mAnchor = anchorNode.midi;
+  const baseFreq = (anchorNode.freq !== undefined) ? anchorNode.freq : (anchorNode.frequencyHz || midiToFreq(mAnchor));
+
+  const hasSkippedChordTone = (mLo, mHi) => {
+    for (let mm = mLo + 1; mm < mHi; mm++) {
+      if (pcInfoMap.has(((mm % 12) + 12) % 12)) return true;
+    }
+    return false;
+  };
+
+  const makeCand = (fCand) => {
+    const mCand = mAnchor + (fCand - fAnchor);
+    const pc = ((mCand % 12) + 12) % 12;
+    const info = pcInfoMap.get(pc);
+    if (!info) return null;
+    return {
+      s: anchorNode.s,
+      f: fCand,
+      midi: mCand,
+      freq: baseFreq * Math.pow(2, (fCand - fAnchor) / 12),
+      note: info.note,
+      interval: info.interval,
+      isRoot: !!info.isRoot
+    };
+  };
+
+  const searchBelow = () => {
+    for (let fCand = fAnchor - 2; fCand >= Math.max(0, fAnchor - 5); fCand--) {
+      const mCand = mAnchor + (fCand - fAnchor);
+      if (prevMidiLimit !== null && mCand <= prevMidiLimit) continue;
+      if (!pcInfoMap.has(((mCand % 12) + 12) % 12)) continue;
+      if (hasSkippedChordTone(mCand, mAnchor)) continue;
+      if (fCand > 0 && (Math.max(curMaxF, fAnchor) - Math.min(curMinF, fCand) > 8)) continue;
+      return makeCand(fCand);
+    }
+    return null;
+  };
+
+  const searchAbove = () => {
+    for (let fCand = fAnchor + 2; fCand <= Math.min(24, fAnchor + 5); fCand++) {
+      const mCand = mAnchor + (fCand - fAnchor);
+      if (nextMidiLimit !== null && mCand >= nextMidiLimit) continue;
+      if (!pcInfoMap.has(((mCand % 12) + 12) % 12)) continue;
+      if (hasSkippedChordTone(mAnchor, mCand)) continue;
+      if (Math.max(curMaxF, fCand) - Math.min(curMinF, fAnchor) > 8) continue;
+      return makeCand(fCand);
+    }
+    return null;
+  };
+
+  return preferHigher ? (searchAbove() || searchBelow()) : (searchBelow() || searchAbove());
+}
+
+function normalizeSweepShapeNodes(nodes) {
+  const raw = Array.isArray(nodes) ? nodes : [];
+  const seen = new Set();
+  const sorted = raw.slice()
+    .map(n => ({
+      s: n.s,
+      f: (n.f !== undefined) ? n.f : n.fret,
+      midi: n.midi,
+      freq: (n.freq !== undefined) ? n.freq : n.frequencyHz,
+      note: (n.note !== undefined) ? n.note : n.noteName,
+      interval: n.interval,
+      isRoot: !!n.isRoot
+    }))
+    .sort((a, b) => (a.s - b.s) || (a.f - b.f))
+    .filter(n => {
+      const k = `${n.s}:${n.f}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+  if (sorted.length < 2) {
+    return { sorted, span: sorted.length, lowSingle: sorted[0] || null, lowPair: null, midNodes: [], topPair: sorted.slice() };
+  }
+
+  const pcInfoMap = new Map();
+  for (const n of sorted) {
+    const pc = ((n.midi % 12) + 12) % 12;
+    if (!pcInfoMap.has(pc)) {
+      pcInfoMap.set(pc, { note: n.note, interval: n.interval, isRoot: !!n.isRoot });
+    }
+  }
+
+  const byStr = new Map();
+  for (const n of sorted) {
+    if (!byStr.has(n.s)) byStr.set(n.s, []);
+    byStr.get(n.s).push(n);
+  }
+  const strs = Array.from(byStr.keys()).sort((a, b) => a - b);
+  const minS = strs[0];
+  const topS = strs[strs.length - 1];
+  const curMinF = Math.min(...sorted.map(n => n.f));
+  const curMaxF = Math.max(...sorted.map(n => n.f));
+
+  // Najwyższa struna (1e): zawsze przygotuj parę [e1, e2] (f1 < f2), żeby przy powrocie było dokładnie 3 dźwięki (e1 -> e2(H) -> e1(P))
+  let topArr = (byStr.get(topS) || []).slice();
+  if (topArr.length === 1) {
+    const prevTopStr = strs.length >= 2 ? byStr.get(strs[strs.length - 2]) : null;
+    const prevTopMidi = prevTopStr ? prevTopStr[prevTopStr.length - 1].midi : null;
+    const extraTop = findExtraChordToneOnString(topArr[0], prevTopMidi, null, pcInfoMap, curMinF, curMaxF, true);
+    if (extraTop) {
+      topArr = [topArr[0], extraTop].sort((a, b) => a.f - b.f);
+    }
+  } else if (topArr.length > 2) {
+    topArr = [topArr[0], topArr[1]];
+  }
+
+  // Mediana progów środkowych strun + dolnego dźwięku na 1(e)
+  const bodyFrets = [topArr[0].f];
+  for (let i = 1; i < strs.length - 1; i++) {
+    const arr = byStr.get(strs[i]);
+    bodyFrets.push(arr[0].f);
+  }
+  bodyFrets.sort((a, b) => a - b);
+  const bodyMedian = bodyFrets[Math.floor(bodyFrets.length / 2)] || 0;
+
+  const midNodes = [];
+  for (let i = 1; i < strs.length - 1; i++) {
+    const arr = byStr.get(strs[i]);
+    let best = arr[0];
+    for (const c of arr) {
+      if (Math.abs(c.f - bodyMedian) < Math.abs(best.f - bodyMedian)) best = c;
+    }
+    midNodes.push(best);
+  }
+
+  const lowArr = (byStr.get(minS) || []).slice();
+  let lowSingle = lowArr[0];
+  for (const c of lowArr) {
+    if (Math.abs(c.f - bodyMedian) < Math.abs(lowSingle.f - bodyMedian)) lowSingle = c;
+  }
+
+  return {
+    sorted,
+    span: strs.length,
+    minS,
+    topS,
+    lowSingle,
+    midNodes,
+    topPair: topArr,
+    pcInfoMap,
+    curMinF,
+    curMaxF
+  };
+}
+
+function buildCustomSingleSweepSteps(nodes, baseSteps) {
+  if (!Array.isArray(nodes) || nodes.length === 0) return baseSteps || [];
+  if ((state.arpSeqStyle || 0) !== 0) return baseSteps || [];
+
+  const dir = state.arpDirection || 0;
+  const fit = normalizeSweepMetricFit(state.sweepMetricFit);
+  const info = normalizeSweepShapeNodes(nodes);
+  if (info.sorted.length < 2) return recalcSweepStepTechniques(info.sorted, dir, false);
+
+  const e1 = info.topPair[0];
+  const e2 = info.topPair[info.topPair.length - 1];
+  const hasTwoTop = (info.topPair.length >= 2);
+  // Struna startowa (minS) zawsze ma dokładnie 1 dźwięk (lowSingle), bez dokładania 2. nuty startowej
+  const ascSingle = hasTwoTop
+    ? [info.lowSingle, ...info.midNodes, e1, e2]
+    : [info.lowSingle, ...info.midNodes, e1];
+  const ascOnePerStr = [info.lowSingle, ...info.midNodes, e1];
+
+  const fullCycle = (ascArr) => ascArr.concat(ascArr.slice(1, -1).reverse());
+
+  let chosenNodes;
+
+  if (dir === 0) {
+    // ↕ Pełny (Dół-Góra): zawsze 1 dźwięk na strunie startowej i dokładnie 3 dźwięki na najwyższej 1(e) (e1 -> e2(H) -> e1(P))
+    chosenNodes = fullCycle(ascSingle); // 3 str.=6 nut, 5 str.=10 nut, 6 str.=12 nut
+  } else if (dir === 1) {
+    // ↓ Tylko w dół (bez powrotu — zawsze 1 dźwięk na strunie startowej; 1 nuta na e w sekstolach lub 2 w szesnastkach)
+    if ((info.span <= 3 || info.span >= 6) && fit === 'sextuplets') {
+      chosenNodes = ascOnePerStr; // 3 str.=3 nuty, 6 str.=6 nut
+    } else {
+      chosenNodes = ascSingle; // 3 str.=4 nuty, 5 str.=6 nut, 6 str.=7 nut
+    }
+  } else {
+    // ↑ Tylko w górę (zawsze 2 dźwięki na 1(e) i 1 dźwięk na strunie startowej)
+    chosenNodes = ascSingle.slice().reverse();
+  }
+
+  const isSext = isSweepSextupletCount(chosenNodes.length, fit);
+  return recalcSweepStepTechniques(chosenNodes, dir, isSext);
+}
+
+function setSweepDirectionAndFit(dir) {
+  stopArpeggioPlayback(false);
+  state.arpDirection = dir;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function setSweepMetricFit(fit) {
+  stopArpeggioPlayback(false);
+  state.sweepMetricFit = normalizeSweepMetricFit(fit);
   saveSettings();
   renderStageAndInspector();
 }
@@ -10747,7 +12036,184 @@ function getActiveArpeggioSteps() {
     });
     return out;
   }
+  if (state.subtab === 'sweep') {
+    return buildCustomSingleSweepSteps(state.arpData.nodes || [], state.arpData.steps || []);
+  }
   return state.arpData.steps || [];
+}
+
+function getSweepCompositionSteps() {
+  const list = Array.isArray(state.sweepComposition) ? state.sweepComposition : [];
+  const out = [];
+  list.forEach((seg, sIdx) => {
+    const segSteps = Array.isArray(seg.steps) ? seg.steps : [];
+    const isSext = (typeof seg.isSextuplet === 'boolean')
+      ? seg.isSextuplet
+      : isSweepSextupletCount(segSteps.length, seg.metricFit || 'sextuplets');
+    segSteps.forEach(st => {
+      out.push(Object.assign({}, st, {
+        seg: sIdx,
+        chordSymbol: seg.symbol,
+        roman: seg.rangeLabel || '',
+        tuplet: (st.tuplet !== undefined) ? st.tuplet : (isSext ? 3 : 0)
+      }));
+    });
+  });
+  return out;
+}
+
+function toggleSweepCompactTabs() {
+  state.sweepCompactTabs = !state.sweepCompactTabs;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function buildSweepCompSnapshotFromData(arpData, rootPc, chordId, fallbackPosIdx) {
+  if (!arpData) return null;
+  const nodes = arpData.nodes || [];
+  const steps = buildCustomSingleSweepSteps(nodes, arpData.steps || []);
+  if (!steps.length) return null;
+  const effPosIdx = (arpData.posIdx !== undefined) ? arpData.posIdx : (fallbackPosIdx || 0);
+  const posObj = Array.isArray(arpData.positions)
+    ? arpData.positions.find(p => p.idx === effPosIdx)
+    : null;
+  let minF = 99, maxF = 0;
+  for (const st of steps) {
+    const fv = (st.f !== undefined) ? st.f : st.fret;
+    if (fv < minF) minF = fv;
+    if (fv > maxF) maxF = fv;
+  }
+  if (minF > maxF) minF = 0;
+  const metricFit = normalizeSweepMetricFit(state.sweepMetricFit);
+  const dir = state.arpDirection || 0;
+  const isSext = isSweepSextupletCount(steps.length, metricFit);
+  return {
+    id: 'sw_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    symbol: arpData.chordSymbol || chordId,
+    chordName: arpData.chordName || '',
+    rootPc,
+    chordId,
+    posIdx: effPosIdx,
+    posLabel: posObj ? posObj.label : `Poz. ${effPosIdx + 1}`,
+    sweepStrings: state.arpSweepStrings,
+    metricFit,
+    isSextuplet: isSext,
+    direction: dir,
+    seqStyle: state.arpSeqStyle || 0,
+    rangeLabel: formatSweepRangeLabel(steps, metricFit, dir),
+    minFret: minF,
+    maxFret: maxF,
+    nodes: nodes.map(n => Object.assign({}, n)),
+    steps: steps.map(st => Object.assign({}, st))
+  };
+}
+
+function buildCurrentSweepCompSnapshot() {
+  return buildSweepCompSnapshotFromData(state.arpData, state.rootPc, state.chordId, state.sweepPosIdx || 0);
+}
+
+function addCurrentSweepToComposition() {
+  const snap = buildCurrentSweepCompSnapshot();
+  if (!snap) return;
+  if (!Array.isArray(state.sweepComposition)) state.sweepComposition = [];
+  const wasEmpty = (state.sweepComposition.length === 0);
+  state.sweepComposition.push(snap);
+  state.sweepCompActiveIdx = state.sweepComposition.length - 1;
+  if (wasEmpty) state.sweepCompactTabs = true;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+async function quickAddDiatonicSweepToComposition(rootPc, chordId) {
+  stopArpeggioPlayback(false);
+  chordId = normalizeChordId(chordId);
+  const customParam = (state.customStringMidis || []).join(',');
+  const effPosIdx = state.sweepPosIdx || 0;
+  const effDiatRootPc = (typeof state.arpDiatonicScaleRootPc === 'number' && state.arpDiatonicScaleRootPc >= 0)
+    ? state.arpDiatonicScaleRootPc
+    : rootPc;
+  const url = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${rootPc}&chordId=${encodeURIComponent(chordId)}&pattern=4&posIdx=${effPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=single&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
+  try {
+    const data = await fetchJson(url);
+    const snap = buildSweepCompSnapshotFromData(data, rootPc, chordId, effPosIdx);
+    if (snap) {
+      if (!Array.isArray(state.sweepComposition)) state.sweepComposition = [];
+      const wasEmpty = (state.sweepComposition.length === 0);
+      state.sweepComposition.push(snap);
+      state.sweepCompActiveIdx = state.sweepComposition.length - 1;
+      if (wasEmpty) state.sweepCompactTabs = true;
+    }
+    state.rootPc = rootPc;
+    state.chordId = chordId;
+    saveSettings();
+    await renderAll();
+  } catch (e) {}
+}
+
+async function selectSweepCompItem(idx) {
+  if (!Array.isArray(state.sweepComposition) || idx < 0 || idx >= state.sweepComposition.length) return;
+  stopArpeggioPlayback(false);
+  state.sweepCompActiveIdx = idx;
+  const item = state.sweepComposition[idx];
+  if (item) {
+    state.rootPc = item.rootPc;
+    state.chordId = item.chordId;
+    state.arpSweepStrings = item.sweepStrings || 3;
+    state.sweepPosIdx = item.posIdx || 0;
+    state.sweepMetricFit = normalizeSweepMetricFit(item.metricFit);
+    state.arpDirection = item.direction || 0;
+    state.arpSeqStyle = item.seqStyle || 0;
+  }
+  saveSettings();
+  await renderAll();
+  scrollSweepCompTabToSegment(idx, false);
+}
+
+function moveSweepCompItem(idx, delta) {
+  if (!Array.isArray(state.sweepComposition)) return;
+  const target = idx + delta;
+  if (idx < 0 || idx >= state.sweepComposition.length || target < 0 || target >= state.sweepComposition.length) return;
+  stopArpeggioPlayback(false);
+  const tmp = state.sweepComposition[idx];
+  state.sweepComposition[idx] = state.sweepComposition[target];
+  state.sweepComposition[target] = tmp;
+  state.sweepCompActiveIdx = target;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function replaceSweepCompItemWithCurrent(idx) {
+  if (!Array.isArray(state.sweepComposition) || idx < 0 || idx >= state.sweepComposition.length) return;
+  const snap = buildCurrentSweepCompSnapshot();
+  if (!snap) return;
+  stopArpeggioPlayback(false);
+  state.sweepComposition[idx] = snap;
+  state.sweepCompActiveIdx = idx;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function removeSweepCompItem(idx) {
+  if (!Array.isArray(state.sweepComposition) || idx < 0 || idx >= state.sweepComposition.length) return;
+  stopArpeggioPlayback(false);
+  state.sweepComposition.splice(idx, 1);
+  if (state.sweepCompActiveIdx >= state.sweepComposition.length) {
+    state.sweepCompActiveIdx = Math.max(0, state.sweepComposition.length - 1);
+  }
+  if (state.sweepComposition.length === 0) {
+    state.sweepPlaybackTarget = 'single';
+  }
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function clearSweepComposition() {
+  stopArpeggioPlayback(false);
+  state.sweepComposition = [];
+  state.sweepCompActiveIdx = 0;
+  state.sweepPlaybackTarget = 'single';
+  saveSettings();
+  renderStageAndInspector();
 }
 
 function refreshArpTabSvgOnly() {
@@ -10755,38 +12221,55 @@ function refreshArpTabSvgOnly() {
   if (!wrap || !state.arpData) return;
   const prevScroll = wrap.scrollLeft || 0;
   const isTrans = isSweepTransitionActive();
+  const isSweepSingle = (state.subtab === 'sweep' && !isTrans);
   const tr = state.arpData.transition || { segments: [] };
   const activeSteps = getActiveArpeggioSteps();
-  wrap.innerHTML = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, state.arpPlayStepIdx, isTrans);
+  const playIdx = (isSweepSingle && state.sweepPlaybackTarget === 'comp') ? -1 : state.arpPlayStepIdx;
+  wrap.innerHTML = buildArpeggioTabSvg(activeSteps, isTrans ? (tr.segments || []) : null, playIdx, isTrans, {
+    compact: isSweepSingle && !!state.sweepCompactTabs,
+    svgId: 'arpTabSvg',
+    playheadId: 'arpPlayheadBg',
+    onStepClickFn: 'playSingleArpeggioStep',
+    activeSegIdx: state.arpActiveSegIdx
+  });
   wrap.scrollLeft = prevScroll;
 }
 
-function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
+function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition, options = {}) {
   if (!steps || steps.length === 0) {
     return `<div style="padding:18px;text-align:center;color:var(--text-muted);">Brak wygenerowanych nut dla tej konfiguracji.</div>`;
   }
+  const compact = !!options.compact;
+  const svgIdAttr = options.svgId ? `id="${options.svgId}"` : '';
+  const playheadId = options.playheadId || 'arpPlayheadBg';
+  const onStepClickFn = options.onStepClickFn || 'playSingleArpeggioStep';
+  const activeSegIdx = (options.activeSegIdx !== undefined) ? options.activeSegIdx : state.arpActiveSegIdx;
+
   const nStrings = 6;
-  const leftPad = 36;
-  const colW = 34;
-  const rightPad = 24;
+  const leftPad = compact ? 28 : 36;
+  const colW = compact ? 26 : 34;
+  const rightPad = compact ? 16 : 24;
   const showIntervalsAbove = (state.labelType === 'intervals');
-  const topY = isTransition ? 46 : 34;
-  const rowGap = 14;
-  const W = Math.max(520, leftPad + steps.length * colW + rightPad);
-  const H = topY + (nStrings - 1) * rowGap + 18;
+  const topY = isTransition ? (compact ? 34 : 46) : (compact ? 26 : 34);
+  const rowGap = compact ? 10 : 14;
+  const W = Math.max(compact ? 420 : 520, leftPad + steps.length * colW + rightPad);
+  const H = topY + (nStrings - 1) * rowGap + (compact ? 13 : 18);
   const strNames = ['e', 'B', 'G', 'D', 'A', 'E'];
   const symMap = { D: '↓', U: '↑', H: 'H', P: 'P', S: 'S' };
   const symColor = { D: '#fb923c', U: '#38bdf8', H: '#4ade80', P: '#4ade80', S: '#facc15' };
+  const phW = compact ? 22 : 28;
+  const phPadY = compact ? 15 : 20;
+  const phExtraH = compact ? 22 : 30;
 
-  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  let svg = `<svg ${svgIdAttr} width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
   // Pionowy kursor podążający za aktualną nutą (aktualizowany bez przeładowywania SVG -> idealne płynne przewijanie!)
-  const playX = (activeIdx >= 0 && activeIdx < steps.length) ? (leftPad + activeIdx * colW + colW * 0.5 - 14) : -100;
-  svg += `<rect id="arpPlayheadBg" x="${playX}" y="${topY - 20}" width="28" height="${(nStrings - 1) * rowGap + 30}" rx="6" fill="rgba(34,197,94,0.14)" stroke="rgba(74,222,128,0.45)" stroke-width="1" style="display:${activeIdx >= 0 ? 'block' : 'none'}"/>`;
+  const playX = (activeIdx >= 0 && activeIdx < steps.length) ? (leftPad + activeIdx * colW + colW * 0.5 - phW * 0.5) : -100;
+  svg += `<rect id="${playheadId}" x="${playX}" y="${topY - phPadY}" width="${phW}" height="${(nStrings - 1) * rowGap + phExtraH}" rx="${compact ? 5 : 6}" fill="rgba(34,197,94,0.14)" stroke="rgba(74,222,128,0.45)" stroke-width="1" style="display:${activeIdx >= 0 ? 'block' : 'none'}"/>`;
 
   for (let r = 0; r < nStrings; r++) {
     const y = topY + r * rowGap;
-    svg += `<text x="12" y="${y + 4}" fill="#8c8277" font-family="monospace" font-size="11" font-weight="700">${strNames[r]}</text>`;
-    svg += `<line x1="${leftPad - 8}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="#3e332a" stroke-width="1.2"/>`;
+    svg += `<text x="${compact ? 8 : 12}" y="${y + (compact ? 3.2 : 4)}" fill="#8c8277" font-family="monospace" font-size="${compact ? 9.5 : 11}" font-weight="700">${strNames[r]}</text>`;
+    svg += `<line x1="${leftPad - 8}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="#3e332a" stroke-width="${compact ? 1.0 : 1.2}"/>`;
   }
   svg += `<line x1="${leftPad - 8}" y1="${topY}" x2="${leftPad - 8}" y2="${topY + (nStrings - 1) * rowGap}" stroke="#6e5c4d" stroke-width="1.5"/>`;
 
@@ -10799,38 +12282,39 @@ function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
     if (isTransition && st.seg !== lastSeg) {
       lastSeg = st.seg;
       if (i > 0) {
-        svg += `<line x1="${x - colW * 0.5}" y1="${topY - 30}" x2="${x - colW * 0.5}" y2="${topY + (nStrings - 1) * rowGap + 5}" stroke="#57412e" stroke-width="1.3" stroke-dasharray="4,3"/>`;
+        svg += `<line x1="${x - colW * 0.5}" y1="${topY - (compact ? 22 : 30)}" x2="${x - colW * 0.5}" y2="${topY + (nStrings - 1) * rowGap + 5}" stroke="#57412e" stroke-width="1.3" stroke-dasharray="4,3"/>`;
       }
       const segObj = segments && segments[st.seg];
-      const hdr = segObj ? `${segObj.symbol} (${segObj.roman})` : '';
-      const hdrColor = (st.seg === state.arpActiveSegIdx) ? '#f39237' : '#d6cec2';
-      svg += `<text data-seg-hdr="${st.seg}" x="${x - 6}" y="12" fill="${hdrColor}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800">${hdr}</text>`;
+      const hdr = segObj ? (segObj.roman ? `${segObj.symbol} (${segObj.roman})` : segObj.symbol) : '';
+      const hdrColor = (st.seg === activeSegIdx) ? '#f39237' : '#d6cec2';
+      svg += `<text data-seg-hdr="${st.seg}" x="${x - 6}" y="${compact ? 10 : 12}" fill="${hdrColor}" font-family="Segoe UI, sans-serif" font-size="${compact ? 10 : 11.5}" font-weight="800">${hdr}</text>`;
     }
 
     // Subtelny znacznik toniki (lub interwał) WYŻEJ nad tabulaturą — bez zaciemniania/podświetlania cyfr progów!
     if (showIntervalsAbove && st.interval) {
-      svg += `<text x="${x}" y="${topY - 21}" fill="${st.isRoot ? '#f39237' : '#9c9288'}" font-family="Segoe UI, sans-serif" font-size="9.5" font-weight="${st.isRoot ? '800' : '600'}" text-anchor="middle">${st.interval}</text>`;
+      svg += `<text x="${x}" y="${topY - (compact ? 15 : 21)}" fill="${st.isRoot ? '#f39237' : '#9c9288'}" font-family="Segoe UI, sans-serif" font-size="${compact ? 8.5 : 9.5}" font-weight="${st.isRoot ? '800' : '600'}" text-anchor="middle">${st.interval}</text>`;
     } else if (st.isRoot) {
-      svg += `<circle cx="${x}" cy="${topY - 22}" r="2.6" fill="#f39237"><title>Tonika (1)</title></circle>`;
+      svg += `<circle cx="${x}" cy="${topY - (compact ? 16 : 22)}" r="${compact ? 2.1 : 2.6}" fill="#f39237"><title>Tonika (1)</title></circle>`;
     }
 
     // Symbol kostkowania / techniki nad tabulaturą
     const techSym = symMap[st.tech] || st.tech || '↓';
     const tCol = symColor[st.tech] || '#fb923c';
-    svg += `<text x="${x}" y="${topY - 9}" fill="${tCol}" font-family="Segoe UI, sans-serif" font-size="11" font-weight="800" text-anchor="middle">${techSym}${st.roll ? '·R' : ''}</text>`;
+    svg += `<text x="${x}" y="${topY - (compact ? 6 : 9)}" fill="${tCol}" font-family="Segoe UI, sans-serif" font-size="${compact ? 9.5 : 11}" font-weight="800" text-anchor="middle">${techSym}${st.roll ? '·R' : ''}</text>`;
 
     // Numer progu na odpowiedniej strunie (czysty biały na ciemnym tle; podświetlenie wyłącznie dla aktywnego kroku!)
     const r = (nStrings - 1) - st.s;
     const y = topY + r * rowGap;
     const fretVal = (st.f !== undefined) ? st.f : st.fret;
-    const boxW = String(fretVal).length > 1 ? 22 : 16;
+    const boxW = compact ? (String(fretVal).length > 1 ? 18 : 13) : (String(fretVal).length > 1 ? 22 : 16);
+    const boxH = compact ? 12 : 15;
     const bgFill = isAct ? '#22c55e' : '#14100d';
     const txtFill = isAct ? '#05140b' : '#f5f2eb';
     const strokeCol = isAct ? '#bbf7d0' : 'none';
 
-    svg += `<g style="cursor:pointer" data-step-g="${i}" data-step-x="${x}" data-root="${st.isRoot?1:0}" onclick="playSingleArpeggioStep(${i})">`;
-    svg += `<rect data-step-rect="${i}" x="${x - boxW / 2}" y="${y - 7.5}" width="${boxW}" height="15" rx="3.5" fill="${bgFill}" stroke="${strokeCol}" stroke-width="${isAct ? '1.2' : '0'}"/>`;
-    svg += `<text data-step-txt="${i}" x="${x}" y="${y + 4}" fill="${txtFill}" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="800" text-anchor="middle">${fretVal}</text>`;
+    svg += `<g style="cursor:pointer" data-step-g="${i}" data-step-x="${x}" data-root="${st.isRoot?1:0}" onclick="${onStepClickFn}(${i})">`;
+    svg += `<rect data-step-rect="${i}" x="${x - boxW / 2}" y="${y - boxH / 2}" width="${boxW}" height="${boxH}" rx="${compact ? 3 : 3.5}" fill="${bgFill}" stroke="${strokeCol}" stroke-width="${isAct ? '1.2' : '0'}"/>`;
+    svg += `<text data-step-txt="${i}" x="${x}" y="${y + (compact ? 3.4 : 4)}" fill="${txtFill}" font-family="Segoe UI, sans-serif" font-size="${compact ? 10 : 11.5}" font-weight="800" text-anchor="middle">${fretVal}</text>`;
     svg += `</g>`;
   }
 
@@ -10839,8 +12323,8 @@ function buildArpeggioTabSvg(steps, segments, activeIdx, isTransition) {
 }
 
 // Aktualizuje podświetlenie aktywnej nuty TAB bez niszczenia DOM i płynnie przesuwa pasek przewijania z zapasem do przodu!
-function updateArpTabHighlightAndScroll(activeIdx, smooth = true) {
-  const wrap = document.getElementById('arpTabSvgWrap');
+function updateTabWrapHighlightAndScroll(wrapId, playheadId, activeSegIdx, activeIdx, smooth = true) {
+  const wrap = document.getElementById(wrapId);
   if (!wrap) return;
   const svg = wrap.querySelector('svg');
   if (!svg) return;
@@ -10860,25 +12344,32 @@ function updateArpTabHighlightAndScroll(activeIdx, smooth = true) {
     }
   });
 
-  if (isSweepTransitionActive()) {
-    svg.querySelectorAll('text[data-seg-hdr]').forEach(t => {
-      const seg = parseInt(t.getAttribute('data-seg-hdr'), 10);
-      t.setAttribute('fill', seg === state.arpActiveSegIdx ? '#f39237' : '#d6cec2');
-    });
-  }
+  svg.querySelectorAll('text[data-seg-hdr]').forEach(t => {
+    const seg = parseInt(t.getAttribute('data-seg-hdr'), 10);
+    t.setAttribute('fill', seg === activeSegIdx ? '#f39237' : '#d6cec2');
+  });
 
-  const ph = svg.querySelector('#arpPlayheadBg');
+  const ph = svg.querySelector(`#${playheadId}`);
   const actG = (activeIdx >= 0) ? svg.querySelector(`g[data-step-g="${activeIdx}"]`) : null;
   if (ph) {
     if (actG) {
       const nx = parseFloat(actG.getAttribute('data-step-x')) || 0;
-      ph.setAttribute('x', String(nx - 14));
+      const phW = parseFloat(ph.getAttribute('width')) || 28;
+      ph.setAttribute('x', String(nx - phW * 0.5));
       ph.style.display = 'block';
       scrollTabContainerToX(wrap, nx, smooth);
     } else {
       ph.style.display = 'none';
     }
   }
+}
+
+function updateArpTabHighlightAndScroll(activeIdx, smooth = true) {
+  updateTabWrapHighlightAndScroll('arpTabSvgWrap', 'arpPlayheadBg', state.arpActiveSegIdx, activeIdx, smooth);
+}
+
+function updateSweepCompTabHighlightAndScroll(activeIdx, smooth = true) {
+  updateTabWrapHighlightAndScroll('sweepCompTabSvgWrap', 'sweepCompPlayheadBg', state.sweepCompActiveIdx, activeIdx, smooth);
 }
 
 function playArpeggioChordPreview() {
@@ -10899,9 +12390,7 @@ function playArpeggioChordPreview() {
 function selectDiatonicArpeggio(rootPc, chordId) {
   stopArpeggioPlayback(false);
   state.rootPc = rootPc;
-  state.chordId = chordId;
-  if (state.subtab === 'sweep') state.sweepPosIdx = 0;
-  else state.arpPosIdx = 0;
+  state.chordId = normalizeChordId(chordId);
   saveSettings();
   renderAll();
 }
@@ -10909,11 +12398,10 @@ function selectDiatonicArpeggio(rootPc, chordId) {
 function selectDiatonicSweepChord(rootPc, chordId) {
   stopArpeggioPlayback(false);
   state.rootPc = rootPc;
-  state.chordId = chordId;
+  state.chordId = normalizeChordId(chordId);
   state.sweepViewMode = 'transition';
   state.arpTransitionId = 'same_chord_inversions';
   state.arpActiveSegIdx = 0;
-  state.sweepPosIdx = 0;
   state.sweepTransPosIdx = 0;
   saveSettings();
   renderAll();
@@ -10958,21 +12446,23 @@ function launchDiatonicScaleSweep() {
   renderAll();
 }
 
-function selectArpTransitionSegment(segIdx) {
+async function selectArpTransitionSegment(segIdx) {
   stopArpeggioPlayback(false);
   state.arpActiveSegIdx = segIdx;
   state.arpPlayStepIdx = -1;
-  renderStageAndInspector();
+  await renderStageAndInspector();
+  scrollArpTabToSegment(segIdx, false);
 }
 
 function setArpeggioBpm(bpm) {
-  state.arpBpm = Math.max(40, Math.min(200, bpm));
+  state.arpBpm = Math.max(40, Math.min(240, bpm));
   const el = document.getElementById('arpBpmVal');
   if (el) el.textContent = `${state.arpBpm} BPM`;
   saveSettings();
   if (state.arpPlaying) {
+    const prevTarget = state.sweepPlaybackTarget || 'single';
     stopArpeggioPlayback(false);
-    toggleArpeggioPlayback();
+    startSweepOrArpPlayback(prevTarget);
   }
 }
 
@@ -10980,13 +12470,32 @@ function playSingleArpeggioStep(idx) {
   const steps = getActiveArpeggioSteps();
   const st = steps[idx];
   if (!st) return;
+  state.sweepPlaybackTarget = 'single';
   state.arpPlayStepIdx = idx;
   if (isSweepTransitionActive() && st.seg !== undefined) {
     state.arpActiveSegIdx = st.seg;
+    syncSweepSegCardSelection();
   }
   pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
+  updateSweepCompTabHighlightAndScroll(-1, false);
   updateArpTabHighlightAndScroll(idx, true);
   renderFretboardToolbarForActiveTab();
+  drawFretboard();
+}
+
+function playSingleSweepCompStep(idx) {
+  const steps = getSweepCompositionSteps();
+  const st = steps[idx];
+  if (!st) return;
+  state.sweepPlaybackTarget = 'comp';
+  state.arpPlayStepIdx = idx;
+  if (st.seg !== undefined) {
+    state.sweepCompActiveIdx = st.seg;
+    syncSweepCompCardSelection();
+  }
+  pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
+  updateArpTabHighlightAndScroll(-1, false);
+  updateSweepCompTabHighlightAndScroll(idx, true);
   drawFretboard();
 }
 
@@ -10997,30 +12506,64 @@ function stopArpeggioPlayback(redraw = true) {
   }
   state.arpPlaying = false;
   state.arpPlayStepIdx = -1;
+  state.sweepPlaybackTarget = 'single';
   const btn = document.getElementById('arpPlayBtn');
   if (btn) {
     btn.textContent = '▶ Odsłuchaj';
     btn.classList.remove('active');
   }
+  const compBtn = document.getElementById('sweepCompPlayBtn');
+  if (compBtn) {
+    compBtn.textContent = '▶ Odsłuchaj kompozycję';
+    compBtn.classList.remove('active');
+  }
   if (redraw && (state.subtab === 'arpeggio' || state.subtab === 'sweep')) {
     updateArpTabHighlightAndScroll(-1, false);
+    updateSweepCompTabHighlightAndScroll(-1, false);
     drawFretboard();
   }
 }
 
-function toggleArpeggioPlayback() {
-  if (state.arpPlaying) {
-    stopArpeggioPlayback(true);
-    return;
-  }
-  const steps = getActiveArpeggioSteps();
+function startSweepOrArpPlayback(targetMode = 'single') {
+  const isComp = (targetMode === 'comp' && state.subtab === 'sweep' && state.sweepViewMode === 'single');
+  const steps = isComp ? getSweepCompositionSteps() : getActiveArpeggioSteps();
   if (!steps.length) return;
+
+  state.sweepPlaybackTarget = isComp ? 'comp' : 'single';
+  const isTransStart = !isComp && isSweepTransitionActive();
+  let lockedSeg = (isTransStart && !state.sweepSequential) ? (state.arpActiveSegIdx || 0) : null;
+  let startIdx = 0;
+
+  if (isComp) {
+    state.sweepCompActiveIdx = 0;
+    startIdx = 0;
+    syncSweepCompCardSelection();
+    updateArpTabHighlightAndScroll(-1, false);
+  } else if (isTransStart) {
+    if (!state.sweepSequential) {
+      startIdx = steps.findIndex(st => st.seg === lockedSeg);
+      if (startIdx < 0) startIdx = 0;
+    } else {
+      state.arpActiveSegIdx = 0;
+      startIdx = 0;
+      syncSweepSegCardSelection();
+      renderFretboardToolbarForActiveTab();
+    }
+  }
+
   state.arpPlaying = true;
-  state.arpPlayStepIdx = 0;
+  state.arpPlayStepIdx = startIdx;
+
+  const isMainPlayBtnActive = !isComp || (!!state.sweepSequential && isComp);
   const btn = document.getElementById('arpPlayBtn');
   if (btn) {
-    btn.textContent = '⏹ Stop';
-    btn.classList.add('active');
+    btn.textContent = isMainPlayBtnActive ? '⏹ Stop' : '▶ Odsłuchaj';
+    btn.classList.toggle('active', isMainPlayBtnActive);
+  }
+  const compBtn = document.getElementById('sweepCompPlayBtn');
+  if (compBtn) {
+    compBtn.textContent = isComp ? '⏹ Stop' : '▶ Odsłuchaj kompozycję';
+    compBtn.classList.toggle('active', isComp);
   }
 
   const tick = () => {
@@ -11028,64 +12571,169 @@ function toggleArpeggioPlayback() {
       stopArpeggioPlayback(false);
       return;
     }
-    const curSteps = getActiveArpeggioSteps();
+    const curSteps = isComp ? getSweepCompositionSteps() : getActiveArpeggioSteps();
     if (!curSteps.length) {
       stopArpeggioPlayback(true);
       return;
     }
-    const loopEnabled = (state.subtab === 'sweep') ? !!state.sweepLoop : !!state.arpLoop;
-    if (state.arpPlayStepIdx >= curSteps.length) {
-      if (loopEnabled) {
-        state.arpPlayStepIdx = 0;
-      } else {
-        stopArpeggioPlayback(true);
-        return;
+
+    let playedStep = null;
+    if (isComp) {
+      if (state.arpPlayStepIdx >= curSteps.length) {
+        if (state.arpAutoTempo) {
+          bumpArpeggioAutoTempo();
+          state.arpPlayStepIdx = 0;
+          state.sweepCompActiveIdx = 0;
+          syncSweepCompCardSelection();
+        } else {
+          stopArpeggioPlayback(true);
+          return;
+        }
       }
+      const st = curSteps[state.arpPlayStepIdx];
+      playedStep = st;
+      if (st.seg !== undefined && st.seg !== state.sweepCompActiveIdx) {
+        state.sweepCompActiveIdx = st.seg;
+        syncSweepCompCardSelection();
+      }
+      pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
+      updateSweepCompTabHighlightAndScroll(state.arpPlayStepIdx, state.arpPlayStepIdx > startIdx);
+      drawFretboard();
+    } else {
+      const isTransNow = isSweepTransitionActive();
+      if (isTransNow) {
+        if (state.sweepSequential) {
+          lockedSeg = null;
+        } else if (lockedSeg === null) {
+          lockedSeg = state.arpActiveSegIdx || 0;
+        }
+        if (state.arpPlayStepIdx >= curSteps.length ||
+            (lockedSeg !== null && curSteps[state.arpPlayStepIdx].seg !== lockedSeg)) {
+          if (state.arpAutoTempo) {
+            bumpArpeggioAutoTempo();
+            state.arpPlayStepIdx = startIdx;
+          } else {
+            stopArpeggioPlayback(true);
+            return;
+          }
+        }
+      } else {
+        const loopEnabled = (state.subtab === 'sweep') ? false : !!state.arpLoop;
+        if (state.arpPlayStepIdx >= curSteps.length) {
+          if (loopEnabled || state.arpAutoTempo) {
+            if (state.arpAutoTempo) bumpArpeggioAutoTempo();
+            state.arpPlayStepIdx = 0;
+          } else {
+            stopArpeggioPlayback(true);
+            return;
+          }
+        }
+      }
+      const st = curSteps[state.arpPlayStepIdx];
+      playedStep = st;
+      const segChanged = (isTransNow && st.seg !== undefined && st.seg !== state.arpActiveSegIdx);
+      if (segChanged) {
+        state.arpActiveSegIdx = st.seg;
+        syncSweepSegCardSelection();
+        renderFretboardToolbarForActiveTab();
+      }
+      pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
+      updateArpTabHighlightAndScroll(state.arpPlayStepIdx, state.arpPlayStepIdx > startIdx);
+      drawFretboard();
     }
-    const st = curSteps[state.arpPlayStepIdx];
-    const segChanged = (isSweepTransitionActive() && st.seg !== undefined && st.seg !== state.arpActiveSegIdx);
-    if (segChanged) {
-      state.arpActiveSegIdx = st.seg;
-      document.querySelectorAll('#dynamicStagePanel [data-sweep-seg]').forEach(card => {
-        const cardSeg = parseInt(card.getAttribute('data-sweep-seg'), 10);
-        card.classList.toggle('selected', cardSeg === state.arpActiveSegIdx);
-      });
-      renderFretboardToolbarForActiveTab();
-    }
-    pluckGuitarFrequency(st.freq || midiToFreq(st.midi), 0.78);
-    updateArpTabHighlightAndScroll(state.arpPlayStepIdx, state.arpPlayStepIdx > 0);
-    drawFretboard();
 
     state.arpPlayStepIdx++;
-    // Szesnastki / triole wg ustawionego BPM (np. 90 BPM -> 166 ms na nutę)
-    const stepMs = Math.max(70, Math.round(60000 / (state.arpBpm * 4)));
+    // Szesnastki (4/ćwierćnutę) albo sekstole (6/ćwierćnutę, tuplet: 3) wg ustawionego BPM
+    const perBeat = (playedStep && playedStep.tuplet === 3) ? 6 : 4;
+    const stepMs = Math.max(55, Math.round(60000 / ((state.arpBpm || 120) * perBeat)));
     arpPlaybackTimer = setTimeout(tick, stepMs);
   };
 
   tick();
 }
 
-function sendArpeggioToExerciseTab() {
-  stopArpeggioPlayback(false);
-  const steps = getActiveArpeggioSteps();
-  if (!steps.length) return;
-  const techMap = { H: 'Hammer-on', P: 'Pull-off', S: 'Slide' };
+function toggleArpeggioPlayback() {
+  if (state.arpPlaying) {
+    if (state.subtab === 'sweep' && state.sweepViewMode === 'single' &&
+        state.sweepPlaybackTarget === 'comp' && !state.sweepSequential) {
+      stopArpeggioPlayback(false);
+      startSweepOrArpPlayback('single');
+      return;
+    }
+    stopArpeggioPlayback(true);
+    return;
+  }
+  if (state.subtab === 'sweep' && state.sweepViewMode === 'single' &&
+      state.sweepSequential && Array.isArray(state.sweepComposition) && state.sweepComposition.length > 0) {
+    startSweepOrArpPlayback('comp');
+    return;
+  }
+  startSweepOrArpPlayback('single');
+}
+
+function toggleSweepCompositionPlayback() {
+  if (state.arpPlaying && state.sweepPlaybackTarget === 'comp') {
+    stopArpeggioPlayback(true);
+    return;
+  }
+  if (state.arpPlaying) {
+    stopArpeggioPlayback(false);
+  }
+  startSweepOrArpPlayback('comp');
+}
+
+function exportStepsToExerciseTab(steps, title) {
+  if (!steps || !steps.length) return;
+  const techShortMap = { 'Hammer-on': 'H', 'Pull-off': 'P', Slide: 'S', H: 'H', P: 'P', S: 'S', D: 'D', U: 'U' };
+  const fallbackTuplet = isSweepSextupletCount(steps.length, state.sweepMetricFit || 'sextuplets') ? 3 : 0;
   state.recordedEvents = steps.map(st => ({
     s: st.s,
     f: st.f,
     midi: st.midi,
     note: st.note,
-    dur: 2, // Szesnastka
-    rest: false,
-    tech: techMap[st.tech] || '—'
+    freq: st.freq || midiToFreq(st.midi),
+    dur: 2, // Szesnastka (z tuplet: 3 -> sekstola / 6 na ćwierćnutę)
+    tuplet: (st.tuplet !== undefined) ? (st.tuplet === 3 ? 3 : 0) : fallbackTuplet,
+    rest: 0,
+    tech: techShortMap[st.tech] || '-',
+    seg: (st.seg !== undefined) ? st.seg : 0,
+    chordSymbol: st.chordSymbol || '',
+    roman: st.roman || '',
+    isRoot: !!st.isRoot,
+    interval: st.interval || '',
+    roll: !!st.roll
   }));
   state.tempoBpm = state.arpBpm;
-  state.exerciseTitle = (isSweepTransitionActive() && state.arpData && state.arpData.transition)
-    ? state.arpData.transition.name
-    : `${state.subtab === 'sweep' ? 'Sweep Picking' : 'Arpeggio'} ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
+  state.exerciseBaseBpm = state.arpBpm;
+  state.exerciseTitle = title;
+  state.exercisePlayerView = 'tab';
   state.exercisePlayerActive = false;
+  state.exerciseCompletedSet = new Set();
+  state.exerciseLastHitIdx = -1;
+  state.exerciseLastHitTime = 0;
+  state.exerciseLastHitLabel = '';
   switchPracticeSubtab('exercise');
 }
+
+function sendArpeggioToExerciseTab() {
+  stopArpeggioPlayback(false);
+  const steps = getActiveArpeggioSteps();
+  const title = (isSweepTransitionActive() && state.arpData && state.arpData.transition)
+    ? state.arpData.transition.name
+    : `${state.subtab === 'sweep' ? 'Sweep Picking' : 'Arpeggio'} ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
+  exportStepsToExerciseTab(steps, title);
+}
+
+function sendSweepCompositionToExerciseTab() {
+  stopArpeggioPlayback(false);
+  const list = Array.isArray(state.sweepComposition) ? state.sweepComposition : [];
+  if (!list.length) return;
+  const steps = getSweepCompositionSteps();
+  const title = `Kompozycja Sweep (${list.map(c => c.symbol).join(' → ')})`;
+  exportStepsToExerciseTab(steps, title);
+}
+
+let saveSettingsDiskTimer = null;
 
 function saveSettings() {
   try {
@@ -11093,7 +12741,7 @@ function saveSettings() {
       rootPc: state.rootPc,
       accMode: state.accMode,
       scaleId: state.scaleId,
-      chordId: state.chordId,
+      chordId: normalizeChordId(state.chordId),
       posSystem: state.posSystem,
       posIdx: state.posIdx,
       labelType: state.labelType,
@@ -11110,21 +12758,31 @@ function saveSettings() {
       arpViewMode: state.arpViewMode,
       sweepViewMode: state.sweepViewMode,
       arpPattern: state.arpPattern,
+      arpPosIdx: state.arpPosIdx || 0,
+      arpActiveSegIdx: state.arpActiveSegIdx || 0,
       sweepPosIdx: state.sweepPosIdx,
       sweepTransPosIdx: state.sweepTransPosIdx || 0,
       arpSweepStrings: state.arpSweepStrings,
+      sweepMetricFit: normalizeSweepMetricFit(state.sweepMetricFit),
+      sweepCompactTabs: !!state.sweepCompactTabs,
+      sweepComposition: Array.isArray(state.sweepComposition) ? state.sweepComposition.slice(0, 32) : [],
+      sweepCompActiveIdx: state.sweepCompActiveIdx || 0,
       arpDirection: state.arpDirection,
       arpSeqStyle: state.arpSeqStyle,
       arpStringSet: state.arpStringSet,
       arpOctaves: state.arpOctaves,
       arpTransitionId: state.arpTransitionId,
       arpDiatonicSevenths: !!state.arpDiatonicSevenths,
+      arpDiatonicCategory: state.arpDiatonicCategory || 'all',
+      arpFilterByScale: !!state.arpFilterByScale,
+      arpAutoTempo: !!state.arpAutoTempo,
+      savedSweepCompositions: Array.isArray(state.savedSweepCompositions) ? state.savedSweepCompositions.slice(0, 16) : [],
       arpDiatonicScaleId: state.arpDiatonicScaleId,
       arpDiatonicScaleRootPc: state.arpDiatonicScaleRootPc,
       arpShowScaleOnFretboard: !!state.arpShowScaleOnFretboard,
       arpBpm: state.arpBpm,
       arpLoop: !!state.arpLoop,
-      sweepLoop: !!state.sweepLoop,
+      sweepSequential: !!state.sweepSequential,
       tuningId: state.tuningId,
       customStringMidis: state.customStringMidis,
       a4ReferenceHz: state.a4ReferenceHz,
@@ -11133,6 +12791,7 @@ function saveSettings() {
       tunerMode: state.tunerMode,
       tunerDisplay: state.tunerDisplay,
       themeMode: state.themeMode || 'dark',
+      uiStyle: ['classic', 'modern', 'rack'].includes(state.uiStyle) ? state.uiStyle : 'classic',
       uiLang: state.uiLang || 'pl',
       fretMarkersMode: state.fretMarkersMode || 'numbers',
       numberAllFrets: !!state.numberAllFrets,
@@ -11222,11 +12881,14 @@ function saveSettings() {
     };
     const jsonStr = JSON.stringify(payload);
     localStorage.setItem('apka_gitara_settings_v1', jsonStr);
-    fetch('/api/save_settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: jsonStr
-    }).catch(() => {});
+    clearTimeout(saveSettingsDiskTimer);
+    saveSettingsDiskTimer = setTimeout(() => {
+      fetch('/api/save_settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: jsonStr
+      }).catch(() => {});
+    }, 250);
   } catch (e) {}
 }
 
@@ -11267,6 +12929,50 @@ async function loadSettings() {
     state.exerciseShowStaff = false;
     state.tabCreationEnabled = true;
   }
+  if (typeof state.sweepSequential !== 'boolean') {
+    state.sweepSequential = false;
+  }
+  if (typeof state.sweepPosIdx !== 'number' || !Number.isFinite(state.sweepPosIdx)) {
+    state.sweepPosIdx = 0;
+  }
+  if (typeof state.arpPosIdx !== 'number' || !Number.isFinite(state.arpPosIdx)) {
+    state.arpPosIdx = 0;
+  }
+  if (typeof state.arpActiveSegIdx !== 'number' || !Number.isFinite(state.arpActiveSegIdx)) {
+    state.arpActiveSegIdx = 0;
+  }
+  state.chordId = normalizeChordId(state.chordId);
+  if (!['dark', 'light', 'system'].includes(state.themeMode)) {
+    state.themeMode = 'dark';
+  }
+  if (!['classic', 'modern', 'rack'].includes(state.uiStyle)) {
+    state.uiStyle = 'classic';
+  }
+  if (!['all', 'triad', 'seventh', 'sus_add_6', 'extended'].includes(state.arpDiatonicCategory)) {
+    state.arpDiatonicCategory = 'all';
+  }
+  state.arpFilterByScale = !!state.arpFilterByScale;
+  state.arpAutoTempo = !!state.arpAutoTempo;
+  if (!Array.isArray(state.savedSweepCompositions)) {
+    state.savedSweepCompositions = [];
+  } else {
+    state.savedSweepCompositions.forEach(pr => {
+      if (pr && Array.isArray(pr.items)) pr.items.forEach(seg => rebuildSweepSegmentSteps(seg));
+    });
+  }
+  state.sweepMetricFit = normalizeSweepMetricFit(state.sweepMetricFit);
+  delete state.sweepStartStr;
+  delete state.sweepReturnMode;
+  if (!Array.isArray(state.sweepComposition)) {
+    state.sweepComposition = [];
+  } else {
+    state.sweepComposition.forEach(seg => rebuildSweepSegmentSteps(seg));
+  }
+  if (typeof state.sweepCompActiveIdx !== 'number' || !Number.isFinite(state.sweepCompActiveIdx)) {
+    state.sweepCompActiveIdx = 0;
+  }
+  state.sweepCompactTabs = !!state.sweepCompactTabs;
+  state.sweepPlaybackTarget = 'single';
 }
 
 function setExerciseScoreViewMode(mode) {
@@ -13831,6 +15537,132 @@ function getDurationBeats(durCode, isTuplet) {
   return isTuplet ? (base * 2 / 3) : base;
 }
 
+function normalizeExerciseTechShort(tech) {
+  if (!tech || tech === '-' || tech === '—') return '';
+  if (tech === 'Hammer-on') return 'H';
+  if (tech === 'Pull-off') return 'P';
+  if (tech === 'Slide') return 'S';
+  if (tech === 'D') return '↓';
+  if (tech === 'U') return '↑';
+  return String(tech);
+}
+
+function getActiveExerciseShapeSlice(evs, highlightIdx = 0) {
+  if (!Array.isArray(evs) || evs.length === 0) {
+    return { startIdx: 0, endIdx: -1, events: [] };
+  }
+  const hi = Math.max(0, Math.min(evs.length - 1, highlightIdx >= 0 ? highlightIdx : 0));
+
+  let hasDistinctSegs = false;
+  let firstSeg = null;
+  for (let i = 0; i < evs.length; i++) {
+    if (evs[i].seg !== undefined) {
+      if (firstSeg === null) firstSeg = evs[i].seg;
+      else if (evs[i].seg !== firstSeg) { hasDistinctSegs = true; break; }
+    }
+  }
+
+  if (hasDistinctSegs) {
+    const curSeg = evs[hi].seg;
+    let startIdx = hi;
+    let endIdx = hi;
+    while (startIdx > 0 && evs[startIdx - 1].seg === curSeg) startIdx--;
+    while (endIdx + 1 < evs.length && evs[endIdx + 1].seg === curSeg) endIdx++;
+    return {
+      startIdx,
+      endIdx,
+      events: evs.slice(startIdx, endIdx + 1).map((ev, offset) => ({ ev, idx: startIdx + offset }))
+    };
+  }
+
+  if (evs.length <= 16) {
+    return {
+      startIdx: 0,
+      endIdx: evs.length - 1,
+      events: evs.map((ev, idx) => ({ ev, idx }))
+    };
+  }
+
+  // Dla dłuższych przebiegów bez jawnych segmentów dzielimy na naturalne kształty/frazy (cykl po strunach lub max 12 nut)
+  const ranges = [];
+  let blockStart = 0;
+  for (let i = 4; i < evs.length; i++) {
+    const curS = evs[i].s;
+    const prevS = evs[i - 1].s;
+    const prev2S = evs[i - 2].s;
+    const len = i - blockStart;
+    const isBottomTurnaround = (curS >= 0 && prevS >= 0 && prev2S >= 0 && prev2S > prevS && curS > prevS && len >= 6);
+    if (len >= 12 || (isBottomTurnaround && len >= 5)) {
+      ranges.push([blockStart, i - 1]);
+      blockStart = i;
+    }
+  }
+  ranges.push([blockStart, evs.length - 1]);
+
+  let hitRange = ranges[0];
+  for (const r of ranges) {
+    if (hi >= r[0] && hi <= r[1]) {
+      hitRange = r;
+      break;
+    }
+  }
+  return {
+    startIdx: hitRange[0],
+    endIdx: hitRange[1],
+    events: evs.slice(hitRange[0], hitRange[1] + 1).map((ev, offset) => ({ ev, idx: hitRange[0] + offset }))
+  };
+}
+
+function getNextExerciseShapeSlice(evs, curSlice) {
+  if (!Array.isArray(evs) || !curSlice || (curSlice.startIdx === 0 && curSlice.endIdx >= evs.length - 1)) {
+    return null;
+  }
+  const nextStart = (curSlice.endIdx + 1 < evs.length) ? (curSlice.endIdx + 1) : 0;
+  const nextSlice = getActiveExerciseShapeSlice(evs, nextStart);
+  if (!nextSlice || (nextSlice.startIdx === curSlice.startIdx && nextSlice.endIdx === curSlice.endIdx)) {
+    return null;
+  }
+  return nextSlice;
+}
+
+function buildExerciseShapeNextOverlaySvg(nextEntries, occupiedPosKeys, topY, strGap, labels, xForFret, isFretVisible, light) {
+  if (!Array.isArray(nextEntries) || nextEntries.length === 0) return '';
+  let out = '';
+  const nextPts = [];
+  nextEntries.forEach(({ ev }) => {
+    if (isFretVisible(ev.f)) {
+      const cx = xForFret(ev.f);
+      const cy = topY + (5 - ev.s) * strGap;
+      if (!nextPts.length || nextPts[nextPts.length - 1].cx !== cx || nextPts[nextPts.length - 1].cy !== cy) {
+        nextPts.push({ cx, cy });
+      }
+    }
+  });
+  if (nextPts.length >= 2) {
+    out += `<polyline points="${nextPts.map(p => `${p.cx.toFixed(1)},${p.cy.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(56,189,248,0.38)" stroke-width="1.6" stroke-dasharray="4,3" pointer-events="none"/>`;
+  }
+  const seenNext = new Set();
+  const nextCircleFill = light ? 'rgba(255,255,255,0.92)' : 'rgba(20,16,13,0.88)';
+  const nextTextFill = light ? '#0284c7' : '#7dd3fc';
+  nextEntries.forEach(({ ev }) => {
+    const key = `${ev.s}_${ev.f}`;
+    if (seenNext.has(key) || (occupiedPosKeys && occupiedPosKeys.has(key))) return;
+    seenNext.add(key);
+    if (!isFretVisible(ev.f)) return;
+    const cy = topY + (5 - ev.s) * strGap;
+    const cx = xForFret(ev.f);
+    const openMidi = state.customStringMidis[ev.s] !== undefined ? state.customStringMidis[ev.s] : [40, 45, 50, 55, 59, 64][ev.s];
+    const m = ev.midi || (openMidi + ev.f);
+    const pc = ((m % 12) + 12) % 12;
+    const nm = (state.labelType === 'intervals') ? computeIntervalLabel(pc, state.rootPc, false) : (ev.note || labels[pc]);
+    out += `<g opacity="0.78" style="cursor:pointer" onclick="onExerciseFretCellClick(${ev.s},${ev.f},false)">
+      <circle cx="${cx}" cy="${cy}" r="9.6" fill="${nextCircleFill}" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="3,2"/>
+      <text x="${cx}" y="${cy + 3.4}" fill="${nextTextFill}" font-size="9.5" font-weight="700" text-anchor="middle">${nm}</text>
+    </g>`;
+  });
+  return out;
+}
+
 function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
   const evs = state.recordedEvents || [];
   const light = isLightTheme();
@@ -13840,6 +15672,8 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
   const staffLineCol = light ? '#9a9083' : '#6b6257';
   const tabLineCol = light ? '#b5aa9c' : '#524940';
   const isPlayer = highlightIdx >= 0;
+  const isPlayMode = isPlayer && state.exercisePlayerMode === 'play';
+  const completedSet = (state.exerciseCompletedSet instanceof Set) ? state.exerciseCompletedSet : null;
   const showStaff = !!state.exerciseShowStaff;
   const showTab = state.tabCreationEnabled || !showStaff;
   const barsPerRow = [0, 2, 4, 6, 8].includes(state.exerciseBarsPerRow) ? state.exerciseBarsPerRow : 0;
@@ -13847,10 +15681,10 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
   const x0 = showStaff ? 86 : 48;
   const rightMargin = 14;
   const staffGap = 10;
-  const tabGap = showStaff ? 12 : 14; // Większa, czytelniejsza tabulatura gdy nuty są wyłączone!
+  const tabGap = showStaff ? 12 : 14;
   const staffTopRel = 34;
-  const tabTopRel = showStaff ? 112 : 36;
-  const rowH = showStaff ? (showTab ? 208 : 118) : 124;
+  const tabTopRel = showStaff ? 114 : 42;
+  const rowH = showStaff ? (showTab ? 210 : 118) : 130;
   const rowGapY = 18;
 
   let useBass = state.exerciseClef === 'bass';
@@ -13886,25 +15720,31 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
     }
   }
 
-  // 2. Zawsze zawijaj na wiersze dopasowane do szerokości (bez poziomego paska przewijania!)
+  // 2. Zwarty układ wierszy dopasowany do gęstości szybkich nut (szesnastki / sekstole)
   const targetRowW = Math.max(620, Math.round(availWidth || 1000));
   const usableW = Math.max(420, targetRowW - x0 - rightMargin);
+  const measurePrefW = (m) => {
+    const perNotePrefW = (m.events.length >= 8) ? 21 : (m.events.length >= 5 ? 24 : 30);
+    const slotEst = Math.max(Math.round(measureBeats), m.events.length);
+    return Math.max(106, slotEst * perNotePrefW + 18);
+  };
+  const maxBarWFor = (m) => {
+    const perNoteCap = (m.events.length >= 8) ? 26 : (m.events.length >= 5 ? 32 : 48);
+    return Math.max(126, m.events.length * perNoteCap + 22);
+  };
   const rows = [];
 
   if (measures.length === 0) {
     rows.push({ measures: [] });
   } else if (barsPerRow > 0) {
-    // Stała liczba taktów w wierszu (2 / 4 / 6 / 8)
     for (let i = 0; i < measures.length; i += barsPerRow) {
       rows.push({ measures: measures.slice(i, i + barsPerRow) });
     }
   } else {
-    // Tryb Auto: zawijaj takty jak tekst — gdy kolejny takt się nie mieści, przechodzi od razu do nowej linii!
     let curRow = [];
     let curPrefW = 0;
     for (const m of measures) {
-      const slotEst = Math.max(Math.round(measureBeats), m.events.length);
-      const prefW = Math.max(130, slotEst * 38 + 20);
+      const prefW = measurePrefW(m);
       if (curRow.length > 0 && curPrefW + prefW > usableW) {
         rows.push({ measures: curRow });
         curRow = [m];
@@ -13931,12 +15771,10 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
     const rowMeasures = rowInfo.measures;
     const isLastRow = (rowIdx === rows.length - 1);
 
-    // Tempo w pierwszym wierszu
     if (rowIdx === 0) {
       svg += `<text x="${showStaff ? 84 : 48}" y="${yOff + 15}" fill="${inkMain}" font-size="11.5" font-weight="700">♩ = ${state.tempoBpm}</text>`;
     }
 
-    // 1. Pięciolinia nutowa (opcjonalna — zwijana/rozwijana paskiem)
     if (showStaff) {
       for (let i = 0; i < 5; i++) {
         const y = staffTop + i * staffGap;
@@ -13950,7 +15788,6 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
       svg += `<line x1="${W - rightMargin}" y1="${staffTop}" x2="${W - rightMargin}" y2="${staffTop + 40}" stroke="${staffLineCol}" stroke-width="${isLastRow ? '1.8' : '1.2'}"/>`;
     }
 
-    // 2. 6-liniowa Tabulatura (TAB)
     if (showTab) {
       for (let s = 0; s < 6; s++) {
         const y = tabTop + s * tabGap;
@@ -13965,23 +15802,20 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
 
     if (rowMeasures.length === 0) return;
 
-    // 3. Wylicz szerokości poszczególnych taktów w tym wierszu (skalowane do 100% szerokości bez przelewania!)
     const weights = rowMeasures.map(m => Math.max(2.5, m.events.length + 0.8));
     const sumWeights = weights.reduce((a, b) => a + b, 0);
     let barWidths;
     if (barsPerRow > 0) {
-      // W trybie stałej liczby taktów (2/4/6/8): pełny wiersz wypełnia 100%, a niepełny ostatni zachowuje proporcje slotów
       const fillRatio = (isLastRow && rowMeasures.length < barsPerRow)
         ? (rowMeasures.length / barsPerRow)
         : 1.0;
-      const allocW = Math.min(usableW, Math.max(usableW * fillRatio, rowMeasures.reduce((a, m) => a + Math.max(120, m.events.length * 26 + 18), 0)));
-      barWidths = weights.map(w => (w / sumWeights) * allocW);
+      const allocW = Math.min(usableW, Math.max(usableW * fillRatio, rowMeasures.reduce((a, m) => a + Math.max(106, m.events.length * 22 + 16), 0)));
+      barWidths = weights.map((w, idx) => Math.min((w / sumWeights) * allocW, maxBarWFor(rowMeasures[idx])));
     } else {
-      // Tryb Auto: pełne wiersze wyrównane do prawej krawędzi; niepełny ostatni wiersz zachowuje naturalne odstępy
-      const prefWidths = rowMeasures.map(m => Math.max(135, Math.max(Math.round(measureBeats), m.events.length) * 38 + 20));
+      const prefWidths = rowMeasures.map(measurePrefW);
       const totalPref = prefWidths.reduce((a, b) => a + b, 0);
       if (!isLastRow || totalPref >= usableW * 0.82) {
-        barWidths = weights.map(w => (w / sumWeights) * usableW);
+        barWidths = weights.map((w, idx) => Math.min((w / sumWeights) * usableW, maxBarWFor(rowMeasures[idx])));
       } else {
         barWidths = prefWidths;
       }
@@ -13995,11 +15829,9 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
       const isLastMeasureOfAll = (isLastRow && mIdx === rowMeasures.length - 1);
       const isIncompleteTail = isLastMeasureOfAll && (m.totalBeats < measureBeats - 0.001);
 
-      // Numer taktu na początku każdego taktu
       const barNumX = (mIdx === 0) ? 14 : (barStartX + 4);
       svg += `<text x="${barNumX}" y="${yOff + 16}" fill="#9ca3af" font-size="10" font-weight="700">${m.barNum}</text>`;
 
-      // Kreska taktowa z lewej strony dla taktów > 0 w wierszu
       if (mIdx > 0) {
         if (showStaff) {
           svg += `<line x1="${barStartX}" y1="${staffTop}" x2="${barStartX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.25"/>`;
@@ -14009,29 +15841,34 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
         }
       }
 
-      // Rozmieszczenie zdarzeń wewnątrz taktu (stabilne sloty podczas wpisywania ostatniego niepełnego taktu!)
-      const padL = Math.min(16, Math.max(7, barW * 0.07));
-      const padR = Math.min(14, Math.max(7, barW * 0.06));
+      const padL = Math.min(12, Math.max(6, barW * 0.04));
+      const padR = Math.min(10, Math.max(5, barW * 0.03));
       const innerW = Math.max(20, barW - padL - padR);
       const slotCount = isIncompleteTail
         ? Math.max(m.events.length, Math.max(1, Math.round(measureBeats)))
         : Math.max(1, m.events.length);
       const slotW = innerW / slotCount;
-      const noteScale = Math.min(1.0, Math.max(0.66, slotW / 24));
-      const fretFontSize = Math.round(((showStaff ? 12 : 13) * noteScale) * 10) / 10;
-      const boxH = Math.round(15 * noteScale * 10) / 10;
-      const noteNameFontSize = Math.round(10 * noteScale * 10) / 10;
+      const noteScale = Math.min(1.0, Math.max(0.70, slotW / 23));
+      const fretFontSize = Math.round(((showStaff ? 12 : 12.5) * noteScale) * 10) / 10;
+      const boxH = Math.round(14.5 * noteScale * 10) / 10;
+      const noteNameFontSize = Math.round(9.5 * noteScale * 10) / 10;
 
       m.events.forEach(({ ev, idx }, k) => {
         const x = barStartX + padL + (k + 0.5) * slotW;
         const isActive = (idx === highlightIdx);
-        const colColor = isActive ? '#4ade80' : '#e7e1d8';
+        const isCompleted = isPlayMode && completedSet && completedSet.has(idx);
+        const isGreenHighlight = isCompleted || (!isPlayMode && isActive);
+        const isOrangeTarget = isPlayMode && isActive && !isCompleted;
+        const colColor = isGreenHighlight ? '#22c55e' : (isOrangeTarget ? '#f39237' : '#e7e1d8');
         const dur = ev.dur !== undefined ? ev.dur : 0;
+        const shortTech = normalizeExerciseTechShort(ev.tech);
 
         svg += `<g style="cursor:pointer" ${isActive ? 'data-ex-active="1"' : ''} onclick="onExerciseScoreNoteClick(${idx})">`;
         if (isActive) {
-          const hlW = Math.max(18, Math.min(32, slotW * 0.92));
-          svg += `<rect x="${x - hlW / 2}" y="${topVisual - 14}" width="${hlW}" height="${(endY - topVisual) + 24}" rx="6" fill="rgba(34,197,94,0.14)" stroke="rgba(74,222,128,0.45)" stroke-width="1"/>`;
+          const hlW = Math.max(16, Math.min(28, slotW * 0.92));
+          const hlFill = isPlayMode ? 'rgba(243,146,55,0.16)' : 'rgba(34,197,94,0.14)';
+          const hlStroke = isPlayMode ? 'rgba(243,146,55,0.55)' : 'rgba(74,222,128,0.45)';
+          svg += `<rect x="${x - hlW / 2}" y="${topVisual - 14}" width="${hlW}" height="${(endY - topVisual) + 22}" rx="5" fill="${hlFill}" stroke="${hlStroke}" stroke-width="1"/>`;
         }
 
         if (ev.rest) {
@@ -14088,29 +15925,37 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
           const topNoteLbl = (state.labelType === 'intervals')
             ? computeIntervalLabel(pc, state.rootPc, false)
             : nm;
+          const labelY = shortTech ? (topVisual - 18) : (topVisual - 7);
           if (state.showExerciseNoteNames) {
-            svg += `<text x="${x}" y="${topVisual - 6}" fill="${isRootPc ? '#d97316' : inkNote}" font-size="${noteNameFontSize}" font-weight="${isRootPc ? '800' : '700'}" text-anchor="middle">${topNoteLbl}</text>`;
+            svg += `<text x="${x}" y="${labelY}" fill="${isGreenHighlight ? '#4ade80' : (isRootPc ? '#d97316' : inkNote)}" font-size="${noteNameFontSize}" font-weight="${isRootPc ? '800' : '700'}" text-anchor="middle">${topNoteLbl}</text>`;
           } else if (isRootPc && showTab && !showStaff) {
-            svg += `<circle cx="${x}" cy="${topVisual - 10}" r="2.6" fill="#f39237"><title>Tonika (1)</title></circle>`;
+            svg += `<circle cx="${x}" cy="${labelY - 3}" r="2.5" fill="#f39237"><title>Tonika (1)</title></circle>`;
           }
 
           if (showTab && ev.s !== undefined && ev.f !== undefined && ev.s >= 0 && ev.f >= 0) {
+            if (shortTech) {
+              const tCol = (shortTech === 'H' || shortTech === 'P') ? '#4ade80' : (shortTech === 'S' ? '#facc15' : (shortTech === '↑' ? '#38bdf8' : '#fb923c'));
+              svg += `<text x="${x}" y="${tabTop - 6}" fill="${tCol}" font-size="${Math.round(9.5 * noteScale * 10) / 10}" font-weight="900" text-anchor="middle">${shortTech}</text>`;
+            }
             const row = 5 - ev.s;
             const ty = tabTop + row * tabGap;
-            const boxW = Math.round(((String(ev.f).length > 1 ? 22 : 17) * noteScale) * 10) / 10;
-            const tabBg = isActive ? '#22c55e' : cardBg;
-            const tabTxt = isActive ? '#05140b' : inkNote;
-            svg += `<rect x="${x - boxW / 2}" y="${ty - boxH / 2}" width="${boxW}" height="${boxH}" rx="3.5" fill="${tabBg}" stroke="${isActive ? '#bbf7d0' : 'none'}" stroke-width="${isActive ? '1.1' : '0'}"/>`;
-            svg += `<text x="${x}" y="${ty + fretFontSize * 0.34}" fill="${tabTxt}" font-size="${fretFontSize}" font-weight="800" text-anchor="middle">${ev.f}</text>`;
-            if (ev.tech && ev.tech !== '-' && ev.tech !== '—') {
-              svg += `<text x="${x + boxW / 2 + 3}" y="${ty - 2}" fill="#4ade80" font-size="${Math.round(9 * noteScale)}" font-weight="800">${ev.tech}</text>`;
+            // Łuk legato H/P między sąsiednimi nutami na tej samej strunie
+            if ((shortTech === 'H' || shortTech === 'P') && k > 0 && m.events[k - 1] && m.events[k - 1].ev.s === ev.s) {
+              const prevX = barStartX + padL + (k - 0.5) * slotW;
+              const arcY = Math.max(tabTop - 4, ty - boxH * 0.65);
+              svg += `<path d="M${prevX.toFixed(1)},${(ty - 4).toFixed(1)} Q${((prevX + x) * 0.5).toFixed(1)},${(arcY - 5).toFixed(1)} ${x.toFixed(1)},${(ty - 4).toFixed(1)}" fill="none" stroke="rgba(74,222,128,0.65)" stroke-width="1.2"/>`;
             }
+            const boxW = Math.round(((String(ev.f).length > 1 ? 20 : 15) * noteScale) * 10) / 10;
+            const tabBg = isGreenHighlight ? '#22c55e' : (isOrangeTarget ? '#f39237' : cardBg);
+            const tabTxt = (isGreenHighlight || isOrangeTarget) ? '#05140b' : inkNote;
+            const tabStroke = isGreenHighlight ? '#86efac' : (isOrangeTarget ? '#fef08a' : 'none');
+            svg += `<rect x="${x - boxW / 2}" y="${ty - boxH / 2}" width="${boxW}" height="${boxH}" rx="3" fill="${tabBg}" stroke="${tabStroke}" stroke-width="${(isGreenHighlight || isOrangeTarget) ? '1.1' : '0'}"/>`;
+            svg += `<text x="${x}" y="${ty + fretFontSize * 0.34}" fill="${tabTxt}" font-size="${fretFontSize}" font-weight="800" text-anchor="middle">${ev.f}</text>`;
           }
         }
         svg += `</g>`;
       });
 
-      // Zamykająca kreska taktowa jeśli takt nie sięga prawej krawędzi (np. niepełny ostatni wiersz)
       if (isLastMeasureOfAll && barEndX < W - rightMargin - 6) {
         if (showStaff) {
           svg += `<line x1="${barEndX}" y1="${staffTop}" x2="${barEndX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.4"/>`;
@@ -14128,6 +15973,39 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
   return svg;
 }
 
+function computeStableExerciseFretWindow(evs, maxBoardFret = 24) {
+  const usedFrets = [];
+  if (Array.isArray(evs)) {
+    for (let i = 0; i < evs.length; i++) {
+      const e = evs[i];
+      if (e && !e.rest && e.f >= 0) usedFrets.push(e.f);
+    }
+  }
+  if (usedFrets.length === 0) {
+    return { viewStartFret: 1, viewEndFret: maxBoardFret, showOpenCol: true };
+  }
+  const hasOpen = usedFrets.some(f => f === 0);
+  const rawMin = Math.min(...usedFrets);
+  const rawMax = Math.max(...usedFrets);
+  let lo = hasOpen ? 0 : Math.max(1, rawMin - 2);
+  let hi = Math.min(maxBoardFret, rawMax + 2);
+  const minSpan = Math.min(maxBoardFret, 12);
+  if ((hi - lo + 1) < minSpan) {
+    const mid = (lo + hi) * 0.5;
+    lo = Math.round(mid - (minSpan - 1) * 0.5);
+    if (lo < (hasOpen ? 0 : 1)) lo = hasOpen ? 0 : 1;
+    hi = lo + minSpan - 1;
+    if (hi > maxBoardFret) {
+      hi = maxBoardFret;
+      lo = Math.max(hasOpen ? 0 : 1, hi - minSpan + 1);
+    }
+  }
+  if (lo <= 2 || hasOpen) {
+    return { viewStartFret: 1, viewEndFret: Math.min(maxBoardFret, Math.max(minSpan, hi)), showOpenCol: true };
+  }
+  return { viewStartFret: lo, viewEndFret: hi, showOpenCol: false };
+}
+
 function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
   const evs = state.recordedEvents || [];
   const light = isLightTheme();
@@ -14136,26 +16014,25 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
   const maxBoardFret = state.maxDisplayedFret || 24;
   const topY = 24, strGap = 28;
   const labels = getRootLabels();
+  const isPlayMode = !isComposer && state.exercisePlayerMode === 'play';
+  const completedSet = (state.exerciseCompletedSet instanceof Set) ? state.exerciseCompletedSet : null;
 
-  // Obsługa „Margines podstrunnicy (±2 progi wokół zakresu ćwiczenia)” w trybie odtwarzacza!
-  let viewStartFret = 1;
-  let viewEndFret = maxBoardFret;
-  let showOpenCol = true;
-  if (!isComposer && state.fretboardMargin !== false && evs.length > 0) {
-    const usedFrets = evs.filter(e => !e.rest && e.f >= 0).map(e => e.f);
-    if (usedFrets.length > 0) {
-      const lo = Math.min(...usedFrets);
-      const hi = Math.max(...usedFrets);
-      if (lo > 2 && hi - lo < 16) {
-        viewStartFret = Math.max(1, lo - 2);
-        viewEndFret = Math.min(maxBoardFret, Math.max(viewStartFret + 9, hi + 2));
-        showOpenCol = false;
-      } else if (hi + 2 < maxBoardFret && hi <= 14) {
-        viewStartFret = 1;
-        viewEndFret = Math.min(maxBoardFret, Math.max(12, hi + 2));
-      }
-    }
-  }
+  const shapeSlice = (!isComposer && evs.length > 0) ? getActiveExerciseShapeSlice(evs, highlightIdx) : null;
+  const displayEntries = shapeSlice
+    ? shapeSlice.events.filter(({ ev }) => !ev.rest && ev.s >= 0 && ev.f >= 0)
+    : evs.map((ev, idx) => ({ ev, idx })).filter(({ ev }) => !ev.rest && ev.s >= 0 && ev.f >= 0);
+  const nextSlice = shapeSlice ? getNextExerciseShapeSlice(evs, shapeSlice) : null;
+  const nextEntries = nextSlice
+    ? nextSlice.events.filter(({ ev }) => !ev.rest && ev.s >= 0 && ev.f >= 0)
+    : [];
+
+  // Stabilne wyśrodkowanie całego ćwiczenia raz dla wszystkich jego nut (nigdy nie przeskakuje między kształtami)
+  const win = (!isComposer && evs.length > 0)
+    ? computeStableExerciseFretWindow(evs, maxBoardFret)
+    : { viewStartFret: 1, viewEndFret: maxBoardFret, showOpenCol: true };
+  const viewStartFret = win.viewStartFret;
+  const viewEndFret = win.viewEndFret;
+  const showOpenCol = win.showOpenCol;
 
   const visibleFrets = Math.max(1, viewEndFret - viewStartFret + 1);
   const fretW = (W - nutX - padR) / visibleFrets;
@@ -14176,7 +16053,6 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
   let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;user-select:none;" xmlns="http://www.w3.org/2000/svg">`;
   svg += `<rect x="${nutX}" y="${topY - 12}" width="${W - nutX - padR}" height="${5 * strGap + 24}" rx="4" fill="${bgFill}" stroke="${bgStroke}" stroke-width="1"/>`;
 
-  // Znaczniki progów (kropki i maska strefy)
   for (let f = viewStartFret; f <= viewEndFret; f++) {
     const colIdx = f - viewStartFret;
     const cx = nutX + (colIdx + 0.5) * fretW;
@@ -14194,7 +16070,6 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
     }
   }
 
-  // Progi (linie pionowe) + siodełko
   svg += `<line x1="${nutX}" y1="${topY - 12}" x2="${nutX}" y2="${topY + 5 * strGap + 12}" stroke="${showOpenCol ? nutCol : wireCol}" stroke-width="${showOpenCol ? 3 : 1.4}"/>`;
   for (let f = viewStartFret; f <= viewEndFret; f++) {
     const colIdx = f - viewStartFret;
@@ -14213,7 +16088,6 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
     }
   }
 
-  // Struny i nazwy pustych strun
   for (let row = 0; row < 6; row++) {
     const s = 5 - row;
     const sy = topY + row * strGap;
@@ -14234,15 +16108,38 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
   const xForFret = (f) => (f === 0 ? (openX + 10) : (nutX + (f - viewStartFret + 0.5) * fretW));
   const isFretVisible = (f) => (f === 0 ? showOpenCol : (f >= viewStartFret && f <= viewEndFret));
 
-  // Kropki/romby dźwięków obecnych w ćwiczeniu
-  const usedPos = new Map();
-  evs.forEach((ev) => {
-    if (!ev.rest && ev.s >= 0 && ev.f >= 0) {
-      usedPos.set(`${ev.s}_${ev.f}`, ev);
+  // Podgląd kolejnego arpeggio (przerywana linia + przerywane kontury) oraz ścieżka aktualnego kształtu
+  const curOccupiedKeys = new Set(displayEntries.map(({ ev }) => `${ev.s}_${ev.f}`));
+  if (!isComposer && nextEntries.length > 0) {
+    svg += buildExerciseShapeNextOverlaySvg(nextEntries, curOccupiedKeys, topY, strGap, labels, xForFret, isFretVisible, light);
+  }
+  if (!isComposer && displayEntries.length >= 2) {
+    const pts = [];
+    displayEntries.forEach(({ ev }) => {
+      if (isFretVisible(ev.f)) {
+        const cx = xForFret(ev.f);
+        const cy = topY + (5 - ev.s) * strGap;
+        if (!pts.length || pts[pts.length - 1].cx !== cx || pts[pts.length - 1].cy !== cy) {
+          pts.push({ cx, cy });
+        }
+      }
+    });
+    if (pts.length >= 2) {
+      svg += `<polyline points="${pts.map(p => `${p.cx.toFixed(1)},${p.cy.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(243,146,55,0.45)" stroke-width="2" stroke-dasharray="5,3"/>`;
     }
+  }
+
+  // Kropki/romby zadeklarowanego kształtu + zielone potwierdzenie dla trafionych dźwięków
+  const usedPos = new Map();
+  displayEntries.forEach(({ ev, idx }) => {
+    const key = `${ev.s}_${ev.f}`;
+    const existing = usedPos.get(key) || { ev, completed: false };
+    if (isPlayMode && completedSet && completedSet.has(idx)) existing.completed = true;
+    existing.ev = ev;
+    usedPos.set(key, existing);
   });
 
-  usedPos.forEach((ev) => {
+  usedPos.forEach(({ ev, completed }) => {
     if (!isFretVisible(ev.f)) return;
     const row = 5 - ev.s;
     const cy = topY + row * strGap;
@@ -14253,7 +16150,10 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
     const nm = (state.labelType === 'intervals')
       ? computeIntervalLabel(pc, state.rootPc, false)
       : (ev.note || labels[pc]);
-    if (ev.tech === '◊') {
+    if (completed) {
+      svg += `<circle cx="${cx}" cy="${cy}" r="11" fill="#22c55e" stroke="#86efac" stroke-width="1.5"/>`;
+      svg += `<text x="${cx}" y="${cy + 3.8}" fill="#052e16" font-size="10" font-weight="900" text-anchor="middle">${nm}</text>`;
+    } else if (ev.tech === '◊') {
       const d = 12;
       svg += `<polygon points="${cx},${cy - d} ${cx + d},${cy} ${cx},${cy + d} ${cx - d},${cy}" fill="#143524" stroke="#10b981" stroke-width="1.8"/>`;
       svg += `<text x="${cx}" y="${cy + 3.5}" fill="#d1fae5" font-size="9.5" font-weight="800" text-anchor="middle">${nm}</text>`;
@@ -14263,7 +16163,7 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
     }
   });
 
-  // Podświetlona aktywna nuta
+  // Podświetlona aktualnie oczekiwana / grana nuta
   if (highlightIdx >= 0 && highlightIdx < evs.length) {
     const aEv = evs[highlightIdx];
     if (aEv && !aEv.rest && aEv.s >= 0 && aEv.f >= 0 && isFretVisible(aEv.f)) {
@@ -14276,14 +16176,17 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
       const nm = (state.labelType === 'intervals')
         ? computeIntervalLabel(pc, state.rootPc, false)
         : (aEv.note || labels[pc]);
-      svg += `<circle cx="${cx}" cy="${cy}" r="16" fill="rgba(243,146,55,0.22)" stroke="#f39237" stroke-width="2"/>`;
+      const isCurCompleted = isPlayMode && completedSet && completedSet.has(highlightIdx);
+      const mainCol = isCurCompleted ? '#22c55e' : '#f39237';
+      const haloFill = isCurCompleted ? 'rgba(34,197,94,0.24)' : 'rgba(243,146,55,0.24)';
+      svg += `<circle cx="${cx}" cy="${cy}" r="16" fill="${haloFill}" stroke="${mainCol}" stroke-width="2.2"/>`;
       if (aEv.tech === '◊') {
         const d = 13;
-        svg += `<polygon points="${cx},${cy - d} ${cx + d},${cy} ${cx},${cy + d} ${cx - d},${cy}" fill="#f39237" stroke="#fff2e2" stroke-width="1.4"/>`;
+        svg += `<polygon points="${cx},${cy - d} ${cx + d},${cy} ${cx},${cy + d} ${cx - d},${cy}" fill="${mainCol}" stroke="#fff2e2" stroke-width="1.4"/>`;
       } else {
-        svg += `<circle cx="${cx}" cy="${cy}" r="11.5" fill="#f39237" stroke="#fff2e2" stroke-width="1.2"/>`;
+        svg += `<circle cx="${cx}" cy="${cy}" r="11.5" fill="${mainCol}" stroke="#fff2e2" stroke-width="1.3"/>`;
       }
-      svg += `<text x="${cx}" y="${cy + 4}" fill="#120f0c" font-size="10.5" font-weight="900" text-anchor="middle">${nm}</text>`;
+      svg += `<text x="${cx}" y="${cy + 4}" fill="#0b140e" font-size="10.5" font-weight="900" text-anchor="middle">${nm}</text>`;
     }
   }
 
@@ -14305,7 +16208,7 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
 }
 
 // =========================================================================
-// TRYB ŚCIEŻKI SKALI / WOLNY GRYF (Zdjęcie 3): pozioma wstęga nut + cały wzór skali!
+// TRYB KSZTAŁTU ZE WSTĘGĄ NUT: pokazuje zadeklarowany kształt + zielone trafienia
 // =========================================================================
 function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
   const evs = state.recordedEvents || [];
@@ -14315,51 +16218,28 @@ function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
   const maxBoardFret = state.maxDisplayedFret || 24;
   const topY = 26, strGap = 31;
   const labels = getRootLabels();
+  const isPlayMode = (state.exercisePlayerMode === 'play');
+  const completedSet = (state.exerciseCompletedSet instanceof Set) ? state.exerciseCompletedSet : null;
 
-  // Wyznacz zakres progów z marginesem ±2 (lub pełny gryf)
-  let viewStartFret = 1;
-  let viewEndFret = maxBoardFret;
-  let showOpenCol = true;
-  if (state.fretboardMargin !== false && evs.length > 0) {
-    const usedFrets = evs.filter(e => !e.rest && e.f >= 0).map(e => e.f);
-    if (usedFrets.length > 0) {
-      const lo = Math.min(...usedFrets);
-      const hi = Math.max(...usedFrets);
-      if (lo > 2 && hi - lo < 16) {
-        viewStartFret = Math.max(1, lo - 2);
-        viewEndFret = Math.min(maxBoardFret, Math.max(viewStartFret + 10, hi + 2));
-        showOpenCol = false;
-      } else if (hi + 2 < maxBoardFret && hi <= 15) {
-        viewStartFret = 1;
-        viewEndFret = Math.min(maxBoardFret, Math.max(12, hi + 2));
-      }
-    }
-  }
+  const shapeSlice = getActiveExerciseShapeSlice(evs, highlightIdx);
+  const shapeEntries = shapeSlice.events.filter(({ ev }) => !ev.rest && ev.s >= 0 && ev.f >= 0);
+  const nextSlice = getNextExerciseShapeSlice(evs, shapeSlice);
+  const nextEntries = nextSlice
+    ? nextSlice.events.filter(({ ev }) => !ev.rest && ev.s >= 0 && ev.f >= 0)
+    : [];
+
+  // Stabilne wyśrodkowanie całego ćwiczenia raz dla wszystkich jego nut (nigdy nie przeskakuje między kształtami)
+  const win = computeStableExerciseFretWindow(evs, maxBoardFret);
+  const viewStartFret = win.viewStartFret;
+  const viewEndFret = win.viewEndFret;
+  const showOpenCol = win.showOpenCol;
   const visibleFrets = Math.max(1, viewEndFret - viewStartFret + 1);
   const fretW = (W - nutX - padR) / visibleFrets;
   const fretInlays = new Set([3, 5, 7, 9, 12, 15, 17, 19, 21, 24]);
   const dotsMode = (state.fretMarkersMode === 'dots');
   const numAll = !!state.numberAllFrets;
 
-  // Klasy wysokości (PC) należące do aktualnej skali lub ćwiczenia
-  const scalePcs = new Set();
-  if (state.fretboardData && Array.isArray(state.fretboardData.cells)) {
-    state.fretboardData.cells.forEach(c => {
-      if (c.inScale) scalePcs.add(((c.midi % 12) + 12) % 12);
-    });
-  }
-  if (scalePcs.size === 0) {
-    evs.forEach(e => { if (!e.rest && e.midi > 0) scalePcs.add(((e.midi % 12) + 12) % 12); });
-  }
-
   const curEv = (highlightIdx >= 0 && highlightIdx < evs.length) ? evs[highlightIdx] : null;
-  const curMidi = (curEv && !curEv.rest) ? Math.round(curEv.midi) : -1;
-  // Zbiór wysokości MIDI z bieżącego okna nadchodzących nut (podświetlanych na niebiesko jak na zdjęciu 3!)
-  const upcomingMidis = new Set();
-  for (let k = highlightIdx; k < Math.min(evs.length, highlightIdx + 10); k++) {
-    if (evs[k] && !evs[k].rest && evs[k].midi > 0) upcomingMidis.add(Math.round(evs[k].midi));
-  }
-
   const bgFill = light ? '#f6f1e9' : '#14100d';
   const bgStroke = light ? '#d6cec2' : '#2e261f';
   const wireCol = light ? '#cfc6b8' : '#352c25';
@@ -14383,7 +16263,6 @@ function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
   }
   svg += `<line x1="${nutX}" y1="${topY - 12}" x2="${nutX}" y2="${topY + 5 * strGap + 12}" stroke="${showOpenCol ? nutCol : wireCol}" stroke-width="${showOpenCol ? 3 : 1.4}"/>`;
 
-  // Struny + wszystkie dźwięki skali na całym widocznym gryfie (wolny wybór miejsca!)
   for (let row = 0; row < 6; row++) {
     const s = 5 - row;
     const sy = topY + row * strGap;
@@ -14391,39 +16270,81 @@ function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
     const openLbl = labels[((openMidi % 12) + 12) % 12];
     svg += `<text x="${openX - 10}" y="${sy + 4}" fill="${numCol}" font-size="11.5" font-weight="800" text-anchor="middle">${openLbl}</text>`;
     svg += `<line x1="${nutX}" y1="${sy}" x2="${W - padR}" y2="${sy}" stroke="${strCol}" stroke-width="${(1.05 + row * 0.32).toFixed(2)}"/>`;
+  }
 
-    const fStart = showOpenCol ? 0 : viewStartFret;
-    for (let f = fStart; f <= viewEndFret; f++) {
-      if (f === 0 && !showOpenCol) continue;
-      const m = openMidi + f;
-      const pc = ((m % 12) + 12) % 12;
-      if (!scalePcs.has(pc) && m !== curMidi) continue;
-      const cx = (f === 0) ? (openX + 10) : (nutX + (f - viewStartFret + 0.5) * fretW);
-      const isRoot = (pc === state.rootPc);
-      const isTargetPitch = (m === curMidi);
-      const isPrimaryTarget = (curEv && !curEv.rest && curEv.s === s && curEv.f === f);
-      const isUpcoming = upcomingMidis.has(m);
-      const nm = (state.labelType === 'intervals') ? computeIntervalLabel(pc, state.rootPc, false) : labels[pc];
+  const xForFret = (f) => (f === 0 ? (openX + 10) : (nutX + (f - viewStartFret + 0.5) * fretW));
+  const isFretVisible = (f) => (f === 0 ? showOpenCol : (f >= viewStartFret && f <= viewEndFret));
 
-      svg += `<g style="cursor:pointer" onclick="onExerciseFretCellClick(${s},${f},false)">`;
-      if (isTargetPitch) {
-        // Świecąca obręcz na KAŻDEJ równoważnej pozycji docelowego dźwięku (możesz zagrać w dowolnym miejscu!)
-        svg += `<circle cx="${cx}" cy="${sy}" r="${isPrimaryTarget ? 15.5 : 14}" fill="rgba(243,146,55,0.22)" stroke="#f39237" stroke-width="${isPrimaryTarget ? 2.4 : 1.7}"/>`;
-        svg += `<circle cx="${cx}" cy="${sy}" r="11.2" fill="#3b82f6" stroke="#fde68a" stroke-width="1.6"/>`;
-        svg += `<text x="${cx}" y="${sy + 3.8}" fill="#ffffff" font-size="10.5" font-weight="900" text-anchor="middle">${nm}</text>`;
-      } else if (isRoot) {
-        svg += `<circle cx="${cx}" cy="${sy}" r="10.5" fill="#9e420e" stroke="#d97724" stroke-width="1.2"/>`;
-        svg += `<text x="${cx}" y="${sy + 3.6}" fill="#fff5eb" font-size="10" font-weight="900" text-anchor="middle">${nm}</text>`;
-      } else if (isUpcoming) {
-        svg += `<circle cx="${cx}" cy="${sy}" r="10.5" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.1"/>`;
-        svg += `<text x="${cx}" y="${sy + 3.6}" fill="#0b1320" font-size="10" font-weight="800" text-anchor="middle">${nm}</text>`;
-      } else {
-        svg += `<circle cx="${cx}" cy="${sy}" r="9.2" fill="${light ? '#d6c7b4' : '#3d2817'}" stroke="${light ? '#b8a48c' : '#5e3c22'}" stroke-width="1"/>`;
-        svg += `<text x="${cx}" y="${sy + 3.4}" fill="${light ? '#3d2817' : '#d6b696'}" font-size="9.5" font-weight="700" text-anchor="middle">${nm}</text>`;
+  // Kolejne arpeggio (przerywana linia i przerywane niebieskie kontury) + ścieżka bieżącego kształtu
+  const curOccupiedKeys = new Set(shapeEntries.map(({ ev }) => `${ev.s}_${ev.f}`));
+  if (nextEntries.length > 0) {
+    svg += buildExerciseShapeNextOverlaySvg(nextEntries, curOccupiedKeys, topY, strGap, labels, xForFret, isFretVisible, light);
+  }
+  if (shapeEntries.length >= 2) {
+    const pts = [];
+    shapeEntries.forEach(({ ev }) => {
+      if (isFretVisible(ev.f)) {
+        const cx = xForFret(ev.f);
+        const cy = topY + (5 - ev.s) * strGap;
+        if (!pts.length || pts[pts.length - 1].cx !== cx || pts[pts.length - 1].cy !== cy) {
+          pts.push({ cx, cy });
+        }
       }
-      svg += `</g>`;
+    });
+    if (pts.length >= 2) {
+      svg += `<polyline points="${pts.map(p => `${p.cx.toFixed(1)},${p.cy.toFixed(1)}`).join(' ')}" fill="none" stroke="rgba(243,146,55,0.45)" stroke-width="2" stroke-dasharray="5,3"/>`;
     }
   }
+
+  // Grupuj pozycje zadeklarowanego kształtu (bez zbędnych nut całej skali!)
+  const posMap = new Map();
+  shapeEntries.forEach(({ ev, idx }) => {
+    const key = `${ev.s}_${ev.f}`;
+    const rec = posMap.get(key) || { ev, completed: false, upcoming: false, isCurPos: false };
+    if (idx === highlightIdx) rec.isCurPos = true;
+    else if (idx > highlightIdx) rec.upcoming = true;
+    if (isPlayMode && completedSet && completedSet.has(idx)) rec.completed = true;
+    posMap.set(key, rec);
+  });
+
+  posMap.forEach(({ ev, completed, upcoming, isCurPos }) => {
+    if (!isFretVisible(ev.f)) return;
+    const row = 5 - ev.s;
+    const sy = topY + row * strGap;
+    const cx = xForFret(ev.f);
+    const openMidi = state.customStringMidis[ev.s] !== undefined ? state.customStringMidis[ev.s] : [40, 45, 50, 55, 59, 64][ev.s];
+    const m = ev.midi || (openMidi + ev.f);
+    const pc = ((m % 12) + 12) % 12;
+    const nm = (state.labelType === 'intervals') ? computeIntervalLabel(pc, state.rootPc, false) : (ev.note || labels[pc]);
+
+    svg += `<g style="cursor:pointer" onclick="onExerciseFretCellClick(${ev.s},${ev.f},false)">`;
+    if (isCurPos) {
+      const targetCol = completed ? '#22c55e' : '#f39237';
+      svg += `<circle cx="${cx}" cy="${sy}" r="16" fill="${completed ? 'rgba(34,197,94,0.24)' : 'rgba(243,146,55,0.24)'}" stroke="${targetCol}" stroke-width="2.4"/>`;
+      svg += `<circle cx="${cx}" cy="${sy}" r="11.5" fill="${targetCol}" stroke="#fef08a" stroke-width="1.4"/>`;
+      svg += `<text x="${cx}" y="${sy + 3.8}" fill="#0b140e" font-size="10.5" font-weight="900" text-anchor="middle">${nm}</text>`;
+    } else if (completed) {
+      svg += `<circle cx="${cx}" cy="${sy}" r="11" fill="#22c55e" stroke="#86efac" stroke-width="1.5"/>`;
+      svg += `<text x="${cx}" y="${sy + 3.6}" fill="#052e16" font-size="10" font-weight="900" text-anchor="middle">${nm}</text>`;
+    } else if (upcoming) {
+      svg += `<circle cx="${cx}" cy="${sy}" r="10.5" fill="#60a5fa" stroke="#93c5fd" stroke-width="1.1"/>`;
+      svg += `<text x="${cx}" y="${sy + 3.6}" fill="#0b1320" font-size="10" font-weight="800" text-anchor="middle">${nm}</text>`;
+    } else {
+      svg += `<circle cx="${cx}" cy="${sy}" r="10" fill="${light ? '#d6c7b4' : '#4f290f'}" stroke="${light ? '#b8a48c' : '#a65b26'}" stroke-width="1.2"/>`;
+      svg += `<text x="${cx}" y="${sy + 3.5}" fill="${light ? '#3d2817' : '#f5d0a9'}" font-size="9.8" font-weight="700" text-anchor="middle">${nm}</text>`;
+    }
+    svg += `</g>`;
+  });
+
+  // Jeśli curEv nie miał (s, f), zachowaj bezpieczeństwo widoku
+  if (curEv && !curEv.rest && curEv.s >= 0 && curEv.f >= 0 && !posMap.has(`${curEv.s}_${curEv.f}`) && isFretVisible(curEv.f)) {
+    const cx = xForFret(curEv.f);
+    const sy = topY + (5 - curEv.s) * strGap;
+    const nm = curEv.note || labels[((curEv.midi % 12) + 12) % 12];
+    svg += `<circle cx="${cx}" cy="${sy}" r="11.5" fill="#f39237" stroke="#fef08a" stroke-width="1.5"/>`;
+    svg += `<text x="${cx}" y="${sy + 3.8}" fill="#0b140e" font-size="10.5" font-weight="900" text-anchor="middle">${nm}</text>`;
+  }
+
   svg += `</svg>`;
   return svg;
 }
@@ -14451,6 +16372,7 @@ function buildScaleRibbonPlayerHtml(stepIdx) {
 
   const heardMidi = (state.detectedMidi !== null && state.detectedMidi !== undefined) ? Math.round(state.detectedMidi) : null;
   const heardMatch = (heardMidi !== null && cur && !cur.rest && Math.round(cur.midi) === heardMidi);
+  const justHit = (typeof performance !== 'undefined' && (performance.now() - (state.exerciseLastHitTime || 0)) < 1100);
   const heardHtml = heardMidi !== null
     ? `${labels[((heardMidi % 12) + 12) % 12]}<sub>${Math.floor(heardMidi / 12) - 1}</sub>`
     : '—';
@@ -14458,7 +16380,7 @@ function buildScaleRibbonPlayerHtml(stepIdx) {
   return `
     <div class="scale-ribbon-stage">
       <div class="ribbon-dir-pill">${dirBadge}</div>
-      <div class="scale-ribbon-heard ${heardMatch ? 'hit' : ''}" title="${t('Ostatnio wykryty / zagrany dźwięk', 'Last detected / played note')}">
+      <div class="scale-ribbon-heard ${(heardMatch || justHit) ? 'hit' : ''}" title="${t('Ostatnio wykryty / zagrany dźwięk', 'Last detected / played note')}">
         <span style="font-size:9px;text-transform:uppercase;opacity:0.7;">${t('Grasz', 'Played')}</span>
         <span>${heardHtml}</span>
       </div>
@@ -14473,11 +16395,11 @@ function buildScaleRibbonPlayerHtml(stepIdx) {
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:11.5px;color:var(--text-muted);padding:0 4px;">
-      <span>${t('💡 Możesz zagrać docelowy dźwięk w DOWOLNYM podświetlonym miejscu na gryfie (niebieskie kropki z pomarańczową obręczą).', '💡 You can play the target note at ANY highlighted position on the fretboard (blue dots with orange halo).')}</span>
+      <span>${t('🎯 Na gryfie poniżej widzisz tylko aktualny zadeklarowany kształt — trafione przez mikrofon nuty zmieniają kolor na zielony.', '🎯 Only the active declared shape is shown below — detected notes turn green.')}</span>
       <span style="display:flex;gap:12px;align-items:center;">
-        <span><b style="color:#b85014;">●</b> ${t('Tonika', 'Root')}</span>
-        <span><b style="color:#60a5fa;">●</b> ${t('Nadchodzące nuty', 'Upcoming notes')}</span>
-        <span><b style="color:#3b82f6;">◉</b> ${t('Zagraj teraz', 'Play now')}</span>
+        <span><b style="color:#22c55e;">●</b> ${t('Zaliczone', 'Hit')}</span>
+        <span><b style="color:#f39237;">◉</b> ${t('Zagraj teraz', 'Play now')}</span>
+        <span><b style="color:#60a5fa;">●</b> ${t('Nadchodzące', 'Upcoming')}</span>
       </span>
     </div>
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;overflow-x:auto;">
@@ -14924,6 +16846,48 @@ function toggleExerciseMetronome() {
   renderStageAndInspector();
 }
 
+function setExercisePlayerBpm(newBpm) {
+  const parsed = parseInt(newBpm, 10);
+  const clamped = Math.max(30, Math.min(260, Number.isFinite(parsed) ? parsed : (state.tempoBpm || 120)));
+  state.tempoBpm = clamped;
+  if (typeof state.exerciseTitle === 'string' && /·\s*\d+\s*BPM\b/.test(state.exerciseTitle)) {
+    state.exerciseTitle = state.exerciseTitle.replace(/·\s*\d+\s*BPM\b/, `· ${clamped} BPM`);
+  }
+  saveSettings();
+  if (state.exercisePlayerActive && !state.exercisePlayerPaused) {
+    if (state.spMetronome) startExerciseMetronome();
+    if (state.exercisePlayerMode === 'listen') {
+      scheduleNextExercisePlayerTick();
+    }
+  }
+  renderStageAndInspector();
+}
+
+function setExercisePlayerSpeedRatio(ratio) {
+  const base = state.exerciseBaseBpm || state.tempoBpm || 120;
+  setExercisePlayerBpm(Math.round(base * ratio));
+}
+
+function switchExercisePlayerMode(mode) {
+  const nextMode = (mode === 'listen') ? 'listen' : 'play';
+  if (state.exercisePlayerMode === nextMode && state.exercisePlayerActive) return;
+  if (exercisePlayerTimer) {
+    clearTimeout(exercisePlayerTimer);
+    exercisePlayerTimer = null;
+  }
+  state.exercisePlayerMode = nextMode;
+  state.exercisePlayerPaused = false;
+  if (state.exercisePlayerActive) {
+    if (state.spMetronome) startExerciseMetronome();
+    if (nextMode === 'listen') {
+      scheduleNextExercisePlayerTick();
+    } else if (!micStream) {
+      try { toggleLiveAudio().catch(() => {}); } catch (e) {}
+    }
+  }
+  renderStageAndInspector();
+}
+
 function stopExercisePlayer(shouldRender = true) {
   if (exercisePlayerTimer) {
     clearTimeout(exercisePlayerTimer);
@@ -14933,6 +16897,10 @@ function stopExercisePlayer(shouldRender = true) {
   state.exercisePlayerActive = false;
   state.exercisePlayerPaused = false;
   state.detectedMidi = null;
+  state.exerciseCompletedSet = new Set();
+  state.exerciseLastHitIdx = -1;
+  state.exerciseLastHitTime = 0;
+  state.exerciseLastHitLabel = '';
   if (shouldRender) renderAll();
 }
 
@@ -14973,9 +16941,9 @@ function scheduleNextExercisePlayerTick() {
   const curEv = evs[idx];
   playExerciseStepAudio(curEv, idx);
 
-  const qMs = 60000 / Math.max(40, state.tempoBpm);
+  const qMs = 60000 / Math.max(30, state.tempoBpm);
   const beats = getDurationBeats(curEv.dur !== undefined ? curEv.dur : state.defaultDuration, curEv.tuplet === 3);
-  const stepMs = Math.max(150, qMs * beats);
+  const stepMs = Math.max(45, qMs * beats);
 
   exercisePlayerTimer = setTimeout(() => {
     if (!state.exercisePlayerActive || state.exercisePlayerPaused) return;
@@ -14998,10 +16966,17 @@ async function startExercisePlayer(mode) {
     clearTimeout(exercisePlayerTimer);
     exercisePlayerTimer = null;
   }
+  if (!state.exercisePlayerActive) {
+    state.exerciseBaseBpm = state.tempoBpm || 120;
+  }
   state.exercisePlayerActive = true;
   state.exercisePlayerMode = mode || 'listen';
   state.exercisePlayerPaused = false;
   state.exercisePlayerStepIdx = 0;
+  state.exerciseCompletedSet = new Set();
+  state.exerciseLastHitIdx = -1;
+  state.exerciseLastHitTime = 0;
+  state.exerciseLastHitLabel = '';
 
   if (state.exercisePlayerMode === 'play') {
     while (state.exercisePlayerStepIdx < state.recordedEvents.length - 1 &&
@@ -15072,11 +17047,21 @@ function checkExercisePlayerPlayedMidi(playedMidi) {
   if (Math.round(playedMidi) !== Math.round(cur.midi)) return;
 
   lastExerciseAdvanceMs = now;
+  if (!(state.exerciseCompletedSet instanceof Set)) state.exerciseCompletedSet = new Set();
+  state.exerciseCompletedSet.add(idx);
+  state.exerciseLastHitIdx = idx;
+  state.exerciseLastHitTime = now;
+  const labels = getRootLabels();
+  const hitNm = cur.note || labels[((Math.round(cur.midi) % 12) + 12) % 12];
+  const hitOct = Math.floor(Math.round(cur.midi) / 12) - 1;
+  state.exerciseLastHitLabel = `${hitNm}${hitOct}`;
+
   let nextIdx = idx + 1;
   while (nextIdx < evs.length && evs[nextIdx].rest) nextIdx++;
   if (nextIdx >= evs.length) {
     nextIdx = 0;
     while (nextIdx < evs.length - 1 && evs[nextIdx].rest) nextIdx++;
+    state.exerciseCompletedSet = new Set();
   }
   state.exercisePlayerStepIdx = nextIdx;
   renderStageAndInspector();
@@ -15150,9 +17135,39 @@ function randomizeScalePractice() {
 
 async function buildArpeggioEventsForScalePractice() {
   const customParam = state.customStringMidis.join(',');
+  const chordIdNorm = normalizeChordId(state.chordId);
+  const reqPat = (state.spPosSystem === 3) ? 1 : 6; // CAGED lub Od prymy (zadeklarowany kształt pozycji!)
+  const spDirMap = { 0: 1, 1: 2, 2: 0, 3: 0 };
+  const reqDir = spDirMap[state.spDirection || 0] ?? 0;
+  const seqStyle = (state.scalePracticeMode === 'arpeggio_pattern') ? 1 : 0;
+  try {
+    const url = `/api/arpeggio?tuning=${encodeURIComponent(state.tuningId)}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(chordIdNorm)}&pattern=${reqPat}&posIdx=${state.spPosIdx || 0}&direction=${reqDir}&seqStyle=${seqStyle}&octaves=${state.spOctaves >= 2 ? 2 : 1}&accMode=${state.accMode}`;
+    const res = await fetchJson(url);
+    if (res && Array.isArray(res.steps) && res.steps.length > 0) {
+      const effDur = (state.spNoteDur !== undefined) ? state.spNoteDur : 1;
+      const effTup = state.spTuplet ? 3 : 0;
+      const techShort = { H: 'H', P: 'P', S: 'S', D: 'D', U: 'U' };
+      return res.steps.map(st => ({
+        s: st.s,
+        f: st.f,
+        midi: st.midi,
+        note: st.note,
+        freq: st.freq || midiToFreq(st.midi),
+        dur: effDur,
+        tuplet: effTup,
+        rest: 0,
+        tech: techShort[st.tech] || '-',
+        seg: st.seg || 0,
+        chordSymbol: res.chordSymbol || '',
+        isRoot: !!st.isRoot,
+        interval: st.interval || ''
+      }));
+    }
+  } catch (e) {}
+
   let pcs = [];
   try {
-    const vData = await fetchJson(`/api/voicings?tuning=${encodeURIComponent(state.tuningId)}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&allTypes=0&accMode=${state.accMode}`);
+    const vData = await fetchJson(`/api/voicings?tuning=${encodeURIComponent(state.tuningId)}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(chordIdNorm)}&allTypes=0&accMode=${state.accMode}`);
     if (vData && vData.voicings && vData.voicings.length > 0) {
       const v0 = vData.voicings[0];
       (v0.frets || []).forEach((f, s) => {
@@ -15166,7 +17181,7 @@ async function buildArpeggioEventsForScalePractice() {
   } catch (e) {}
   if (pcs.length === 0) {
     const ivs = (typeof earChordsCatalog !== 'undefined')
-      ? ((earChordsCatalog.find(c => c.id === state.chordId) || { intervals: [0, 4, 7] }).intervals)
+      ? ((earChordsCatalog.find(c => c.id === chordIdNorm) || { intervals: [0, 4, 7] }).intervals)
       : [0, 4, 7];
     pcs = ivs.map(i => (state.rootPc + i) % 12);
   }
@@ -15184,7 +17199,6 @@ async function buildArpeggioEventsForScalePractice() {
       }
     }
   }
-  // Wybierz unikalne wysokości rosnąco w kompaktowym zakresie gryfu
   cells.sort((a, b) => a.midi - b.midi || a.f - b.f);
   const uniq = [];
   let prevM = -1;
