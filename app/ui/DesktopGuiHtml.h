@@ -354,14 +354,18 @@ select, input[type="number"] {
   transition: filter 0.12s ease;
 }
 .fb-node:hover {
-  filter: brightness(1.22) drop-shadow(0 0 6px rgba(243, 146, 55, 0.55));
+  filter: brightness(1.18) drop-shadow(0 0 6px rgba(243, 146, 55, 0.55));
+}
+.fb-node:hover .fb-note-dot {
+  stroke: #f39237;
+  stroke-width: 2.6;
 }
 .fb-hit-rect {
   fill: transparent;
   cursor: pointer;
 }
 .fb-hit-rect:hover {
-  fill: rgba(243, 146, 55, 0.06);
+  fill: rgba(243, 146, 55, 0.16);
 }
 
 /* Siatka kart akordów w stylu ze zrzutu ekranu (5 kolumn, czyste białe linie 6 strun) */
@@ -2350,11 +2354,14 @@ const state = {
   earCompareMode: false,
   earCompareSelection: [],
   // Stan zakładki Szukaj
-  searchDir: 'chord_to_scale', // 'chord_to_scale' | 'scale_to_chord'
+  searchDir: 'chord_to_scale', // 'chord_to_scale' | 'scale_to_chord' | 'detect'
   searchData: null,
   selectedSearchScaleIdx: -1, // -1 = pokazuj tylko dźwięki akordu; >=0 = koloruj wg roli (zielony/żółty/czerwony)
   selectedSearchChordIdx: -1,
   searchLabelType: 'notes', // 'notes' | 'intervals' | 'tensions'
+  detectScaleMode: 'all', // 'all' | 'major' | 'minor'
+  detectScalePcs: [], // wykryte klasy wysokości (tryb Wykryj skalę)
+  detectScaleData: null,
   // Stan Stroika
   tunerMode: 'guitar', // 'guitar' | 'chromatic'
   tunerDisplay: 'needle', // 'needle' | 'strobe'
@@ -6687,8 +6694,9 @@ function drawFretboard() {
     const masked = isCellMasked(s, f);
     const nodeOpacity = masked ? '0.20' : '1.0';
 
-    // Obszar kliknięcia / przeciągania
-    svg += `<rect class="fb-hit-rect" x="${cx - cellW/2}" y="${cy - stringH/2}" width="${cellW}" height="${stringH}"
+    // Okrągły obszar kliknięcia / przeciągania (łatwe celowanie po skosie, bez łapania sąsiednich nut)
+    const hitR = Math.min(cellW, stringH) * 0.5;
+    svg += `<circle class="fb-hit-rect" cx="${cx}" cy="${cy}" r="${hitR.toFixed(1)}"
                   onmousedown="onFretCellMouseDown(event, ${s}, ${f})"
                   onmouseenter="onFretCellMouseEnter(event, ${s}, ${f})"/>`;
 
@@ -6899,7 +6907,7 @@ function drawFretboard() {
       } else {
         // Subtelny „duch” nazwy dźwięku chromatycznego na strunie w tle
         svg += `<g opacity="${masked ? '0.18' : '1.0'}" pointer-events="none">`;
-        svg += `<rect x="${cx - 10}" y="${cy - 6}" width="20" height="12" fill="#14100d"/>`;
+        svg += `<rect x="${cx - 10}" y="${cy - 6}" width="20" height="12" rx="6" fill="#14100d"/>`;
         svg += `<text x="${cx}" y="${cy + 3.5}" fill="#3d342c" font-family="Segoe UI, system-ui, sans-serif" font-size="9.5" font-weight="600" text-anchor="middle">${cell.note}</text>`;
         svg += `</g>`;
       }
@@ -6952,7 +6960,7 @@ function drawFretboard() {
     } else if (isCapoOpenNode) {
       svg += `<circle cx="${cx}" cy="${cy}" r="${(radius + 3.6).toFixed(1)}" fill="none" stroke="#fbbf24" stroke-width="2.1" stroke-dasharray="3,2" opacity="0.95"/>`;
     }
-    svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${arpIsCurPlay ? '2.5' : '1.5'}"/>`;
+    svg += `<circle class="fb-note-dot" cx="${cx}" cy="${cy}" r="${radius}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${arpIsCurPlay ? '2.5' : '1.5'}"/>`;
     svg += `<text x="${cx}" y="${cy + noteFontSize * 0.34}" fill="${textColor}" font-family="Segoe UI, system-ui, sans-serif" font-size="${isTappedVoicingNode ? Math.max(9.5, noteFontSize - 2) : noteFontSize}" font-weight="700" text-anchor="middle">${label}</text>`;
     if (isSweepTab && arpTechMap) {
       const stInfo = arpTechMap.get(`${s}:${f}`);
@@ -7452,6 +7460,7 @@ function playCurrentScalePreview() {
 
 function switchMainView(view, btn) {
   stopCurrentScalePreview(false);
+  stopDetectScalePolling();
   if (typeof stopArpeggioPlayback === 'function') {
     stopArpeggioPlayback(false);
   }
@@ -7489,6 +7498,7 @@ function switchMainView(view, btn) {
 
 function switchPracticeSubtab(sub, btn) {
   stopCurrentScalePreview(false);
+  stopDetectScalePolling();
   if (typeof stopExercisePlayer === 'function') {
     stopExercisePlayer(false);
   }
@@ -10232,98 +10242,143 @@ async function renderStageAndInspector() {
     // =======================================================================
     // ZAKŁADKA: SZUKAJ (Screenshots 3 & 4 – lista w prawym panelu, kliknięcie koloruje gryf wg roli!)
     // =======================================================================
-    const data = await fetchJson(`/api/search?dir=${state.searchDir}&rootPc=${state.rootPc}&chordId=${state.chordId}&scaleId=${state.scaleId}&accMode=${state.accMode}`);
-    state.searchData = data;
-
-    stage.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;font-size:13px;">
-        <div style="color:var(--text-muted);">
-          ${state.searchDir === 'chord_to_scale'
-            ? (state.selectedSearchScaleIdx >= 0 && data.matches[state.selectedSearchScaleIdx]
-                ? `Wybrana skala: <b style="color:var(--text)">${data.matches[state.selectedSearchScaleIdx].scaleName}</b> na tle akordu <b style="color:var(--accent)">${data.chordSymbol}</b>`
-                : `Akord <b style="color:var(--accent)">${data.chordSymbol}</b> — wybierz skalę z listy po prawej, aby pokolorować gryf wg roli!`)
-            : `Skala <b style="color:var(--accent)">${data.scaleFullName}</b> — wybierz akord z listy po prawej`}
-        </div>
-        <div style="display:flex;gap:16px;align-items:center;font-size:12px;">
-          <span><b style="color:#4ade80">●</b> Składnik akordu</span>
-          <span><b style="color:#eab308">●</b> Napięcie</span>
-          <span><b style="color:#ef4444">●</b> Do unikania</span>
-        </div>
-      </div>`;
-
-    if (state.searchDir === 'chord_to_scale') {
-      insp.innerHTML = `
-        <div>
-          <div class="section-label">SZUKAJ WG</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn active" onclick="state.searchDir='chord_to_scale';state.selectedSearchScaleIdx=-1;renderAll()">Akord → skale</button>
-            <button class="chip-btn" onclick="state.searchDir='scale_to_chord';state.selectedSearchChordIdx=-1;renderAll()">Skala → akordy</button>
+    if (state.searchDir === 'detect') {
+      ensureDetectScalePolling();
+      stage.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;font-size:13px;">
+          <div style="color:var(--text-muted);">
+            🎤 <b style="color:var(--accent)">Wykrywanie skali</b> — zagraj dźwięki / akord, a lista pokaże pasujące skale
           </div>
         </div>
-        <div>
-          <div class="section-label">PRYMA AKORDU</div>
-          ${buildRootButtonsHtml('setSearchRootPc')}
-        </div>
-        <div>
-          <div class="section-label">RODZAJ</div>
-          <select onchange="state.chordId=this.value;state.selectedSearchScaleIdx=-1;renderAll();">
-            ${state.initData.chords.map(c => `<option value="${c.id}" ${c.id===state.chordId?'selected':''}>${c.id}</option>`).join('')}
-          </select>
-        </div>
-        <div style="flex:1;min-height:180px;overflow-y:auto;">
-          <div class="section-label">PASUJĄCE SKALE (${data.matches.length})</div>
-          ${data.matches.map((m, idx) => `
-            <div class="list-row ${state.selectedSearchScaleIdx===idx?'selected':''}"
-                 style="margin-bottom:5px;flex-direction:column;align-items:flex-start;gap:3px;"
-                 onclick="selectSearchScale(${idx})">
-              <div>
-                <strong>${m.scaleName}</strong>
-                <span style="color:var(--text-muted);margin-left:6px;">Napięcia: ${m.tensions || 'brak'}</span>
-              </div>
-              ${m.avoid ? `<div style="font-size:11px;color:var(--red);">Do unikania: ${m.avoid}</div>` : ''}
-            </div>
-          `).join('')}
-        </div>
-        <div>
-          <div class="section-label">ETYKIETY</div>
-          <div class="btn-grid-3">
-            <button class="chip-btn ${state.searchLabelType==='notes'?'active':''}" onclick="state.searchLabelType='notes';drawFretboard();renderStageAndInspector()">Nuty</button>
-            <button class="chip-btn ${state.searchLabelType==='intervals'?'active':''}" onclick="state.searchLabelType='intervals';drawFretboard();renderStageAndInspector()">Interwały</button>
-            <button class="chip-btn ${state.searchLabelType==='tensions'?'active':''}" onclick="state.searchLabelType='tensions';drawFretboard();renderStageAndInspector()">Napięcia</button>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:12px;">
+            <span style="color:var(--text-muted);">Wykryte dźwięki:</span>
+            <strong id="detectScalePcsLabel" style="color:var(--accent);font-size:15px;">—</strong>
           </div>
+          <div id="detectScaleList" style="display:flex;flex-direction:column;gap:4px;max-height:52vh;overflow-y:auto;"></div>
         </div>`;
-    } else {
       insp.innerHTML = `
         <div>
           <div class="section-label">SZUKAJ WG</div>
           <div class="btn-grid-2">
             <button class="chip-btn" onclick="state.searchDir='chord_to_scale';state.selectedSearchScaleIdx=-1;renderAll()">Akord → skale</button>
-            <button class="chip-btn active" onclick="state.searchDir='scale_to_chord';state.selectedSearchChordIdx=-1;renderAll()">Skala → akordy</button>
+            <button class="chip-btn" onclick="state.searchDir='scale_to_chord';state.selectedSearchChordIdx=-1;renderAll()">Skala → akordy</button>
+            <button class="chip-btn active" style="grid-column:1/-1;" onclick="state.searchDir='detect';renderAll()">🎤 Wykryj skalę</button>
           </div>
         </div>
         <div>
-          <div class="section-label">TONIKA SKALI</div>
-          ${buildRootButtonsHtml('setSearchRootPc')}
+          <div class="section-label">TYP SKALI</div>
+          <div class="btn-grid-3">
+            <button class="chip-btn ${state.detectScaleMode==='all'?'active':''}" onclick="state.detectScaleMode='all';refreshDetectScale()">Wszystkie</button>
+            <button class="chip-btn ${state.detectScaleMode==='major'?'active':''}" onclick="state.detectScaleMode='major';refreshDetectScale()">Dur</button>
+            <button class="chip-btn ${state.detectScaleMode==='minor'?'active':''}" onclick="state.detectScaleMode='minor';refreshDetectScale()">Moll</button>
+          </div>
         </div>
         <div>
-          <div class="section-label">SKALA</div>
-          <select onchange="state.scaleId=this.value;state.selectedSearchChordIdx=-1;renderAll();">
-            ${state.initData.scales.map(s => `<option value="${s.id}" ${s.id===state.scaleId?'selected':''}>${s.name}</option>`).join('')}
-          </select>
+          <button class="chip-btn" style="width:100%;" onclick="clearDetectScalePcs()">🧹 Wyczyść wykryte dźwięki</button>
         </div>
-        <div style="flex:1;min-height:180px;overflow-y:auto;">
-          <div class="section-label">PASUJĄCE AKORDY (${(data.chords||[]).length})</div>
-          ${(data.chords||[]).map((c, idx) => `
-            <div class="list-row ${state.selectedSearchChordIdx===idx?'selected':''}"
-                 style="margin-bottom:5px;"
-                 onclick="state.selectedSearchChordIdx=${idx};drawFretboard();renderStageAndInspector()">
-              <strong>${c.symbol}</strong>
-              <span style="color:var(--text-muted);">${c.notes}</span>
-            </div>
-          `).join('')}
+        <div style="font-size:11.5px;color:var(--text-muted);line-height:1.5;">
+          ${t('Włącz mikrofon (lewy pasek) i zagraj akord lub kilka dźwięków. Lista zbiera grane klasy wysokości i podaje pasujące skale (najpierw podstawowe i modalne, potem pentatoniki).', 'Turn the microphone on (left bar) and play a chord or a few notes. The list collects the played pitch classes and shows matching scales.')}
         </div>`;
+      refreshDetectScale();
+      drawFretboard();
+    } else {
+      stopDetectScalePolling();
+      const data = await fetchJson(`/api/search?dir=${state.searchDir}&rootPc=${state.rootPc}&chordId=${state.chordId}&scaleId=${state.scaleId}&accMode=${state.accMode}`);
+      state.searchData = data;
+
+      stage.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;font-size:13px;">
+          <div style="color:var(--text-muted);">
+            ${state.searchDir === 'chord_to_scale'
+              ? (state.selectedSearchScaleIdx >= 0 && data.matches[state.selectedSearchScaleIdx]
+                  ? `Wybrana skala: <b style="color:var(--text)">${data.matches[state.selectedSearchScaleIdx].scaleName}</b> na tle akordu <b style="color:var(--accent)">${data.chordSymbol}</b>`
+                  : `Akord <b style="color:var(--accent)">${data.chordSymbol}</b> — wybierz skalę z listy po prawej, aby pokolorować gryf wg roli!`)
+              : `Skala <b style="color:var(--accent)">${data.scaleFullName}</b> — wybierz akord z listy po prawej`}
+          </div>
+          <div style="display:flex;gap:16px;align-items:center;font-size:12px;">
+            <span><b style="color:#4ade80">●</b> Składnik akordu</span>
+            <span><b style="color:#eab308">●</b> Napięcie</span>
+            <span><b style="color:#ef4444">●</b> Do unikania</span>
+          </div>
+        </div>`;
+
+      if (state.searchDir === 'chord_to_scale') {
+        insp.innerHTML = `
+          <div>
+            <div class="section-label">SZUKAJ WG</div>
+            <div class="btn-grid-2">
+              <button class="chip-btn active" onclick="state.searchDir='chord_to_scale';state.selectedSearchScaleIdx=-1;renderAll()">Akord → skale</button>
+              <button class="chip-btn" onclick="state.searchDir='scale_to_chord';state.selectedSearchChordIdx=-1;renderAll()">Skala → akordy</button>
+              <button class="chip-btn" style="grid-column:1/-1;" onclick="state.searchDir='detect';renderAll()">🎤 Wykryj skalę</button>
+            </div>
+          </div>
+          <div>
+            <div class="section-label">PRYMA AKORDU</div>
+            ${buildRootButtonsHtml('setSearchRootPc')}
+          </div>
+          <div>
+            <div class="section-label">RODZAJ</div>
+            <select onchange="state.chordId=this.value;state.selectedSearchScaleIdx=-1;renderAll();">
+              ${state.initData.chords.map(c => `<option value="${c.id}" ${c.id===state.chordId?'selected':''}>${c.id}</option>`).join('')}
+            </select>
+          </div>
+          <div style="flex:1;min-height:180px;overflow-y:auto;">
+            <div class="section-label">PASUJĄCE SKALE (${data.matches.length})</div>
+            ${data.matches.map((m, idx) => `
+              <div class="list-row ${state.selectedSearchScaleIdx===idx?'selected':''}"
+                   style="margin-bottom:5px;flex-direction:column;align-items:flex-start;gap:3px;"
+                   onclick="selectSearchScale(${idx})">
+                <div>
+                  <strong>${m.scaleName}</strong>
+                  <span style="color:var(--text-muted);margin-left:6px;">Napięcia: ${m.tensions || 'brak'}</span>
+                </div>
+                ${m.avoid ? `<div style="font-size:11px;color:var(--red);">Do unikania: ${m.avoid}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+          <div>
+            <div class="section-label">ETYKIETY</div>
+            <div class="btn-grid-3">
+              <button class="chip-btn ${state.searchLabelType==='notes'?'active':''}" onclick="state.searchLabelType='notes';drawFretboard();renderStageAndInspector()">Nuty</button>
+              <button class="chip-btn ${state.searchLabelType==='intervals'?'active':''}" onclick="state.searchLabelType='intervals';drawFretboard();renderStageAndInspector()">Interwały</button>
+              <button class="chip-btn ${state.searchLabelType==='tensions'?'active':''}" onclick="state.searchLabelType='tensions';drawFretboard();renderStageAndInspector()">Napięcia</button>
+            </div>
+          </div>`;
+      } else {
+        insp.innerHTML = `
+          <div>
+            <div class="section-label">SZUKAJ WG</div>
+            <div class="btn-grid-2">
+              <button class="chip-btn" onclick="state.searchDir='chord_to_scale';state.selectedSearchScaleIdx=-1;renderAll()">Akord → skale</button>
+              <button class="chip-btn active" onclick="state.searchDir='scale_to_chord';state.selectedSearchChordIdx=-1;renderAll()">Skala → akordy</button>
+              <button class="chip-btn" style="grid-column:1/-1;" onclick="state.searchDir='detect';renderAll()">🎤 Wykryj skalę</button>
+            </div>
+          </div>
+          <div>
+            <div class="section-label">TONIKA SKALI</div>
+            ${buildRootButtonsHtml('setSearchRootPc')}
+          </div>
+          <div>
+            <div class="section-label">SKALA</div>
+            <select onchange="state.scaleId=this.value;state.selectedSearchChordIdx=-1;renderAll();">
+              ${state.initData.scales.map(s => `<option value="${s.id}" ${s.id===state.scaleId?'selected':''}>${s.name}</option>`).join('')}
+            </select>
+          </div>
+          <div style="flex:1;min-height:180px;overflow-y:auto;">
+            <div class="section-label">PASUJĄCE AKORDY (${(data.chords||[]).length})</div>
+            ${(data.chords||[]).map((c, idx) => `
+              <div class="list-row ${state.selectedSearchChordIdx===idx?'selected':''}"
+                   style="margin-bottom:5px;"
+                   onclick="state.selectedSearchChordIdx=${idx};drawFretboard();renderStageAndInspector()">
+                <strong>${c.symbol}</strong>
+                <span style="color:var(--text-muted);">${c.notes}</span>
+              </div>
+            `).join('')}
+          </div>`;
+      }
+      drawFretboard();
     }
-    drawFretboard();
 
   } else if (state.subtab === 'arpeggio' || state.subtab === 'sweep') {
     // =======================================================================
@@ -12073,6 +12128,59 @@ function setSearchRootPc(pc) {
   state.selectedSearchScaleIdx = -1;
   state.selectedSearchChordIdx = -1;
   renderAll();
+}
+
+// =========================================================================
+// TRYB „WYKRYJ SKALĘ" — zbiera grane klasy wysokości i znajduje pasujące skale
+// =========================================================================
+let detectScalePollTimer = null;
+
+function stopDetectScalePolling() {
+  if (detectScalePollTimer) { clearInterval(detectScalePollTimer); detectScalePollTimer = null; }
+}
+
+function ensureDetectScalePolling() {
+  if (detectScalePollTimer) return;
+  refreshDetectScale();
+  detectScalePollTimer = setInterval(refreshDetectScale, 800);
+}
+
+function clearDetectScalePcs() {
+  state.detectScalePcs = [];
+  state.detectScaleData = null;
+  refreshDetectScale();
+}
+
+async function refreshDetectScale() {
+  if (state.mainView !== 'practice' || state.subtab !== 'search' || state.searchDir !== 'detect') return;
+  const recMidis = getRecognitionMidis();
+  const pcs = new Set();
+  for (const m of recMidis) pcs.add(((Math.round(m) % 12) + 12) % 12);
+  const pcArr = [...pcs].sort((a, b) => a - b);
+  state.detectScalePcs = pcArr;
+  const rootHint = recMidis.length ? (((Math.round(recMidis[0]) % 12) + 12) % 12) : -1;
+
+  const pcsEl = document.getElementById('detectScalePcsLabel');
+  if (pcsEl) pcsEl.textContent = pcArr.length ? pcArr.map(p => getRootLabels()[p]).join('  ') : '—';
+
+  const listEl = document.getElementById('detectScaleList');
+  if (pcArr.length === 0) {
+    if (listEl) listEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:4px 2px;">Zagraj dźwięki / akord, aby wykryć skalę…</div>';
+    return;
+  }
+  const mode = state.detectScaleMode || 'all';
+  const data = await fetchJson(`/api/detect-scale?pcs=${pcArr.join(',')}&mode=${mode}&rootHint=${rootHint}&accMode=${state.accMode}`);
+  state.detectScaleData = data;
+  if (listEl) {
+    const scales = (data && data.scales) || [];
+    listEl.innerHTML = scales.length === 0
+      ? '<div style="color:var(--text-muted);font-size:12px;padding:4px 2px;">Brak pasującej skali.</div>'
+      : scales.slice(0, 30).map(s =>
+          `<div class="list-row" style="margin-bottom:5px;cursor:default;">
+             <strong>${s.scaleName}</strong>
+             <span style="color:var(--text-muted);margin-left:6px;">${s.category}</span>
+           </div>`).join('');
+  }
 }
 
 let arpPlaybackTimer = null;

@@ -648,6 +648,90 @@ std::string handleSearchApi(std::string_view query) {
     return oss.str();
 }
 
+// Wykrywanie skali na podstawie zagranych klas wysokości (tryb „Wykryj skalę" w zakładce Szukaj).
+// pcs: lista klas 0..11 rozdzielona przecinkami; mode: all | major | minor.
+std::string handleDetectScaleApi(std::string_view query) {
+    std::string pcsParam = getQueryParam(query, "pcs", "");
+    std::string mode = getQueryParam(query, "mode", "all");
+    int rootHint = getQueryInt(query, "rootHint", -1);
+    AccidentalMode accMode = toAccMode(getQueryInt(query, "accMode", 2));
+
+    bool present[12] = {false};
+    int pcCount = 0;
+    {
+        std::istringstream ss(pcsParam);
+        std::string tok;
+        while (std::getline(ss, tok, ',')) {
+            if (tok.empty()) continue;
+            int pc = std::atoi(tok.c_str());
+            if (pc >= 0 && pc < 12 && !present[pc]) { present[pc] = true; ++pcCount; }
+        }
+    }
+    if (pcCount == 0) {
+        return "{\"scales\":[]}";
+    }
+
+    struct Match { int rootPc; const ScaleDefinition* def; int extra; int categoryRank; bool rootIsHint; };
+    std::vector<Match> matches;
+
+    auto categoryRank = [](std::string_view cat) -> int {
+        if (cat == "Podstawowe") return 0;
+        if (cat == "Modalne") return 1;
+        if (cat == "Pentatoniki i Blues") return 2;
+        if (cat == "Jazzowe") return 3;
+        if (cat == "Symetryczne") return 4;
+        return 5; // Egzotyczne
+    };
+
+    for (const auto& def : allScaleDefinitions()) {
+        bool hasM3 = false, hasm3 = false;
+        for (const auto& iv : def.intervals) {
+            if (iv.semitones == 4) hasM3 = true;
+            if (iv.semitones == 3) hasm3 = true;
+        }
+        if (mode == "major" && (!hasM3 || hasm3)) continue;
+        if (mode == "minor" && (!hasm3 || hasM3)) continue;
+
+        for (int root = 0; root < 12; ++root) {
+            Scale sc{Note::fromPitchClass(root, accMode), &def};
+            bool allPresent = true;
+            for (int pc = 0; pc < 12; ++pc) {
+                if (present[pc] && !sc.containsPitchClass(pc)) { allPresent = false; break; }
+            }
+            if (!allPresent) continue;
+
+            int extra = 0;
+            for (const auto& sn : sc.notes(accMode)) {
+                if (!present[sn.pitchClass()]) ++extra;
+            }
+            matches.push_back({root, &def, extra, categoryRank(def.category), (rootHint >= 0 && root == rootHint)});
+        }
+    }
+
+    std::sort(matches.begin(), matches.end(), [](const Match& a, const Match& b) {
+        if (a.rootIsHint != b.rootIsHint) return a.rootIsHint > b.rootIsHint;
+        if (a.categoryRank != b.categoryRank) return a.categoryRank < b.categoryRank;
+        if (a.extra != b.extra) return a.extra < b.extra;
+        if (a.rootPc != b.rootPc) return a.rootPc < b.rootPc;
+        return a.def->id < b.def->id;
+    });
+
+    std::ostringstream oss;
+    oss << "{\"scales\":[";
+    for (std::size_t i = 0; i < matches.size(); ++i) {
+        if (i > 0) oss << ",";
+        const auto& m = matches[i];
+        Scale sc{Note::fromPitchClass(m.rootPc, accMode), m.def};
+        oss << "{\"scaleId\":\"" << jsonEscape(m.def->id) << "\""
+            << ",\"rootPc\":" << m.rootPc
+            << ",\"scaleName\":\"" << jsonEscape(sc.fullName(false)) << "\""
+            << ",\"category\":\"" << jsonEscape(m.def->category) << "\""
+            << ",\"extra\":" << m.extra << "}";
+    }
+    oss << "]}";
+    return oss.str();
+}
+
 void writePossibleChordsInScaleJson(
     std::ostringstream& oss,
     const Scale& sc,
@@ -1438,6 +1522,9 @@ int main(int argc, char** argv) {
             sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
         } else if (path == "/api/search") {
             std::string body = handleSearchApi(query);
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/detect-scale") {
+            std::string body = handleDetectScaleApi(query);
             sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
         } else if (path == "/api/diatonic") {
             std::string body = handleDiatonicApi(query);
