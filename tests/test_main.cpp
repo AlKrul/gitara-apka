@@ -521,6 +521,25 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
         CHECK(!st.empty());
     }
 
+    // Zakres strun arpeggia (startStr / returnStr): skraca frazę i trzyma się wybranych strun (parzysta liczba nut pod metronom)
+    {
+        auto fullSeq = buildArpeggioSequenceSteps(fb, rootOct2, ArpeggioPattern::RootOctave, 0, AccidentalMode::Sharps, 0);
+        auto cutSeq = buildArpeggioSequenceSteps(fb, rootOct2, ArpeggioPattern::RootOctave, 0, AccidentalMode::Sharps, 0, 2, 2);
+        CHECK(!fullSeq.empty());
+        CHECK(cutSeq.size() < fullSeq.size());
+        for (const auto& st : cutSeq) {
+            CHECK(st.stringIndex >= 2);
+        }
+        // Powrót do tej samej struny nie może zdublować nuty granicowej (unison na końcu zjazdu)
+        if (cutSeq.size() >= 2) {
+            CHECK(cutSeq.back().midi != cutSeq[0].midi);
+        }
+        // Kierunek „tylko w górę" z filtrem startStr również się skraca
+        auto upFull = buildArpeggioSequenceSteps(fb, rootOct2, ArpeggioPattern::RootOctave, 1, AccidentalMode::Sharps, 0);
+        auto upCut = buildArpeggioSequenceSteps(fb, rootOct2, ArpeggioPattern::RootOctave, 1, AccidentalMode::Sharps, 0, 2, -1);
+        CHECK(upCut.size() < upFull.size());
+    }
+
     // Sweep shapes 3-, 5- i 6-strunowe dla Am, Cmaj, G#dim7, Cmaj7
     for (const char* cid : {"minor", "major", "dim7", "maj7", "7"}) {
         Chord testCh{Note{Letter::A, Accidental::Natural}, findChordDefinition(cid)};

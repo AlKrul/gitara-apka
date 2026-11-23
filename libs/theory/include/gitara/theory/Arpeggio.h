@@ -140,13 +140,17 @@ struct DiatonicArpeggio {
 
 /// Generuje kroki odtwarzania (TAB + kostkowanie) dla dowolnego wzorca arpeggio (FullNeck/CAGED/2NPS/3NPS/Sweep/Inversions/RootOctave).
 /// seqStyle: 0 = Prosto (1-3-5-7), 1 = Grupy po 3, 2 = Skoki interwałowe (1-5-3-7).
+/// startString/returnString: -1 = auto (od najniższej / pełny powrót), 0..5 = struna (0=E6 najgrubsza .. 5=e1 najcieńsza)
+/// od której zaczynamy arpeggio w górę i do której wracamy w dół (kontrola długości frazy pod metronom).
 [[nodiscard]] std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
     const Fretboard& fretboard,
     const std::vector<ArpeggioPositionNode>& nodes,
     ArpeggioPattern pattern,
     int direction = 0,
     AccidentalMode mode = AccidentalMode::Auto,
-    int seqStyle = 0);
+    int seqStyle = 0,
+    int startString = -1,
+    int returnString = -1);
 
 /// Zwraca listę wbudowanych przejść / progresji Sweep Picking.
 [[nodiscard]] const std::vector<SweepTransitionPresetInfo>& allSweepTransitionPresets();

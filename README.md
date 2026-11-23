@@ -2,6 +2,8 @@
 
 A guitar practice app in C++20: music theory, a DSP engine (pitch, chord and onset detection), tablature with GP5/MIDI export, and a GUI.
 
+Detection runs a hybrid engine: PitchPlease (a neural WASM model) supplies the notes, onsets and velocities, while a chord namer ported from [dechorder](https://github.com/Airflame/dechorder) (28 qualities plus inversions/slash chords) names the chord — improving chord precision and expanding multi-note recognition.
+
 ## Repository layout
 
 | Path | Contents |
@@ -11,8 +13,8 @@ A guitar practice app in C++20: music theory, a DSP engine (pitch, chord and ons
 | `libs/dsp` | Pitch/onset/chord detection, signal conditioning, Karplus-Strong synth |
 | `libs/engine` | Practice engine, metronome, ear trainer, progressions, sessions |
 | `app/` | Application entry point (`Main.cpp`) and the embedded HTML GUI |
-| `web/` | JS DSP modules and the vendored PitchPlease WASM engine, served at runtime |
-| `tests/` | C++ unit tests (`test_main.cpp`) and the JS DSP test (`dsp_web_test.mjs`) |
+| `web/` | JS DSP modules, the hybrid chord namer ported from [dechorder](https://github.com/Airflame/dechorder) (`web/js/dsp/dechorder`), and the vendored PitchPlease WASM engine, served at runtime |
+| `tests/` | C++ unit tests (`test_main.cpp`) and JS DSP tests (`dsp_web_test.mjs`, `dechorder_web_test.mjs`) |
 
 ## Requirements
 
@@ -55,4 +57,7 @@ make test
 
 # JS DSP engine test (from the repository root)
 node tests/dsp_web_test.mjs
+
+# Hybrid chord namer test (dechorder port)
+node tests/dechorder_web_test.mjs
 ```

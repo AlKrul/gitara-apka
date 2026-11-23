@@ -188,8 +188,13 @@ body {
   font-weight: 800;
   color: var(--accent);
   min-width: 38px;
+  max-width: 180px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: center;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .content-split {
@@ -2053,7 +2058,7 @@ body.ui-mode-fhd .sp-card {
         </select>
         <span>Wykryty:</span>
         <span id="liveNoteBadge" class="live-note-badge">—</span>
-        <span id="liveCentsBadge" style="color:var(--text-muted);min-width:95px;white-space:nowrap;">0.0 ct · 0.0 Hz</span>
+        <span id="liveCentsBadge" style="color:var(--text-muted);"></span>
         <button id="topPreviewBtn" class="chip-btn" style="padding:4px 9px;font-size:12px;white-space:nowrap;" onclick="playCurrentScalePreview()">▶ Posłuchaj</button>
       </div>
     </header>
@@ -2397,6 +2402,8 @@ const state = {
   arpSeqStyle: 0, // 0=Prosto (1-3-5), 1=Grupy po 3, 2=Skoki (1-5-3)
   arpStringSet: 0, // 0=G-B-e/D-G-B-e, 1=D-G-B/A-D-G-B, 2=A-D-G/E-A-D-G
   arpOctaves: 2, // 1 | 2 dla trybu Od prymy
+  arpStartStr: -1, // -1=auto (od najniższej struny), 0..5=struna od której zaczynamy arpeggio (0=E6 .. 5=e1)
+  arpReturnStr: -1, // -1=pełny powrót (do najniższej), 0..5=struna do której wracamy w dół
   arpTransitionId: 'neoclassical_minor',
   arpActiveSegIdx: 0,
   arpDiatonicSevenths: true,
@@ -2735,14 +2742,61 @@ function updateGuitarToKeyboardSync() {
         const el = resolvePianoKeyElement(st.midi);
         if (el) el.classList.add('guitar-play-sync');
       }
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
       return;
     }
   }
 
   // 3. Aktualnie kliknięty / grany dźwięk (lub dwudźwięk / akord z mikrofonu): podświetl na klawiaturze!
-  const activeMidis = (micStream && state.detectedMidis && state.detectedMidis.length > 0)
-    ? state.detectedMidis
-    : ((state.detectedMidi !== null && state.detectedMidi !== undefined) ? [state.detectedMidi] : []);
+  const activeMidis = getRecognitionMidis();
 
   const focusPc = (activeMidis.length > 0)
     ? (((Math.round(activeMidis[0]) % 12) + 12) % 12)
@@ -2750,6 +2804,55 @@ function updateGuitarToKeyboardSync() {
 
   if (focusPc !== null && focusPc !== undefined) {
     if (state.mainView === 'practice' && state.subtab === 'scale' && !isScaleDegreeHighlightEnabled(focusPc)) {
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
       return;
     }
     for (let m = 40; m <= 88; m++) {
@@ -2764,6 +2867,55 @@ function updateGuitarToKeyboardSync() {
   activeMidis.forEach(am => {
     const pc = ((Math.round(am) % 12) + 12) % 12;
     if (state.mainView === 'practice' && state.subtab === 'scale' && !isScaleDegreeHighlightEnabled(pc)) {
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
       return;
     }
     const el = resolvePianoKeyElement(am);
@@ -4748,7 +4900,7 @@ async function toggleLiveAudio() {
     state.detectedMidi = null;
     state.detectedMidis = [];
     document.getElementById('liveNoteBadge').textContent = '—';
-    document.getElementById('liveCentsBadge').textContent = '0.0 ct · 0.0 Hz';
+    document.getElementById('liveCentsBadge').textContent = '';
     drawFretboard();
     updateGuitarToKeyboardSync();
     if (state.mainView === 'tuner') renderTunerCanvas();
@@ -4895,19 +5047,17 @@ async function toggleLiveAudio() {
             state.detectedHz = hz;
 
             const noteLabel = isPoly
-              ? activeMidis.map(m => noteNames[((m % 12) + 12) % 12] + ' ' + (Math.floor(m / 12) - 1)).join(' + ')
-              : (noteNames[((primary.midiNote % 12) + 12) % 12] + ' ' + (Math.floor(primary.midiNote / 12) - 1));
+              ? (resolveChordLabel(activeMidis) || (chord && chord.full) || activeMidis.map(m => noteNames[((m % 12) + 12) % 12]).join(' '))
+              : noteNames[((primary.midiNote % 12) + 12) % 12];
             document.getElementById('liveNoteBadge').textContent = noteLabel;
-            document.getElementById('liveCentsBadge').textContent = isPoly
-              ? (identifyPolyChordLabel(activeMidis, noteNames) || (chord && chord.full) || '')
-              : `${cents >= 0 ? '+' : ''}${cents.toFixed(1)} ct · ${hz.toFixed(1)} Hz · ${Math.round(primary.durationMs)} ms`;
+            document.getElementById('liveCentsBadge').textContent = '';
 
             if (setChanged) fretboardDirty = true;
           } else if (setChanged) {
             state.detectedMidi = null;
             state.detectedMidis = [];
             document.getElementById('liveNoteBadge').textContent = '—';
-            document.getElementById('liveCentsBadge').textContent = '0.0 ct · 0.0 Hz';
+            document.getElementById('liveCentsBadge').textContent = '';
             const heardBadge = document.getElementById('exerciseHeardBadge');
             if (heardBadge) heardBadge.textContent = '';
             const earBox = document.getElementById('earPlayDetectedBox');
@@ -4971,9 +5121,8 @@ async function toggleLiveAudio() {
                 state.detectedHz = mpm.hz;
                 const noteNames = getRootLabels();
                 document.getElementById('liveNoteBadge').textContent =
-                  noteNames[((targetMidi % 12) + 12) % 12] + ' ' + (Math.floor(targetMidi / 12) - 1);
-                document.getElementById('liveCentsBadge').textContent =
-                  `${cents >= 0 ? '+' : ''}${cents.toFixed(1)} ct · ${mpm.hz.toFixed(1)} Hz`;
+                  noteNames[((targetMidi % 12) + 12) % 12];
+                document.getElementById('liveCentsBadge').textContent = '';
               } else {
                 tunerQuietFrames++;
               }
@@ -4984,7 +5133,7 @@ async function toggleLiveAudio() {
               state.detectedMidi = null;
               state.detectedMidis = [];
               document.getElementById('liveNoteBadge').textContent = '—';
-              document.getElementById('liveCentsBadge').textContent = '0.0 ct · 0.0 Hz';
+              document.getElementById('liveCentsBadge').textContent = '';
             }
             renderTunerCanvas();
           } else if (fretboardDirty) {
@@ -4996,6 +5145,56 @@ async function toggleLiveAudio() {
         };
         renderLoop();
         return;
+        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
+      return;
       } else {
         ppDetector.stop();
         console.warn('PitchPlease nie uruchomił się, przełączam na fallback GuitarDsp.');
@@ -5007,6 +5206,14 @@ async function toggleLiveAudio() {
         window.GuitarDsp = await import('/web/js/dsp/guitarDspEngine.js');
       } catch (modErr) {
         console.warn('Moduł /web/js/dsp/guitarDspEngine.js niedostępny, przełączam na fallback MPM:', modErr);
+      }
+    }
+
+    if (!window.DechorderDsp) {
+      try {
+        window.DechorderDsp = await import('/web/js/dsp/dechorder/index.js');
+      } catch (modErr) {
+        console.warn('Moduł /web/js/dsp/dechorder/index.js niedostępny:', modErr);
       }
     }
 
@@ -5111,6 +5318,56 @@ async function toggleLiveAudio() {
 
         if (!anyVisualChange && (nowMs - lastUiRefreshMs) < 34) {
           return;
+          const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
+      return;
         }
         lastUiRefreshMs = nowMs;
 
@@ -5159,12 +5416,10 @@ async function toggleLiveAudio() {
           state.detectedHz = hz;
 
           const noteLabel = isPoly
-            ? activeMidis.map(m => noteNames[((m % 12) + 12) % 12] + ' ' + (Math.floor(m / 12) - 1)).join(' + ')
-            : (noteNames[((playedMidi % 12) + 12) % 12] + ' ' + (Math.floor(playedMidi / 12) - 1));
+            ? (resolveChordLabel(activeMidis) || activeMidis.map(m => noteNames[((m % 12) + 12) % 12]).join(' '))
+            : noteNames[((playedMidi % 12) + 12) % 12];
           document.getElementById('liveNoteBadge').textContent = noteLabel;
-          document.getElementById('liveCentsBadge').textContent = isPoly
-            ? identifyPolyChordLabel(activeMidis, noteNames)
-            : `${cents >= 0 ? '+' : ''}${cents.toFixed(1)} ct · ${hz.toFixed(1)} Hz · ${Math.round(primary.durationMs)} ms`;
+          document.getElementById('liveCentsBadge').textContent = '';
 
           if (anyVisualChange) {
             drawFretboard();
@@ -5174,7 +5429,7 @@ async function toggleLiveAudio() {
           state.detectedMidi = null;
           state.detectedMidis = [];
           document.getElementById('liveNoteBadge').textContent = '—';
-          document.getElementById('liveCentsBadge').textContent = '0.0 ct · 0.0 Hz';
+          document.getElementById('liveCentsBadge').textContent = '';
           const heardBadge = document.getElementById('exerciseHeardBadge');
           if (heardBadge) heardBadge.textContent = '';
           const earBox = document.getElementById('earPlayDetectedBox');
@@ -5253,6 +5508,55 @@ async function toggleLiveAudio() {
         audioLoopId = requestAnimationFrame(renderLoop);
       };
       renderLoop();
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
       return;
     }
 
@@ -5332,12 +5636,10 @@ async function toggleLiveAudio() {
           state.detectedHz = hz;
 
           const noteLabel = isPoly
-            ? activePoly.map(m => noteNames[((m % 12) + 12) % 12] + ' ' + (Math.floor(m / 12) - 1)).join(' + ')
-            : (noteNames[((playedMidi % 12) + 12) % 12] + ' ' + (Math.floor(playedMidi / 12) - 1));
+            ? (resolveChordLabel(activePoly) || activePoly.map(m => noteNames[((m % 12) + 12) % 12]).join(' '))
+            : noteNames[((playedMidi % 12) + 12) % 12];
           document.getElementById('liveNoteBadge').textContent = noteLabel;
-          document.getElementById('liveCentsBadge').textContent = isPoly
-            ? identifyPolyChordLabel(activePoly, noteNames)
-            : `${cents >= 0 ? '+' : ''}${cents.toFixed(1)} ct · ${hz.toFixed(1)} Hz · ${Math.round(T.clarity * 100)}%`;
+          document.getElementById('liveCentsBadge').textContent = '';
 
           if (tr.event === 'on') {
             const heardBadge = document.getElementById('exerciseHeardBadge');
@@ -5365,7 +5667,7 @@ async function toggleLiveAudio() {
           state.detectedMidi = null;
           state.detectedMidis = [];
           document.getElementById('liveNoteBadge').textContent = '—';
-          document.getElementById('liveCentsBadge').textContent = '0.0 ct · 0.0 Hz';
+          document.getElementById('liveCentsBadge').textContent = '';
           const heardBadge = document.getElementById('exerciseHeardBadge');
           if (heardBadge) heardBadge.textContent = '';
           const earBox = document.getElementById('earPlayDetectedBox');
@@ -6353,9 +6655,10 @@ function drawFretboard() {
     }
   }
 
-  const activeMidisSet = (micStream && state.detectedMidis && state.detectedMidis.length > 0)
-    ? new Set(state.detectedMidis.map(m => Math.round(m)))
-    : ((state.detectedMidi !== null && state.detectedMidi !== undefined) ? new Set([Math.round(state.detectedMidi)]) : null);
+  const recMidisForFret = getRecognitionMidis();
+  const activeMidisSet = (recMidisForFret.length > 0)
+    ? new Set(recMidisForFret.map(m => Math.round(m)))
+    : null;
 
   // Zestaw 7 dźwięków wybranej (lub aktualnie przeciąganej szablonem!) tonacji z Koła Kwintowego dla zakładki Akordy
   let cofFretKeyRootPc = state.chordScaleRootPc;
@@ -6391,8 +6694,9 @@ function drawFretboard() {
 
     const pc = ((cell.midi % 12) + 12) % 12;
     const degHighlightAllowed = (state.subtab !== 'scale') || isScaleDegreeHighlightEnabled(pc);
-    const activePlayPc = (state.detectedMidi !== null && state.detectedMidi !== undefined)
-      ? (((Math.round(state.detectedMidi) % 12) + 12) % 12)
+    const recMidiForCell = getRecognitionMidi();
+    const activePlayPc = (recMidiForCell !== null && recMidiForCell !== undefined)
+      ? (((Math.round(recMidiForCell) % 12) + 12) % 12)
       : ((state.mainView === 'practice' && state.subtab === 'scale') ? state.selectedScaleNotePc : null);
     const isDetected = (showDetectedOnFretboard && degHighlightAllowed && !masked && activeMidisSet && activeMidisSet.has(cell.midi));
     // Wykrywanie dźwięku z gitary (mikrofon): podświetlamy tylko dokładnie ten sam dźwięk (ta sama wysokość / oktawa),
@@ -6956,6 +7260,55 @@ function onFretCellMouseEnter(e, s, f) {
   // Jeśli przytrzymujemy lewy przycisk myszy na gryfie, przesunięcie na inny próg daje płynne legato / slide!
   if (state.isHoldingFretNote && state.fretboardData) {
     if (state.lockUnmarkedNotes && (!state.markedFretCells || !state.markedFretCells.has(`${s}:${f}`))) {
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
       return;
     }
     if (state.lastHandPos && state.lastHandPos.s === s && state.lastHandPos.f === f) return;
@@ -7181,6 +7534,29 @@ async function renderAll() {
 
   await renderStageAndInspector();
   drawFretboard();
+}
+
+// Nazwa akordu na wyświetlaczu (hybryda: nuty z PitchPlease + namer dechordera z inwersjami).
+function resolveChordLabel(activeMidis) {
+  if (!activeMidis || activeMidis.length < 2) return '';
+  if (window.DechorderDsp && window.DechorderDsp.matchChordFromMidis) {
+    const r = window.DechorderDsp.matchChordFromMidis(activeMidis);
+    return window.DechorderDsp.readingLabel(r) || '';
+  }
+  return identifyPolyChordLabel(activeMidis, getRootLabels());
+}
+
+// Aktywne nuty rozpoznawania na gryfie (hybryda: nuty z PitchPlease).
+function getRecognitionMidis() {
+  if (state.detectedMidis && state.detectedMidis.length > 0) return state.detectedMidis;
+  if (state.detectedMidi !== null && state.detectedMidi !== undefined) return [state.detectedMidi];
+  return [];
+}
+
+function getRecognitionMidi() {
+  const ms = getRecognitionMidis();
+  if (ms.length > 0) return ms[ms.length - 1];
+  return (state.detectedMidi !== null && state.detectedMidi !== undefined) ? state.detectedMidi : null;
 }
 
 function buildRootButtonsHtml(onClickFnName) {
@@ -8048,6 +8424,56 @@ async function renderStageAndInspector() {
             </div>
           </div>`;
         return;
+        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
+      return;
       }
 
       const q = state.earCurrentQuestion || {};
@@ -8089,6 +8515,56 @@ async function renderStageAndInspector() {
             </div>
           </div>`;
         return;
+        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
+      return;
       }
 
       // WARIANT 3: ZAGRAJ NA GITARZE (Zrzut 4)
@@ -8118,6 +8594,56 @@ async function renderStageAndInspector() {
             ${q.answered ? `<button class="action-btn" style="padding:9px 22px;border-radius:20px;" onclick="nextEarActiveRound()">${(state.earSessionType === 'fixed' && state.earRound >= state.earTargetRounds) ? 'Podsumowanie →' : 'Następna runda →'}</button>` : ''}
           </div>`;
         return;
+        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
+      return;
       }
 
       // WARIANT 4: AKORDY (Zrzuty 6 i 7)
@@ -8176,6 +8702,56 @@ async function renderStageAndInspector() {
             </div>
           </div>`;
         return;
+        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
+      return;
       }
     }
 
@@ -8284,6 +8860,55 @@ async function renderStageAndInspector() {
                     onclick="exitEarActiveSession()">Zmień ustawienia</span>
             </div>
           </div>
+        </div>`;
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
         </div>`;
       return;
     }
@@ -8585,6 +9210,55 @@ async function renderStageAndInspector() {
         <div style="font-size:13px;color:var(--text-muted);line-height:1.5;">
           Ćwiczenie zostanie wygenerowane przez silnik <b>C++20 (WorkshopGenerator)</b>, dodane do bieżącej sesji oraz listy <b>Twoje ćwiczenia</b>, skąd możesz je od razu uruchomić na gryfie i w tabulaturze.
         </div>`;
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
+        </div>`;
       return;
     }
 
@@ -8675,6 +9349,55 @@ async function renderStageAndInspector() {
           </div>
           <button class="action-btn" style="width:100%;" onclick="saveNewWorkshopSession()">Zapisz sesję</button>
           <button class="chip-btn" style="width:100%;" onclick="state.workshopSubView='sessions';renderStageAndInspector()">Anuluj</button>
+        </div>`;
+      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
+      insp.innerHTML = `
+        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
+            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
+          </div>
+          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
+                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
+                 onchange="setExercisePlayerBpm(this.value)">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
+            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              ${[0.5, 0.75, 1.0, 1.25].map(r => {
+                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
+                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
+                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
+                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">TRYB ĆWICZENIA</div>
+          <div class="btn-grid-2">
+            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
+            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
+          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
+          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
+          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
+          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
+          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
+          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
         </div>`;
       return;
     }
@@ -9620,7 +10343,7 @@ async function renderStageAndInspector() {
     const effDiatRootPc = (isTrans && state.arpTransitionId !== 'same_chord_inversions')
       ? state.rootPc
       : state.arpDiatonicScaleRootPc;
-    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(curChordId)}&pattern=${reqPattern}&posIdx=${reqPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=${encodeURIComponent(reqViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
+    const arpUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(curChordId)}&pattern=${reqPattern}&posIdx=${reqPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&startStr=${state.arpStartStr ?? -1}&returnStr=${state.arpReturnStr ?? -1}&viewMode=${encodeURIComponent(reqViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
     let data = await fetchJson(arpUrl);
     if (state._matchSweepSegBounds) {
       const mb = state._matchSweepSegBounds;
@@ -9640,7 +10363,7 @@ async function renderStageAndInspector() {
         }
         if (match && match.idx !== data.posIdx) {
           state.sweepPosIdx = match.idx;
-          const retryUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${reqPattern}&posIdx=${state.sweepPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&viewMode=${encodeURIComponent(reqViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
+          const retryUrl = `/api/arpeggio?tuning=${state.tuningId}&customMidis=${customParam}&rootPc=${state.rootPc}&chordId=${encodeURIComponent(state.chordId)}&pattern=${reqPattern}&posIdx=${state.sweepPosIdx}&sweepStrings=${state.arpSweepStrings}&direction=${state.arpDirection}&seqStyle=${state.arpSeqStyle||0}&stringSet=${state.arpStringSet||0}&octaves=${state.arpOctaves||2}&startStr=${state.arpStartStr ?? -1}&returnStr=${state.arpReturnStr ?? -1}&viewMode=${encodeURIComponent(reqViewMode)}&transitionId=${encodeURIComponent(state.arpTransitionId)}&scaleRootPc=${effDiatRootPc}&scaleId=${encodeURIComponent(state.arpDiatonicScaleId)}&sevenths=${state.arpDiatonicSevenths?1:0}&accMode=${state.accMode}`;
           data = await fetchJson(retryUrl);
         }
       }
@@ -10112,6 +10835,29 @@ async function renderStageAndInspector() {
             <button class="chip-btn ${state.arpDirection===0?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=0;saveSettings();renderStageAndInspector()">↕ Góra-dół</button>
             <button class="chip-btn ${state.arpDirection===1?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=1;saveSettings();renderStageAndInspector()">↓ W górę</button>
             <button class="chip-btn ${state.arpDirection===2?'active':''}" style="font-size:11px;" onclick="stopArpeggioPlayback(false);state.arpDirection=2;saveSettings();renderStageAndInspector()">↑ W dół</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">ZAKRES STRUN (FRAZA POD METRONOM)</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:var(--text-muted);min-width:62px;white-space:nowrap;">Od struny:</span>
+              <select style="flex:1;min-width:0;" onchange="stopArpeggioPlayback(false);state.arpStartStr=parseInt(this.value,10);saveSettings();renderStageAndInspector()">
+                <option value="-1" ${(state.arpStartStr ?? -1) === -1 ? 'selected' : ''}>Auto (najniższa)</option>
+                ${[0,1,2,3,4,5].map(s => `<option value="${s}" ${(state.arpStartStr ?? -1) === s ? 'selected' : ''}>Str. ${6 - s} (${rootLabels[(state.customStringMidis[s] % 12 + 12) % 12]})</option>`).join('')}
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:var(--text-muted);min-width:62px;white-space:nowrap;">Powrót do:</span>
+              <select style="flex:1;min-width:0;" onchange="stopArpeggioPlayback(false);state.arpReturnStr=parseInt(this.value,10);saveSettings();renderStageAndInspector()">
+                <option value="-1" ${(state.arpReturnStr ?? -1) === -1 ? 'selected' : ''}>Pełny (do najniższej)</option>
+                ${[0,1,2,3,4,5].map(s => `<option value="${s}" ${(state.arpReturnStr ?? -1) === s ? 'selected' : ''}>Str. ${6 - s} (${rootLabels[(state.customStringMidis[s] % 12 + 12) % 12]})</option>`).join('')}
+              </select>
+            </div>
+            <div style="font-size:10.5px;color:var(--text-muted);line-height:1.4;">
+              ${t('Wybierz, od której struny zaczynasz i do której wracasz — dobierz parzystą liczbę nut, żeby fraza pętliła się równo z metronomem (bez pauzy 3/16).', 'Pick the start string and the return string to get an even note count so the phrase loops in time (no 3/16 rest).')}
+            </div>
           </div>
         </div>
 
@@ -12771,6 +13517,8 @@ function saveSettings() {
       arpSeqStyle: state.arpSeqStyle,
       arpStringSet: state.arpStringSet,
       arpOctaves: state.arpOctaves,
+      arpStartStr: state.arpStartStr,
+      arpReturnStr: state.arpReturnStr,
       arpTransitionId: state.arpTransitionId,
       arpDiatonicSevenths: !!state.arpDiatonicSevenths,
       arpDiatonicCategory: state.arpDiatonicCategory || 'all',

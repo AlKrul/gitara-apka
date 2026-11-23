@@ -722,6 +722,8 @@ std::string handleArpeggioApi(std::string_view query) {
     int seqStyle = getQueryInt(query, "seqStyle", 0);
     int stringSet = getQueryInt(query, "stringSet", 0);
     int octaves = getQueryInt(query, "octaves", 2);
+    int startString = getQueryInt(query, "startStr", -1);   // -1 = od najniższej struny
+    int returnString = getQueryInt(query, "returnStr", -1); // -1 = pełny powrót do najniższej
     std::string viewMode = getQueryParam(query, "viewMode", "single"); // "single" | "transition"
     std::string transitionId = getQueryParam(query, "transitionId", "neoclassical_minor");
     int scaleRootPc = getQueryInt(query, "scaleRootPc", rootPc);
@@ -794,7 +796,7 @@ std::string handleArpeggioApi(std::string_view query) {
             positions.push_back({i, std::string(octNames[static_cast<std::size_t>(i)]) + " · pr. " + std::to_string(mn) + "–" + std::to_string(mx), mn, mx, false});
             if (i == resolvedPosIdx) activeNodes = std::move(ns);
         }
-        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle, startString, returnString);
     } else if (pat == ArpeggioPattern::Inversions) {
         auto invs = generateArpeggioInversions(fb, ch, stringSet, mode, nullptr);
         if (!invs.empty()) {
@@ -807,7 +809,7 @@ std::string handleArpeggioApi(std::string_view query) {
                 std::size_t maxInv = std::min<std::size_t>(invs.size(), 5);
                 for (std::size_t i = 0; i < maxInv; ++i) {
                     for (const auto& n : invs[i].nodes) activeNodes.push_back(n);
-                    auto segSteps = buildArpeggioSequenceSteps(fb, invs[i].nodes, pat, direction == 2 ? 2 : 1, mode, seqStyle);
+                    auto segSteps = buildArpeggioSequenceSteps(fb, invs[i].nodes, pat, direction == 2 ? 2 : 1, mode, seqStyle, startString, returnString);
                     for (auto& st : segSteps) {
                         st.segmentIndex = static_cast<int>(i);
                         activeSteps.push_back(std::move(st));
@@ -816,7 +818,7 @@ std::string handleArpeggioApi(std::string_view query) {
             } else {
                 resolvedPosIdx = std::clamp(posIdx, 0, static_cast<int>(invs.size()) - 1);
                 activeNodes = invs[static_cast<std::size_t>(resolvedPosIdx)].nodes;
-                activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+                activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle, startString, returnString);
             }
         }
     } else if (pat == ArpeggioPattern::CAGED) {
@@ -830,7 +832,7 @@ std::string handleArpeggioApi(std::string_view query) {
             positions.push_back({i, std::string(cagedNames[static_cast<std::size_t>(i)]) + " (pr. " + std::to_string(mn) + "–" + std::to_string(mx) + ")", mn, mx, false});
             if (i == resolvedPosIdx) activeNodes = std::move(ns);
         }
-        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle, startString, returnString);
     } else if (pat == ArpeggioPattern::TwoNPS || pat == ArpeggioPattern::ThreeNPS) {
         int countPos = std::max<int>(3, static_cast<int>(ch.notes(mode).size()));
         resolvedPosIdx = std::clamp(posIdx, 0, countPos - 1);
@@ -842,11 +844,11 @@ std::string handleArpeggioApi(std::string_view query) {
             positions.push_back({i, "Poz. " + std::to_string(i + 1) + " (pr. " + std::to_string(mn) + "–" + std::to_string(mx) + ")", mn, mx, false});
             if (i == resolvedPosIdx) activeNodes = std::move(ns);
         }
-        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle, startString, returnString);
     } else {
         resolvedPosIdx = 0;
         activeNodes = fullNeckNodes;
-        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+        activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle, startString, returnString);
     }
 
     auto transition = generateSweepTransition(fb, transitionId, rootPc, sweepStrings, posIdx, &ch, &sc, mode, diatonicSevenths);

@@ -753,7 +753,9 @@ std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
     ArpeggioPattern pattern,
     int direction,
     AccidentalMode mode,
-    int seqStyle) {
+    int seqStyle,
+    int startString,
+    int returnString) {
     if (nodes.empty()) return {};
 
     if (pattern == ArpeggioPattern::Sweep && seqStyle == 0) {
@@ -821,6 +823,22 @@ std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
 
     auto asc = toSteps(ascNodes, false);
     auto desc = toSteps(descNodes, true);
+
+    // Kontrola zakresu strun: od której struny zaczynamy (w górę) i do której wracamy (w dół).
+    // Pozwala dobrać parzystą liczbę nut frazy, żeby arpeggio pętliło się równo z metronomem.
+    auto filterByString = [](std::vector<ArpeggioStep> in, int minString) {
+        if (minString < 0) return in;
+        std::vector<ArpeggioStep> out;
+        out.reserve(in.size());
+        for (auto& st : in) {
+            if (st.stringIndex >= minString) out.push_back(st);
+        }
+        return out;
+    };
+    if (startString >= 0 || returnString >= 0) {
+        asc = filterByString(std::move(asc), startString);
+        desc = filterByString(std::move(desc), returnString);
+    }
 
     if (direction == 1) return asc;
     if (direction == 2) return desc;
