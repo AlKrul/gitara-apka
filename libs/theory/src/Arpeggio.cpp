@@ -131,7 +131,8 @@ std::vector<SweepShape> generateSweepShapes(
     int stringSpan,
     int direction,
     AccidentalMode mode,
-    const FretboardMask* mask) {
+    const FretboardMask* mask,
+    int stringSetOffset) {
     std::vector<SweepShape> shapes;
     if (!chord.definition || fretboard.stringCount() < 3) {
         return shapes;
@@ -141,11 +142,13 @@ std::vector<SweepShape> generateSweepShapes(
     const int nFrets = fretboard.fretCount();
     const int span = (stringSpan == 6 && nStrings >= 6) ? 6
                    : (stringSpan == 5 && nStrings >= 5) ? 5
+                   : (stringSpan == 4 && nStrings >= 4) ? 4
                    : 3;
 
-    // Zestaw kolejnych strun dla sweepu (zawsze kończy się na najcieńszej strunie wiolinowej)
-    const int startString = nStrings - span; // 3-str: G-B-e (3..5), 5-str: A-D-G-B-e (1..5), 6-str: E-A-D-G-B-e (0..5)
-    const int topString = nStrings - 1;
+    // Zestaw kolejnych strun dla sweepu (domyślnie do najcieńszej struny e1, lub przesunięty w dół o stringSetOffset)
+    const int safeOffset = std::clamp(stringSetOffset, 0, std::max(0, nStrings - span));
+    const int topString = nStrings - 1 - safeOffset;
+    const int startString = topString - span + 1;
 
     const auto chordNotes = chord.notes(mode);
     const int reqCount = static_cast<int>(chordNotes.size());
@@ -384,7 +387,7 @@ std::vector<SweepShape> generateSweepShapes(
         for (int anchor = 1; anchor <= std::min(nFrets, 16); anchor += 3) {
             std::vector<ArpeggioPositionNode> picked;
             int prevMidi = 0;
-            for (int s = startString; s < nStrings; ++s) {
+            for (int s = startString; s <= topString; ++s) {
                 for (int f = anchor; f <= std::min(nFrets, anchor + 5); ++f) {
                     if (mask && !mask->isAllowed(s, f)) continue;
                     int m = fretboard.midiAt(s, f);
@@ -918,7 +921,7 @@ SweepTransition generateSweepTransition(
     SweepTransition tr{};
     tr.id = std::string(presetId);
 
-    const int effSpan = (stringSpan == 6) ? 6 : (stringSpan == 5 ? 5 : 3);
+    const int effSpan = (stringSpan == 6) ? 6 : (stringSpan == 5 ? 5 : (stringSpan == 4 ? 4 : 3));
 
     struct Spec {
         int semiOffset;

@@ -664,6 +664,24 @@ void testArpeggioWorkshopEarTrainerProgressionsAndSessions() {
             CHECK(c1.segments[0].minFret == gs5[0].minFret && c1.segments[0].maxFret == gs5[0].maxFret);
             CHECK(c2.segments[0].minFret == gs5[1].minFret && c2.segments[0].maxFret == gs5[1].maxFret);
         }
+
+        // 4-strunowe sweepy (D-G-B-e oraz przesunięty zestaw basowy E-A-D-G z stringSetOffset = 2)
+        Chord aMin7{Note{Letter::A, Accidental::Natural}, findChordDefinition("m7")};
+        auto sw4High = generateSweepShapes(fb, aMin7, 4, 0, AccidentalMode::Sharps, nullptr, 0);
+        CHECK(!sw4High.empty());
+        for (const auto& n : sw4High[0].nodes) {
+            CHECK(n.position.stringIndex >= 2 && n.position.stringIndex <= 5);
+        }
+        auto sw4Bass = generateSweepShapes(fb, aMin7, 4, 0, AccidentalMode::Sharps, nullptr, 2);
+        CHECK(!sw4Bass.empty());
+        for (const auto& n : sw4Bass[0].nodes) {
+            CHECK(n.position.stringIndex >= 0 && n.position.stringIndex <= 3);
+        }
+        auto sw3Low = generateSweepShapes(fb, aMin7, 3, 1, AccidentalMode::Sharps, nullptr, 3);
+        CHECK(!sw3Low.empty());
+        for (const auto& n : sw3Low[0].nodes) {
+            CHECK(n.position.stringIndex >= 0 && n.position.stringIndex <= 2);
+        }
     }
 
     Scale cMajScale{Note{Letter::C, Accidental::Natural}, findScaleDefinition("major")};

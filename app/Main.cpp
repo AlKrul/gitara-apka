@@ -858,16 +858,16 @@ std::string handleArpeggioApi(std::string_view query) {
     int resolvedPosIdx = posIdx;
 
     if (pat == ArpeggioPattern::Sweep) {
-        auto shapes = generateSweepShapes(fb, ch, sweepStrings, direction, mode, nullptr);
+        auto shapes = generateSweepShapes(fb, ch, sweepStrings, direction, mode, nullptr, stringSet);
         if (!shapes.empty()) {
             resolvedPosIdx = std::clamp(posIdx, 0, static_cast<int>(shapes.size()) - 1);
             for (const auto& sh : shapes) {
                 positions.push_back({sh.positionIndex, sh.label, sh.minFret, sh.maxFret, sh.hasFingerRoll});
             }
             activeNodes = shapes[static_cast<std::size_t>(resolvedPosIdx)].nodes;
-            activeSteps = (seqStyle == 0)
+            activeSteps = (seqStyle == 0 && startString < 0 && returnString < 0)
                 ? shapes[static_cast<std::size_t>(resolvedPosIdx)].steps
-                : buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle);
+                : buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle, startString, returnString);
         }
     } else if (pat == ArpeggioPattern::RootOctave) {
         constexpr std::array<const char*, 4> octNames = {"Od str. E6 (niska)", "Od str. A5", "Od str. D4", "Od str. E6 (wysoka)"};

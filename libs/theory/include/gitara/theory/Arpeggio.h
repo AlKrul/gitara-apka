@@ -110,15 +110,17 @@ struct DiatonicArpeggio {
     AccidentalMode mode = AccidentalMode::Auto,
     const FretboardMask* mask = nullptr);
 
-/// Generuje wszystkie grywalne kształty Sweep Pickingu (3-, 5- lub 6-strunowe) dla zadanego akordu na całym gryfie.
+/// Generuje wszystkie grywalne kształty Sweep Pickingu (3-, 4-, 5- lub 6-strunowe) dla zadanego akordu na całym gryfie.
 /// direction: 0 = w górę i w dół, 1 = tylko w górę, 2 = tylko w dół.
+/// stringSetOffset: 0 = najwyższe struny (do e1), 1 = zestaw o 1 strunę niżej (np. D-G-B), 2 = o 2 niżej (A-D-G / E-A-D-G), 3 = E-A-D.
 [[nodiscard]] std::vector<SweepShape> generateSweepShapes(
     const Fretboard& fretboard,
     const Chord& chord,
     int stringSpan = 3,
     int direction = 0,
     AccidentalMode mode = AccidentalMode::Auto,
-    const FretboardMask* mask = nullptr);
+    const FretboardMask* mask = nullptr,
+    int stringSetOffset = 0);
 
 /// Generuje poziome inwersje (przewroty) arpeggio na wybranym zestawie sąsiednich strun.
 /// stringSetIndex: 0 = najwyższe (G-B-e / D-G-B-e), 1 = środkowe (D-G-B / A-D-G-B), 2 = niższe (A-D-G / E-A-D-G).
