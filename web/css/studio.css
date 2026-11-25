@@ -1,0 +1,1212 @@
+/* ==========================================================================
+   🎼 Studio TAB — arkusz stylów spójny ze wszystkimi 4 motywami (classic, modern,
+   rack, bento), trybami dark/light oraz układami sidebar/topdeck
+   ========================================================================== */
+
+.studio-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Odizolowanie od globalnego CSS hosta (`select, input[type="number"] { width: 100%; padding: 8px 10px; }`) */
+.studio-shell select,
+.studio-shell input[type="number"],
+.studio-insp-wrap select,
+.studio-insp-wrap input[type="number"] {
+  width: auto;
+  padding: 3px 7px;
+  font-size: 11.5px;
+  border-radius: 6px;
+  min-height: 26px;
+}
+
+.studio-shell .studio-drum-select {
+  width: 100%;
+  font-size: 10.5px;
+  padding: 2px 4px;
+  min-height: 22px;
+}
+
+.studio-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 8px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+/* Strefa A — Zwarty 2-wierszowy pasek transportu, pętli, tempa i plików */
+.studio-zone-a {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 7px 10px;
+}
+
+.studio-zone-a-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.studio-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding-right: 9px;
+  border-right: 1px solid var(--border);
+}
+
+.studio-group:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.studio-btn {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  white-space: nowrap;
+}
+
+.studio-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+.studio-btn.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.studio-btn.primary {
+  background: var(--accent);
+  color: #14100d;
+  border-color: var(--accent);
+  font-weight: 800;
+}
+
+.studio-btn.primary:hover {
+  filter: brightness(1.07);
+}
+
+.studio-btn.sm {
+  padding: 3px 7px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+.studio-btn.danger:hover {
+  border-color: var(--red, #f87171);
+  color: var(--red, #f87171);
+}
+
+.studio-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.studio-pill-badge strong {
+  color: var(--accent);
+}
+
+.studio-countin-badge {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid #f59e0b;
+  color: #f59e0b;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.studio-toast {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 3px 9px;
+}
+
+/* Strefa C — Scena wielotaktowego TAB */
+.studio-zone-c-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.studio-track-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.studio-track-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.studio-tab-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 390px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.studio-tab-scroll.multitrack {
+  max-height: 500px;
+}
+
+.studio-tab-scroll svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.studio-sel-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.65);
+  color: #fbbf24;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.studio-sel-clear {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.studio-playhead-line {
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+/* Strefa E — Animowany kolorowy gryf + legenda */
+.studio-zone-e-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.studio-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.studio-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.studio-fretboard-wrap {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.studio-fretboard-wrap svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  max-height: 235px;
+  min-width: 0;
+  margin: 0 auto;
+  height: auto;
+}
+
+.studio-fb-candidate-ring {
+  stroke: #f59e0b;
+  fill: rgba(245, 158, 11, 0.22);
+}
+
+/* Pady perkusyjne & podgląd klawiszy w Strefie E */
+.studio-drum-pads {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  padding: 4px;
+}
+
+.studio-drum-pad {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+  transition: transform 0.08s ease, border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.studio-drum-pad.active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--accent);
+  transform: scale(0.98);
+}
+
+.studio-drum-pad.next {
+  border-style: dashed;
+  border-color: #38bdf8;
+}
+
+/* Strefa D — Dolna matryca aranżacji Ścieżki × Takty */
+.studio-arranger-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.studio-matrix-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg-card);
+}
+
+.studio-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.studio-matrix-table th,
+.studio-matrix-table td {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 3px 5px;
+  vertical-align: middle;
+}
+
+.studio-matrix-table tr:last-child td {
+  border-bottom: none;
+}
+
+.studio-matrix-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--bg-panel);
+  min-width: 205px;
+  max-width: 235px;
+}
+
+.studio-matrix-track-row.active-track .studio-matrix-sticky {
+  background: var(--bg-hover);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.studio-track-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.studio-track-name-btn {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.studio-track-name-btn:hover {
+  color: var(--accent);
+}
+
+.studio-sm-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.studio-sm-btn.solo.on {
+  background: #eab308;
+  color: #14100d;
+  border-color: #eab308;
+}
+
+.studio-sm-btn.mute.on {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.studio-bar-col-head {
+  text-align: center;
+  min-width: 68px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: var(--bg-panel);
+}
+
+.studio-bar-col-head.playing {
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.studio-bar-col-head.in-loop {
+  box-shadow: inset 0 2px 0 #f59e0b;
+}
+
+.studio-matrix-cell {
+  text-align: center;
+  min-width: 68px;
+  cursor: pointer;
+}
+
+.studio-cell-block {
+  border-radius: 6px;
+  padding: 5px 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studio-cell-block.filled {
+  color: var(--text);
+  border-color: rgba(245, 158, 11, 0.45);
+  background: var(--accent-glow);
+}
+
+.studio-cell-block.cursor-cell {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.studio-cell-block.playing-cell {
+  box-shadow: 0 0 0 2px #22c55e;
+}
+
+.studio-drum-select {
+  width: 100%;
+  font-size: 10.5px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* Dopasowanie pod 4 style aplikacji */
+:root[data-ui-style="rack"] .studio-card,
+:root[data-ui-style="rack"] .studio-zone-a,
+:root[data-ui-style="rack"] .studio-tab-scroll,
+:root[data-ui-style="rack"] .studio-fretboard-wrap,
+:root[data-ui-style="rack"] .studio-matrix-scroll {
+  border-radius: 3px;
+}
+
+:root[data-ui-style="rack"] .studio-btn {
+  border-radius: 2px;
+}
+
+:root[data-ui-style="bento"] .studio-card,
+:root[data-ui-style="bento"] .studio-zone-a {
+  border-radius: 18px;
+  box-shadow: 0 10px 26px rgba(2, 4, 14, 0.24);
+}
+
+:root[data-ui-style="bento"] .studio-btn {
+  border-radius: 10px;
+}
+
+/* Prawy panel inspektora Studio TAB (Narzędzia kompozytora + Ścieżka) */
+.studio-insp-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.studio-insp-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 3px;
+}
+
+.studio-insp-tab-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 5px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.studio-insp-tab-btn:hover {
+  color: var(--text);
+}
+
+.studio-insp-tab-btn.active {
+  background: var(--accent);
+  color: #14100d;
+  font-weight: 800;
+}
+
+.studio-insp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.studio-insp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.studio-insp-input {
+  width: 100%;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 4px 8px;
+  font-size: 11.5px;
+}
+
+/* ==========================================================================
+   Strefa B w prawym panelu — Kafelki symboli + bogate dymki hover
+   ========================================================================== */
+
+.studio-rail-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.studio-rail-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.studio-rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.studio-rail-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.studio-rail-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.studio-rail-select-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.studio-rail-select-row .studio-pal-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.studio-pal-btn {
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  height: 27px;
+  padding: 0 3px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.studio-pal-btn:hover {
+  background: var(--bg-hover);
+  border-color: #f59e0b;
+}
+
+.studio-pal-btn.active {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #f59e0b;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25);
+}
+
+.studio-pal-btn.danger:hover {
+  border-color: var(--red, #f87171);
+  color: var(--red, #f87171);
+}
+
+.studio-pal-select {
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Natychmiastowy dymek informacyjny (nazwa + skrót + opis działania) */
+.studio-hover-tip {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  max-width: 268px;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  padding: 7px 10px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.48);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.08s ease, transform 0.08s ease;
+  display: none;
+}
+
+.studio-hover-tip.show {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.studio-tip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.studio-tip-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.studio-tip-kbd {
+  font-family: Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.studio-tip-desc {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.studio-inline-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: var(--bg-card);
+  border: 1px solid #f59e0b;
+  font-size: 12px;
+}
+
+.studio-bar-col-head.selected-range {
+  background: rgba(245, 158, 11, 0.16);
+  color: #f59e0b;
+}
+
+.studio-cell-block.selected-range {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.18);
+}
+
+/* Wyszukiwarka komend Ctrl+K */
+.studio-cmdk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 90px;
+}
+
+.studio-cmdk-dialog {
+  width: min(560px, 92vw);
+  background: var(--bg-panel);
+  border: 1px solid #f59e0b;
+  border-radius: 14px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.48);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-cmdk-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.studio-cmdk-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  outline: none;
+}
+
+.studio-cmdk-list {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  gap: 3px;
+}
+
+.studio-cmdk-item {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
+}
+
+.studio-cmdk-item:hover,
+.studio-cmdk-item.selected {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.studio-cmdk-kbd {
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+:root[data-ui-style="rack"] .studio-rail-palette,
+:root[data-ui-style="rack"] .studio-rail-group,
+:root[data-ui-style="rack"] .studio-cmdk-dialog,
+:root[data-ui-style="rack"] .studio-hover-tip {
+  border-radius: 3px;
+}
+
+:root[data-ui-style="rack"] .studio-pal-btn,
+:root[data-ui-style="rack"] .studio-insp-tabs {
+  border-radius: 2px;
+}
+
+:root[data-ui-style="bento"] .studio-rail-group,
+:root[data-ui-style="bento"] .studio-cmdk-dialog,
+:root[data-ui-style="bento"] .studio-mic-bar,
+:root[data-ui-style="bento"] .studio-pos-bar {
+  border-radius: 16px;
+}
+
+/* Faza 3: Panel mikrofonu, czułość, pozycje ręki (#f59e0b) i SoundFont2 (.sf2) */
+.studio-mic-bar {
+  margin-top: 6px;
+  padding: 6px 9px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.studio-mic-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-mic-slider-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 11px;
+  color: var(--text);
+}
+
+.studio-mic-hint {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.studio-btn.rec-active {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: #ef4444;
+  color: #fca5a5;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35);
+}
+
+.studio-pos-bar {
+  margin-top: 6px;
+  padding: 6px 9px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  background: rgba(245, 158, 11, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-cand-pill {
+  padding: 3px 9px;
+  border-radius: 99px;
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.studio-cand-pill:hover {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+}
+
+.studio-cand-pill.active {
+  background: #f59e0b;
+  border-color: #fbbf24;
+  color: #14100d;
+  font-weight: 900;
+}
+
+.studio-playalong-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.studio-engine-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.studio-engine-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.studio-engine-toggle button.active {
+  background: var(--accent);
+  color: #14100d;
+}
+
+:root[data-ui-style="rack"] .studio-mic-bar,
+:root[data-ui-style="rack"] .studio-pos-bar,
+:root[data-ui-style="rack"] .studio-metro-panel,
+:root[data-ui-style="rack"] .studio-metro-block,
+:root[data-ui-style="rack"] .studio-drum-cell {
+  border-radius: 3px;
+}
+
+/* ==========================================================================
+   Klockowy metronom akcentów (A / B / C) + Hybrydowa kratka perkusji (5 torów)
+   ========================================================================== */
+
+.studio-metro-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 9px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studio-metro-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.studio-metro-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.studio-metro-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.studio-metro-labels span {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+}
+
+.studio-metro-grid {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.studio-metro-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 4px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: border-color 0.1s ease, background-color 0.1s ease;
+}
+
+.studio-metro-col.playing-col {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.studio-metro-colnum {
+  height: 15px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.studio-metro-block {
+  width: 28px;
+  height: 24px;
+  border-radius: 5px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  opacity: 0.42;
+  transition: opacity 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+}
+
+.studio-metro-block:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.studio-metro-block.lvl-a { border-color: #f59e0b; }
+.studio-metro-block.lvl-b { border-color: #eab308; }
+.studio-metro-block.lvl-c { border-color: #38bdf8; }
+
+.studio-metro-block.lvl-a.on {
+  opacity: 1;
+  background: #f59e0b;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+}
+
+.studio-metro-block.lvl-b.on {
+  opacity: 1;
+  background: #eab308;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.42);
+}
+
+.studio-metro-block.lvl-c.on {
+  opacity: 1;
+  background: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.38);
+}
+
+/* 5-wierszowy sekwencer perkusji dla gitarzystów */
+.studio-drum-seq {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 2px 4px;
+}
+
+.studio-drum-seq-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.studio-drum-seq-head,
+.studio-drum-seq-row {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.studio-drum-seq-pad-spacer {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding-left: 4px;
+}
+
+.studio-drum-seq-row .studio-drum-pad {
+  padding: 5px 8px;
+  font-size: 11.5px;
+  border-radius: 7px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-drum-seq-steps {
+  display: grid;
+  gap: 4px;
+  align-items: center;
+}
+
+.studio-drum-seq-colnum {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  padding: 2px 0;
+  border-radius: 4px;
+}
+
+.studio-drum-seq-colnum.beat-start {
+  color: var(--text);
+}
+
+.studio-drum-seq-colnum.playing-step {
+  background: rgba(34, 197, 94, 0.18);
+  color: #22c55e;
+}
+
+.studio-drum-cell {
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.08s ease, background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.studio-drum-cell.beat-start {
+  border-left: 2px solid rgba(255, 255, 255, 0.24);
+}
+
+.studio-drum-cell:hover {
+  border-color: var(--lane-col, var(--accent));
+}
+
+.studio-drum-cell.lvl-1 {
+  border-color: var(--lane-col, var(--accent));
+  background: color-mix(in srgb, var(--lane-col, #f59e0b) 22%, transparent);
+  color: var(--text);
+}
+
+.studio-drum-cell.lvl-2 {
+  border-color: var(--lane-col, var(--accent));
+  background: color-mix(in srgb, var(--lane-col, #f59e0b) 58%, transparent);
+  color: #14100d;
+}
+
+.studio-drum-cell.lvl-3 {
+  border-color: var(--lane-col, var(--accent));
+  background: var(--lane-col, #f59e0b);
+  color: #14100d;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--lane-col, #f59e0b) 55%, transparent);
+}
+
+.studio-drum-cell.playing-step {
+  outline: 2px solid #22c55e;
+  outline-offset: -1px;
+}

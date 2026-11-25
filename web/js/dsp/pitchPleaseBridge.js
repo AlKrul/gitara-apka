@@ -147,10 +147,11 @@ export class GuitarEventTracker {
     if (!this.autoAdapt) {
       return { lowOn: this.thresholdOn, highOn: this.highThresholdOn };
     }
+    const lowCap = Math.max(0.68, this.thresholdOn);
     const lowOn = (this.adaptLowFrames >= 6)
       ? Math.max(
           Math.max(0.42, this.thresholdOn - 0.12),
-          Math.min(Math.min(0.68, this.thresholdOn + 0.06), this.emaLowPeak * 0.68)
+          Math.min(Math.min(lowCap, this.thresholdOn + 0.06), this.emaLowPeak * 0.68)
         )
       : this.thresholdOn;
     const highOn = (this.adaptHighFrames >= 6)
@@ -160,6 +161,22 @@ export class GuitarEventTracker {
         )
       : Math.min(lowOn - 0.06, this.highThresholdOn);
     return { lowOn, highOn };
+  }
+
+  getConfig() {
+    return {
+      minMidi: this.minMidi,
+      maxMidi: this.maxMidi,
+      a4Hz: this.a4Hz,
+      thresholdOn: this.thresholdOn,
+      highThresholdOn: this.highThresholdOn,
+      thresholdOff: this.thresholdOff,
+      noiseGateRms: this.noiseGateRms,
+      maxActiveNotes: this.maxActiveNotes,
+      retriggerCooldownMs: this.retriggerCooldownMs,
+      enableThinHybridBoost: this.enableThinHybridBoost,
+      autoAdapt: this.autoAdapt
+    };
   }
 
   /**
@@ -633,6 +650,7 @@ export function createGuitarPitchDetector(options = {}) {
           maxGuitarProb: res.maxGuitarProb,
           maxLowProb: res.maxLowProb,
           maxHighProb: res.maxHighProb,
+          frameTimeSec: (frame && typeof frame.time === 'number') ? frame.time : null,
           frame
         });
       }
@@ -756,6 +774,13 @@ export function createGuitarPitchDetector(options = {}) {
         tracker.updateConfig({ enableThinHybridBoost: ampPreEqEnabled });
       }
       tracker.updateConfig(cfg);
+    },
+
+    getConfig() {
+      return {
+        ...tracker.getConfig(),
+        ampPreEq: ampPreEqEnabled
+      };
     },
 
     getLatestPcm() {

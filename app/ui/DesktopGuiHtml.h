@@ -8,7 +8,9 @@ inline constexpr const char* kDesktopGuiHtml = R"HTML(<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apka Gitarowa – Studio Treningowe (A–G)</title>
+<link rel="stylesheet" href="/web/css/studio.css">
 <script type="module" src="/web/js/dsp/guitarDspEngine.js"></script>
+<script type="module" src="/web/js/studio/studioView.js"></script>
 <style>
 :root {
   --bg-main: #110e0c;
@@ -2298,6 +2300,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {
   <aside class="sidebar">
     <div id="brandTitle" class="brand">🎸 Apka Gitarowa</div>
     <button id="navPracticeBtn" class="nav-btn active" onclick="switchMainView('practice', this)">🎵 Praktyka</button>
+    <button id="navStudioBtn" class="nav-btn" onclick="switchMainView('studio', this)">🎼 Studio TAB</button>
     <button id="navEarBtn" class="nav-btn" onclick="switchMainView('ear', this)">👂 Kształcenie słuchu</button>
     <button id="navChangesBtn" class="nav-btn" onclick="switchMainView('changes', this)">🔄 Zmiany</button>
     <button id="navWorkshopBtn" class="nav-btn" onclick="switchMainView('workshop', this)">🛠️ Warsztat</button>
@@ -4983,6 +4986,7 @@ function applyUiLanguage() {
   };
   setTxt('brandTitle', '🎸 Apka Gitarowa', '🎸 Guitar Studio');
   setTxt('navPracticeBtn', '🎵 Praktyka', '🎵 Practice');
+  setTxt('navStudioBtn', '🎼 Studio TAB', '🎼 TAB Studio');
   setTxt('navEarBtn', '👂 Kształcenie słuchu', '👂 Ear Training');
   setTxt('navChangesBtn', '🔄 Zmiany', '🔄 Changes');
   setTxt('navWorkshopBtn', '🛠️ Warsztat', '🛠️ Workshop');
@@ -5334,9 +5338,13 @@ async function toggleLiveAudio() {
         onError: (err) => {
           console.warn('[PitchPlease]', err);
         },
-        onFrame: ({ events, activeNotes, chord }) => {
+        onFrame: ({ events, activeNotes, chord, rms, frameTimeSec, frame }) => {
           if (!micStream || livePitchPleaseDetector !== ppDetector) return;
           if (state.mainView === 'tuner') return; // Stroik ma własną, sub-centową pętlę MPM
+          if (state.mainView === 'studio' && window.StudioTab && typeof window.StudioTab.onPitchFrame === 'function') {
+            window.StudioTab.onPitchFrame({ events, activeNotes, chord, rms, frameTimeSec, frame });
+            return;
+          }
 
           const noteNames = getRootLabels();
           const a4 = state.a4ReferenceHz || 440;
@@ -5447,6 +5455,9 @@ async function toggleLiveAudio() {
       const started = await ppDetector.start(micStream, ctx);
       if (started && micStream) {
         livePitchPleaseDetector = ppDetector;
+        if (state.mainView === 'studio' && window.StudioTab && typeof window.StudioTab.onDetectorReady === 'function') {
+          window.StudioTab.onDetectorReady(ppDetector);
+        }
         syncMicButtonsUi(true);
         const stEl = document.getElementById('micStatusText');
         if (stEl) stEl.textContent = `Aktywne · WASM (${chosenModel})`;
@@ -7868,6 +7879,9 @@ function switchMainView(view, btn) {
   if (view !== 'changes' && typeof stopChangesPlayback === 'function' && state.changesIsPlaying) {
     stopChangesPlayback();
   }
+  if (view !== 'studio' && window.StudioTab && typeof window.StudioTab.stopPlayback === 'function') {
+    window.StudioTab.stopPlayback();
+  }
   if (view === 'settings' && state.mainView !== 'settings') {
     state.settingsReturnView = { mainView: state.mainView, subtab: state.subtab };
   } else if (view !== 'settings') {
@@ -7886,6 +7900,7 @@ function switchMainView(view, btn) {
     subtabs.style.display = 'none';
     title.style.display = 'block';
     const titles = {
+      studio: t('🎼 Studio TAB', '🎼 TAB Studio'),
       tuner: t('← Stroik (Tuner)', '← Tuner'),
       ear: t('Kształcenie słuchu', 'Ear Training'),
       changes: t('Zmiany i Progresje', 'Changes & Progressions'),
@@ -8665,6 +8680,15 @@ async function renderStageAndInspector() {
   const stage = document.getElementById('dynamicStagePanel');
   const insp = document.getElementById('rightInspector');
   if (!state.initData) return;
+
+  if (state.mainView === 'studio') {
+    if (window.StudioTab && typeof window.StudioTab.render === 'function') {
+      window.StudioTab.render(stage, insp);
+    } else {
+      stage.innerHTML = '<div style="padding:24px;color:var(--text-muted);">Ładowanie modułu 🎼 Studio TAB...</div>';
+    }
+    return;
+  }
 
   // =========================================================================
   // WIDOK: STROIK (TUNER) — BEZ GRYFU, PÓŁKOLISTY ZEGAR + 6 STRUN (Screenshot 5)
@@ -10374,7 +10398,10 @@ async function renderStageAndInspector() {
       ${buildCircleOfFifthsPanel()}
       <div style="display:flex;justify-content:space-between;align-items:center;margin:${state.chordShowCircle ? '12px' : '0'} 0 4px;flex-wrap:wrap;gap:8px;">
         <span class="section-label" style="margin:0;">CHWYTY (${state.chordVoicingsList.length})${capoFret > 0 ? ` · KAPODASTER PRÓG ${capoFret}` : ''}</span>
-        ${capoFret > 0 ? `<span style="font-size:11.5px;color:var(--accent);font-weight:700;">Brzmi: ${rootLabels[state.rootPc]} · Kształt przy kapodastrze: ${capoRelRootLbl} (progi fizyczne ${capoFret}–24)</span>` : ''}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${capoFret > 0 ? `<span style="font-size:11.5px;color:var(--accent);font-weight:700;">Brzmi: ${rootLabels[state.rootPc]} · Kształt przy kapodastrze: ${capoRelRootLbl} (progi fizyczne ${capoFret}–24)</span>` : ''}
+          <button class="chip-btn" style="padding:4px 10px;font-size:11.5px;border-color:var(--accent);color:var(--accent);" onclick="sendSelectedChordToStudioTab()" title="Wyślij zaznaczony chwyt do Studio TAB">🎼 Do Studia TAB</button>
+        </div>
       </div>
       <div class="chord-cards-grid">
         ${state.chordVoicingsList.map((v, idx) => {
@@ -10962,6 +10989,10 @@ async function renderStageAndInspector() {
                     onclick="sendArpeggioToExerciseTab()" title="Przenieś sekwencję do Edytora Ćwiczeń (ćwiczenie z mikrofonem i eksport GP5/MIDI)">
               ✏️ Ćwicz w TAB / GP5
             </button>
+            <button class="chip-btn" style="padding:6px 11px;font-size:12px;border-color:var(--accent);color:var(--accent);"
+                    onclick="sendArpeggioToStudioTab()" title="Wyślij arpeggio / sweep do wielościeżkowego Studio TAB">
+              🎼 Do Studia TAB
+            </button>
           </div>
         </div>
 
@@ -11047,6 +11078,10 @@ async function renderStageAndInspector() {
                 <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;border-color:var(--accent);color:var(--accent);"
                         onclick="sendSweepCompositionToExerciseTab()">
                   ✏️ Ćwicz kompozycję w TAB / GP5
+                </button>
+                <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;border-color:var(--accent);color:var(--accent);"
+                        onclick="sendSweepCompositionToStudioTab()">
+                  🎼 Do Studia TAB
                 </button>
                 <button class="chip-btn" style="padding:5px 9px;font-size:11px;color:#f87171;border-color:#7f1d1d;"
                         onclick="clearSweepComposition()">
@@ -14136,6 +14171,91 @@ function sendSweepCompositionToExerciseTab() {
   exportStepsToExerciseTab(steps, title);
 }
 
+function sendStepsToStudioTab(rawSteps, title, bpm = 120) {
+  if (!window.StudioTab || typeof window.StudioTab.importSteps !== 'function') return;
+  const steps = (rawSteps || []).map(st => ({
+    notes: [{
+      string: st.s,
+      fret: st.f,
+      hammerOn: st.tech === 'H' || st.tech === 'P' || st.tech === 'Hammer-on' || st.tech === 'Pull-off',
+      slide: st.tech === 'S' || st.tech === 'Slide',
+      tapped: Boolean(st.tapped)
+    }],
+    duration: st.duration ?? 2,
+    chordSymbol: st.chordSymbol || ''
+  }));
+  if (!steps.length) return;
+  window.StudioTab.importSteps(steps, { title, bpm, tuningMidis: state.customStringMidis, replaceSong: true });
+  switchMainView('studio');
+}
+
+function sendSelectedChordToStudioTab() {
+  const list = state.chordVoicingsList || [];
+  const v = list[state.selectedChordVoicingIdx || 0] || list[0];
+  if (!v || !Array.isArray(v.frets) || !window.StudioTab) return;
+  const notes = [];
+  v.frets.forEach((f, s) => {
+    if (f >= 0) notes.push({ string: s, fret: f, tapped: Boolean(v.tapped && v.tapped[s]) });
+  });
+  window.StudioTab.importSteps([{ notes, duration: -2, chordSymbol: v.symbol || '' }], {
+    title: `Akord ${v.symbol || ''}`,
+    bpm: 100,
+    tuningMidis: state.customStringMidis,
+    replaceSong: true
+  });
+  switchMainView('studio');
+}
+
+function sendArpeggioToStudioTab() {
+  stopArpeggioPlayback(false);
+  const title = (isSweepTransitionActive() && state.arpData && state.arpData.transition)
+    ? state.arpData.transition.name
+    : `${state.subtab === 'sweep' ? 'Sweep' : 'Arpeggio'} ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
+  sendStepsToStudioTab(getActiveArpeggioSteps(), title, state.arpBpm || 110);
+}
+
+function sendSweepCompositionToStudioTab() {
+  stopArpeggioPlayback(false);
+  const list = Array.isArray(state.sweepComposition) ? state.sweepComposition : [];
+  if (!list.length) return;
+  sendStepsToStudioTab(getSweepCompositionSteps(), `Kompozycja Sweep (${list.map(c => c.symbol).join(' → ')})`, state.arpBpm || 110);
+}
+
+function sendChangesProgressionToStudioTab() {
+  if (!window.StudioTab || typeof window.StudioTab.importChordProgression !== 'function') return;
+  const parts = String(state.changesTimeSig || '4/4').split('/');
+  const num = parseInt(parts[0], 10) || 4;
+  const den = parseInt(parts[1], 10) || 4;
+  const openMidis = state.customStringMidis || [40, 45, 50, 55, 59, 64];
+  const chords = [];
+  for (const bar of (state.changesMeasures || [])) {
+    const beats = bar.beats || [];
+    for (let bt = 0; bt < num; bt++) {
+      const slot = beats[bt] || (bt === 0 ? getEffectiveChangesSlot(bar, 0) : null);
+      if (!slot) continue;
+      const ch = resolveChangesSlot(slot);
+      if (!ch) continue;
+      const frets = openMidis.map((om, sIdx) => {
+        if (sIdx === 0 && ch.rootPc !== ((om) % 12)) {
+          for (let f = 0; f <= 11; f++) if ((om + f) % 12 === ch.rootPc) return f;
+        }
+        for (let f = 0; f <= 5; f++) if (ch.pcs.includes((om + f) % 12)) return f;
+        return -1;
+      });
+      chords.push({ symbol: ch.symbol, frets, duration: 0 });
+    }
+  }
+  const activeProg = getChangesProgressionsList()[state.selectedProgressionIdx || 0];
+  window.StudioTab.importChordProgression(chords, {
+    title: activeProg ? activeProg.title : 'Progresja akordów',
+    bpm: state.changesBpm || 110,
+    numerator: num,
+    denominator: den,
+    tuningMidis: openMidis
+  });
+  switchMainView('studio');
+}
+
 let saveSettingsDiskTimer = null;
 
 function saveSettings() {
@@ -14291,7 +14411,8 @@ function saveSettings() {
       dspAmpPreEq: state.dspAmpPreEq !== false,
       dspNoiseGateRms: state.dspNoiseGateRms,
       dspCalibrated: !!state.dspCalibrated,
-      dspDefaultsV2: !!state.dspDefaultsV2
+      dspDefaultsV2: !!state.dspDefaultsV2,
+      studioPrefs: state.studioPrefs || null
     };
     const jsonStr = JSON.stringify(payload);
     localStorage.setItem('apka_gitara_settings_v1', jsonStr);
@@ -16185,8 +16306,12 @@ function renderChangesView(stage, insp) {
             ${activeProg.style || state.changesFeel} · ${barCount} taktów
           </span>
         </div>
-        <button class="chip-btn" style="padding:6px 12px;font-size:12px;"
-                onclick="window.location.href='/api/export/progression_gp5?id=${activeProg.id}&keyRootPc=${state.changesKeyRootPc}&bpm=${state.changesBpm}'">💾 Eksport .GP5</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="chip-btn" style="padding:6px 12px;font-size:12px;border-color:var(--accent);color:var(--accent);"
+                  onclick="sendChangesProgressionToStudioTab()">🎼 Do Studia TAB</button>
+          <button class="chip-btn" style="padding:6px 12px;font-size:12px;"
+                  onclick="window.location.href='/api/export/progression_gp5?id=${activeProg.id}&keyRootPc=${state.changesKeyRootPc}&bpm=${state.changesBpm}'">💾 Eksport .GP5</button>
+        </div>
       </div>
 
       <!-- Karta odtwarzacza -->
@@ -18883,6 +19008,12 @@ function shiftMidiOctave(delta) {
 }
 
 function handleMidiNoteSideEffects(midi) {
+  if (state.mainView === 'studio') {
+    if (window.StudioTab && typeof window.StudioTab.onMidiNote === 'function') {
+      window.StudioTab.onMidiNote(midi);
+    }
+    return;
+  }
   state.detectedMidi = midi;
   state.selectedScaleNotePc = ((Math.round(midi) % 12) + 12) % 12;
   drawFretboard();
@@ -18959,7 +19090,11 @@ function toggleMidiFocus() {
 }
 
 window.addEventListener('keydown', e => {
-  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+  if (state.mainView === 'studio') {
+    if (window.StudioTab && typeof window.StudioTab.handleKeyDown === 'function') window.StudioTab.handleKeyDown(e);
+    return;
+  }
   if (!state.midiFocused || e.repeat) return;
   const key = e.key.toLowerCase();
   if (key === 'z') { e.preventDefault(); shiftMidiOctave(-1); return; }
@@ -18979,6 +19114,7 @@ window.addEventListener('keydown', e => {
 });
 
 window.addEventListener('keyup', e => {
+  if (state.mainView === 'studio') return;
   if (!state.midiFocused) return;
   const key = e.key.toLowerCase();
   if (qwertyOffsets[key] !== undefined) {
@@ -18995,6 +19131,29 @@ window.addEventListener('keyup', e => {
     }
   }
 });
+
+window.__gitaraStudioHost = {
+  getState: () => state,
+  getDetector: () => livePitchPleaseDetector,
+  getMicDetector: () => livePitchPleaseDetector,
+  getMicStream: () => micStream,
+  ensureMicActive: async () => {
+    if (!micStream && typeof toggleLiveAudio === 'function') await toggleLiveAudio();
+    return Boolean(micStream && livePitchPleaseDetector);
+  },
+  saveSettings: () => saveSettings(),
+  ensureAudioCtx: () => ensureAudioCtx(),
+  getMasterAudioOut: () => getMasterAudioOut(),
+  pluckGuitarFrequency: (...args) => pluckGuitarFrequency(...args),
+  playHarmonicBellFrequency: (...args) => playHarmonicBellFrequency(...args),
+  playKeyboardPresetNote: (...args) => playKeyboardPresetNote(...args),
+  playDrumHit: (...args) => playDrumHit(...args),
+  playMetronomeTickAudio: (...args) => playMetronomeTickAudio(...args),
+  midiToFreq: (m) => midiToFreq(m),
+  getRootLabels: () => getRootLabels(),
+  fetchJson: (u) => fetchJson(u),
+  t: (pl, en) => t(pl, en)
+};
 </script>
 </body>
 </html>

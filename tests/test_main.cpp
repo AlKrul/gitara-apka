@@ -10,6 +10,7 @@
 #include "gitara/engine/SessionManager.h"
 #include "gitara/engine/WorkshopGenerator.h"
 #include "gitara/score/Score.h"
+#include "gitara/score/StudioJsonCodec.h"
 #include "gitara/theory/Arpeggio.h"
 #include "gitara/theory/Chord.h"
 #include "gitara/theory/Fretboard.h"
@@ -428,6 +429,130 @@ void testScoreTabRecorderAndTuxGuitarExport() {
     CHECK(gp5Bytes[0] == 24);
     std::string header(reinterpret_cast<const char*>(gp5Bytes.data() + 1), 24);
     CHECK(header == "FICHIER GUITAR PRO v5.00");
+}
+
+void testStudioJsonCodecAndGp5V2() {
+    using namespace gitara::score;
+
+    const std::string json = R"JSON({
+      "title": "Neon Studio Test",
+      "artist": "Test Band",
+      "album": "Studio V2",
+      "tempoBpm": 132,
+      "keyRootPc": 4,
+      "keyIsMinor": true,
+      "tracks": [
+        {
+          "name": "Gitara Lead",
+          "instrumentType": "guitar",
+          "isPercussion": false,
+          "openStringMidis": [40, 45, 50, 55, 59, 64],
+          "capo": 2,
+          "midiChannel": 0,
+          "midiProgram": 29,
+          "measures": [
+            {
+              "numerator": 4,
+              "denominator": 4,
+              "repeatOpen": true,
+              "repeatClose": 2,
+              "voltaMask": 1,
+              "sectionMarker": "Refren",
+              "tripletFeel": 0,
+              "beats": [
+                {
+                  "duration": 0,
+                  "dots": 0,
+                  "isRest": false,
+                  "chordSymbol": "Em",
+                  "notes": [
+                    {
+                      "string": 2,
+                      "fret": 7,
+                      "velocity": 110,
+                      "hammerOn": true,
+                      "palmMute": true,
+                      "harmonicType": 1,
+                      "slideType": "legato",
+                      "bendPoints": [
+                        {"position": 0, "value": 0, "vibrato": false},
+                        {"position": 30, "value": 100, "vibrato": true},
+                        {"position": 60, "value": 100, "vibrato": true}
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Perkusja GM",
+          "instrumentType": "drums",
+          "isPercussion": true,
+          "midiChannel": 9,
+          "measures": [
+            {
+              "numerator": 4,
+              "denominator": 4,
+              "beats": [
+                {
+                  "duration": 0,
+                  "isRest": false,
+                  "notes": [
+                    {"string": 0, "fret": 36, "velocity": 120},
+                    {"string": 1, "fret": 38, "velocity": 105}
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    })JSON";
+
+    Song song{};
+    std::string err;
+    CHECK(parseStudioSongJson(json, song, &err));
+    CHECK(err.empty());
+    CHECK(song.title == "Neon Studio Test");
+    CHECK(song.tempoBpm == 132);
+    CHECK(song.tracks.size() == 2);
+    CHECK(song.tracks[0].capo == 2);
+    CHECK(song.tracks[0].measures[0].repeatOpen);
+    CHECK(song.tracks[0].measures[0].repeatClose == 2);
+    CHECK(song.tracks[0].measures[0].voltaMask == 1);
+    CHECK(song.tracks[0].measures[0].sectionMarker == "Refren");
+    CHECK(song.tracks[0].measures[0].beats[0].notes[0].bendPoints.size() == 3);
+    CHECK(song.tracks[1].isPercussion);
+    CHECK(song.tracks[1].measures[0].beats[0].notes[0].fret == 36);
+
+    const auto gp5 = exportToGp5Bytes(song);
+    CHECK(gp5.size() > 512);
+    CHECK(std::string(reinterpret_cast<const char*>(gp5.data() + 1), 24) == "FICHIER GUITAR PRO v5.00");
+    std::string gp5AsText(reinterpret_cast<const char*>(gp5.data()), gp5.size());
+    CHECK(gp5AsText.find("Refren") != std::string::npos);
+    // Sprawdzamy, że MIDI bębnów (36/38) w perkusji GP5 nie zostały ucięte do 24
+    CHECK(std::find(gp5.begin(), gp5.end(), static_cast<std::uint8_t>(36)) != gp5.end());
+    CHECK(std::find(gp5.begin(), gp5.end(), static_cast<std::uint8_t>(38)) != gp5.end());
+
+    const auto mid = exportToMidiBytes(song);
+    CHECK(mid.size() > 64);
+    CHECK(mid[0] == 'M' && mid[1] == 'T' && mid[2] == 'h' && mid[3] == 'd');
+    // Kanał 10 perkusji (0x99) + Kick 36 (50+2 dla gitary w kanale 0 => 52 + capo 2 => fret 7 na D3=50 => 59)
+    bool hasDrumCh10Kick = false;
+    bool hasKeySigMeta = false;
+    for (std::size_t i = 0; i + 2 < mid.size(); ++i) {
+        if (mid[i] == 0x99 && mid[i + 1] == 36) hasDrumCh10Kick = true;
+        if (mid[i] == 0xFF && mid[i + 1] == 0x59 && mid[i + 2] == 0x02) hasKeySigMeta = true;
+    }
+    CHECK(hasDrumCh10Kick);
+    CHECK(hasKeySigMeta);
+
+    Song bad{};
+    std::string badErr;
+    CHECK(!parseStudioSongJson("{broken", bad, &badErr));
+    CHECK(!badErr.empty());
 }
 
 void testExerciseVerifierAndMetronome() {
@@ -1051,6 +1176,7 @@ int main() {
     testDspPitchChordAndSynth();
     testGuitarNoteEngineCqtFluxHpsAndSustain();
     testScoreTabRecorderAndTuxGuitarExport();
+    testStudioJsonCodecAndGp5V2();
     testExerciseVerifierAndMetronome();
     testArpeggioWorkshopEarTrainerProgressionsAndSessions();
 

@@ -8,8 +8,11 @@ namespace gitara::score {
 
 double Beat::quarterNoteLength() const noexcept {
     double base = std::pow(2.0, -static_cast<int>(duration));
-    if (dotted) {
+    const int effDots = (dots > 0) ? dots : (dotted ? 1 : 0);
+    if (effDots == 1) {
         base *= 1.5;
+    } else if (effDots >= 2) {
+        base *= 1.75;
     }
     if (tupletNumerator > 0 && tupletDenominator > 0) {
         base *= static_cast<double>(tupletDenominator) / static_cast<double>(tupletNumerator);
@@ -295,12 +298,35 @@ std::vector<std::uint8_t> exportToMidiBytes(const Song& song) {
         if (tIdx < song.tracks.size()) {
             const auto& track = song.tracks[tIdx];
             gitara::theory::Fretboard fb{track.tuning};
-            std::uint8_t ch = static_cast<std::uint8_t>(track.midiChannel & 0x0F);
+            const std::uint8_t ch = track.isPercussion
+                ? static_cast<std::uint8_t>(9)
+                : static_cast<std::uint8_t>(track.midiChannel & 0x0F);
+
+            // Key Signature w ścieżce 0
+            if (tIdx == 0) {
+                static constexpr int kMajorFifths[12] = {0, -5, 2, -3, 4, -1, 6, 1, -4, 3, -2, 5};
+                static constexpr int kMinorFifths[12] = {-3, 4, -1, 6, 1, -4, 3, -2, 5, 0, -5, 2};
+                int pc = ((song.keyRootPc % 12) + 12) % 12;
+                int sf = song.keyIsMinor ? kMinorFifths[pc] : kMajorFifths[pc];
+                writeVariableLength(trk, 0);
+                trk.push_back(0xFF);
+                trk.push_back(0x59);
+                trk.push_back(0x02);
+                trk.push_back(static_cast<std::uint8_t>(static_cast<std::int8_t>(sf)));
+                trk.push_back(song.keyIsMinor ? 1 : 0);
+            }
 
             // Program Change
             writeVariableLength(trk, 0);
             trk.push_back(static_cast<std::uint8_t>(0xC0u | ch));
-            trk.push_back(static_cast<std::uint8_t>(track.midiProgram & 0x7Fu));
+            trk.push_back(static_cast<std::uint8_t>(track.isPercussion ? 0 : (track.midiProgram & 0x7Fu)));
+
+            auto resolveNoteMidi = [&](const TabNote& n) -> int {
+                if (track.isPercussion || track.tuning.stringCount() <= 0) {
+                    return std::clamp(n.fret, 0, 127);
+                }
+                return std::clamp(fb.midiAt(n.stringIndex, n.fret) + track.capo, 0, 127);
+            };
 
             std::uint32_t restAccumulatorTicks = 0;
             for (const auto& m : track.measures) {
@@ -315,7 +341,7 @@ std::vector<std::uint8_t> exportToMidiBytes(const Song& song) {
                     // Note On dla wszystkich nut uderzenia
                     for (std::size_t nIdx = 0; nIdx < b.notes.size(); ++nIdx) {
                         const auto& n = b.notes[nIdx];
-                        int midi = std::clamp(fb.midiAt(n.stringIndex, n.fret), 0, 127);
+                        int midi = resolveNoteMidi(n);
                         writeVariableLength(trk, (nIdx == 0) ? restAccumulatorTicks : 0u);
                         restAccumulatorTicks = 0;
                         trk.push_back(static_cast<std::uint8_t>(0x90u | ch));
@@ -326,7 +352,7 @@ std::vector<std::uint8_t> exportToMidiBytes(const Song& song) {
                     // Note Off po czasie trwania uderzenia
                     for (std::size_t nIdx = 0; nIdx < b.notes.size(); ++nIdx) {
                         const auto& n = b.notes[nIdx];
-                        int midi = std::clamp(fb.midiAt(n.stringIndex, n.fret), 0, 127);
+                        int midi = resolveNoteMidi(n);
                         writeVariableLength(trk, (nIdx == 0) ? beatTicks : 0u);
                         trk.push_back(static_cast<std::uint8_t>(0x80u | ch));
                         trk.push_back(static_cast<std::uint8_t>(midi));
@@ -361,7 +387,7 @@ std::vector<std::uint8_t> exportToGp5Bytes(const Song& song) {
     writeGpIntByteSizeString(buf, song.title);
     writeGpIntByteSizeString(buf, "");
     writeGpIntByteSizeString(buf, song.artist);
-    writeGpIntByteSizeString(buf, "");
+    writeGpIntByteSizeString(buf, song.album);
     writeGpIntByteSizeString(buf, "");
     writeGpIntByteSizeString(buf, song.artist);
     writeGpIntByteSizeString(buf, "");
@@ -397,7 +423,21 @@ std::vector<std::uint8_t> exportToGp5Bytes(const Song& song) {
 
     // 5. 64 kanały MIDI (po 12 bajtów każdy: instrument, vol, bal, chorus, reverb, phaser, tremolo, 2x blank)
     for (int ch = 0; ch < 64; ++ch) {
-        writeLE32(buf, (ch == 0 && !song.tracks.empty()) ? song.tracks.front().midiProgram : 24);
+        int prog = 24;
+        if (ch == 9) {
+            prog = 0;
+        } else {
+            for (const auto& tr : song.tracks) {
+                if (!tr.isPercussion && (tr.midiChannel & 0x0F) == (ch & 0x0F)) {
+                    prog = std::clamp(tr.midiProgram, 0, 127);
+                    break;
+                }
+            }
+            if (prog == 24 && ch == 0 && !song.tracks.empty() && !song.tracks.front().isPercussion) {
+                prog = std::clamp(song.tracks.front().midiProgram, 0, 127);
+            }
+        }
+        writeLE32(buf, prog);
         buf.push_back(13); // Volume
         buf.push_back(8);  // Balance
         buf.push_back(0);  // Chorus
@@ -413,69 +453,104 @@ std::vector<std::uint8_t> exportToGp5Bytes(const Song& song) {
     writeLE32(buf, 0);
 
     const std::size_t numTracks = std::max<std::size_t>(1, song.tracks.size());
-    const std::size_t numMeasures =
-        (!song.tracks.empty() && !song.tracks.front().measures.empty())
-            ? song.tracks.front().measures.size()
-            : 1;
+    std::size_t numMeasures = 1;
+    for (const auto& tr : song.tracks) {
+        numMeasures = std::max(numMeasures, tr.measures.size());
+    }
 
     writeLE32(buf, static_cast<std::int32_t>(numMeasures));
     writeLE32(buf, static_cast<std::int32_t>(numTracks));
 
-    // 6. Nagłówki taktów (Measure Headers)
+    // 6. Nagłówki taktów (Measure Headers GP5 v2: metrum, repetycje, markery, volty, podział triolowy)
+    int prevNum = 4;
+    int prevDen = 4;
     for (std::size_t mIdx = 0; mIdx < numMeasures; ++mIdx) {
         if (mIdx > 0) buf.push_back(0); // Blank byte przed kolejnymi nagłówkami taktów w GP5
-        int num = 4;
-        int den = 4;
+        Measure refM{};
         if (!song.tracks.empty() && mIdx < song.tracks.front().measures.size()) {
-            num = song.tracks.front().measures[mIdx].numerator;
-            den = song.tracks.front().measures[mIdx].denominator;
+            refM = song.tracks.front().measures[mIdx];
         }
-        std::uint8_t flags = (mIdx == 0) ? 0x03u : 0x00u; // Licznik + mianownik w 1. takcie
+        const int num = std::clamp(refM.numerator, 1, 32);
+        const int den = std::clamp(refM.denominator, 1, 16);
+
+        std::uint8_t flags = 0;
+        if (mIdx == 0 || num != prevNum) flags |= 0x01u;
+        if (mIdx == 0 || den != prevDen) flags |= 0x02u;
+        if (refM.repeatOpen) flags |= 0x04u;
+        if (refM.repeatClose > 0) flags |= 0x08u;
+        if (refM.voltaMask > 0) flags |= 0x10u;
+        if (!refM.sectionMarker.empty()) flags |= 0x20u;
+        if (refM.isDoubleBar) flags |= 0x80u;
+
+        prevNum = num;
+        prevDen = den;
+
         buf.push_back(flags);
         if (flags & 0x01u) buf.push_back(static_cast<std::uint8_t>(num));
         if (flags & 0x02u) buf.push_back(static_cast<std::uint8_t>(den));
-        // Beams (4 bajty) + placeholder + tripletFeel
-        buf.insert(buf.end(), {2, 2, 2, 2, 0, 0});
+        if (flags & 0x08u) buf.push_back(static_cast<std::uint8_t>(std::clamp(refM.repeatClose, 1, 99)));
+        if (flags & 0x20u) {
+            writeGpIntByteSizeString(buf, refM.sectionMarker);
+            buf.push_back(0xFFu); // R
+            buf.push_back(0x80u); // G
+            buf.push_back(0x00u); // B
+            buf.push_back(0x00u); // 0
+        }
+        if (flags & 0x10u) {
+            buf.push_back(static_cast<std::uint8_t>(refM.voltaMask & 0xFFu));
+        }
+        if (flags & 0x03u) {
+            buf.insert(buf.end(), {2, 2, 2, 2});
+        }
+        if (!(flags & 0x10u)) {
+            buf.push_back(0);
+        }
+        buf.push_back(static_cast<std::uint8_t>(std::clamp(refM.tripletFeel, 0, 3)));
     }
 
-    // 7. Nagłówki ścieżek (Tracks) z dokładnym strojem strun (od najwyższej E4 do najniższej E2 wg GP5)
+    // 7. Nagłówki ścieżek (Tracks) z flagą perkusji (Flags1=0x01), kanałem 10 i kapodastrem
     for (std::size_t tIdx = 0; tIdx < numTracks; ++tIdx) {
-        buf.push_back(0); // Flags1
-        std::string tName = (tIdx < song.tracks.size()) ? song.tracks[tIdx].name : "Gitara";
+        const Track* trPtr = (tIdx < song.tracks.size()) ? &song.tracks[tIdx] : nullptr;
+        const bool isPerc = trPtr ? trPtr->isPercussion : false;
+        buf.push_back(isPerc ? 0x01u : 0x00u); // Flags1 (bit 0 = percussion)
+        std::string tName = trPtr ? trPtr->name : "Gitara";
         writeGpFixedString(buf, tName, 40);
 
-        gitara::theory::Tuning tuning = (tIdx < song.tracks.size())
-            ? song.tracks[tIdx].tuning
+        gitara::theory::Tuning tuning = trPtr
+            ? trPtr->tuning
             : gitara::theory::findTuning("standard");
-        writeLE32(buf, tuning.stringCount());
-        // W GP5 struny są zapisywane od 1. (najcieńszej, np. E4 = 64) do 7.
+        const int stringCount = isPerc ? 6 : std::clamp(tuning.stringCount(), 1, 7);
+        writeLE32(buf, stringCount);
         for (int i = 0; i < 7; ++i) {
-            int revIdx = tuning.stringCount() - 1 - i;
-            int midi = (revIdx >= 0 && revIdx < tuning.stringCount())
-                ? tuning.openStrings[static_cast<std::size_t>(revIdx)].midiNumber()
-                : 0;
+            int midi = 0;
+            if (!isPerc) {
+                int revIdx = stringCount - 1 - i;
+                if (revIdx >= 0 && revIdx < tuning.stringCount()) {
+                    midi = tuning.openStrings[static_cast<std::size_t>(revIdx)].midiNumber();
+                }
+            }
             writeLE32(buf, midi);
         }
-        writeLE32(buf, 1);  // Port
-        writeLE32(buf, 1);  // Channel
-        writeLE32(buf, 2);  // Effects channel
-        writeLE32(buf, 24); // Frets
-        writeLE32(buf, 0);  // Capo
+        const int gpChan = isPerc ? 10 : (std::clamp(trPtr ? trPtr->midiChannel : static_cast<int>(tIdx), 0, 15) + 1);
+        const int gpFxChan = isPerc ? 10 : (gpChan == 10 ? 11 : std::min(16, gpChan + 1));
+        writeLE32(buf, 1);       // Port
+        writeLE32(buf, gpChan);  // Channel (10 = perkusja GM)
+        writeLE32(buf, gpFxChan);// Effects channel
+        writeLE32(buf, 24);      // Frets
+        writeLE32(buf, isPerc ? 0 : std::clamp(trPtr ? trPtr->capo : 0, 0, 12)); // Capo
         writeLE32(buf, 0x00FF8000); // Color
         for (int i = 0; i < 49; ++i) buf.push_back(0); // RSE padding w GP5.00
     }
 
-    // 8. Zawartość taktów (Measures -> Voices -> Beats -> Notes ze struną i progiem!)
+    // 8. Zawartość taktów (Measures -> Voices -> Beats -> Notes + NoteEffects GP5)
     for (std::size_t mIdx = 0; mIdx < numMeasures; ++mIdx) {
         for (std::size_t tIdx = 0; tIdx < numTracks; ++tIdx) {
-            const Measure* measurePtr = nullptr;
-            int stringCount = 6;
-            if (tIdx < song.tracks.size()) {
-                stringCount = song.tracks[tIdx].tuning.stringCount();
-                if (mIdx < song.tracks[tIdx].measures.size()) {
-                    measurePtr = &song.tracks[tIdx].measures[mIdx];
-                }
-            }
+            const Track* trPtr = (tIdx < song.tracks.size()) ? &song.tracks[tIdx] : nullptr;
+            const bool isPerc = trPtr ? trPtr->isPercussion : false;
+            const Measure* measurePtr = (trPtr && mIdx < trPtr->measures.size()) ? &trPtr->measures[mIdx] : nullptr;
+            const int stringCount = isPerc
+                ? 6
+                : std::clamp(trPtr ? trPtr->tuning.stringCount() : 6, 1, 7);
 
             // Głos 1 (aktywne uderzenia)
             const std::size_t beatCount = (measurePtr && !measurePtr->beats.empty())
@@ -490,8 +565,17 @@ std::vector<std::uint8_t> exportToGp5Bytes(const Song& song) {
                     b = measurePtr->beats[bIdx];
                 }
 
+                std::string combinedText = b.chordSymbol;
+                if (!b.text.empty()) {
+                    if (!combinedText.empty()) combinedText += " ";
+                    combinedText += b.text;
+                }
+                const bool hasBeatEffects = (!b.brushStroke.empty() || b.pickStroke > 0);
+
                 std::uint8_t beatFlags = 0;
-                if (b.dotted) beatFlags |= 0x01u;
+                if (b.dotted || b.dots > 0) beatFlags |= 0x01u;
+                if (!combinedText.empty()) beatFlags |= 0x04u;
+                if (hasBeatEffects) beatFlags |= 0x08u;
                 if (b.tupletNumerator > 0) beatFlags |= 0x20u;
                 if (b.isRest || b.notes.empty()) beatFlags |= 0x40u;
                 buf.push_back(beatFlags);
@@ -503,39 +587,123 @@ std::vector<std::uint8_t> exportToGp5Bytes(const Song& song) {
                 if (beatFlags & 0x20u) {
                     writeLE32(buf, b.tupletNumerator);
                 }
+                if (beatFlags & 0x04u) {
+                    writeGpIntByteSizeString(buf, combinedText);
+                }
+                if (beatFlags & 0x08u) {
+                    const std::uint8_t bFx1 = !b.brushStroke.empty() ? 0x40u : 0x00u;
+                    const std::uint8_t bFx2 = (b.pickStroke > 0) ? 0x02u : 0x00u;
+                    buf.push_back(bFx1);
+                    buf.push_back(bFx2);
+                    if (bFx1 & 0x40u) {
+                        const bool isUp = (b.brushStroke == "up");
+                        buf.push_back(isUp ? 0u : 3u);
+                        buf.push_back(isUp ? 3u : 0u);
+                    }
+                    if (bFx2 & 0x02u) {
+                        buf.push_back(static_cast<std::uint8_t>(std::clamp(b.pickStroke, 1, 2)));
+                    }
+                }
 
-                // Maska bitowa użytych strun (bit 6 = najwyższa struna E4 .. bit 1 = najniższa struna E2)
+                // Maska bitowa użytych strun (perkusja mapuje równoczesne uderzenia na indeksy 0..stringCount-1)
                 std::uint8_t stringBits = 0;
+                std::array<const TabNote*, 7> noteByStr{};
                 if (!b.isRest) {
+                    int nextPercStr = 0;
                     for (const auto& n : b.notes) {
-                        if (n.stringIndex >= 0 && n.stringIndex < stringCount) {
-                            int bitPos = 1 + n.stringIndex; // 0 (E2) -> bit 1, 5 (E4) -> bit 6
+                        int sIdx = isPerc ? nextPercStr++ : n.stringIndex;
+                        if (sIdx >= 0 && sIdx < stringCount && !noteByStr[static_cast<std::size_t>(sIdx)]) {
+                            int bitPos = 1 + sIdx;
                             stringBits |= static_cast<std::uint8_t>(1u << bitPos);
+                            noteByStr[static_cast<std::size_t>(sIdx)] = &n;
                         }
                     }
                 }
                 buf.push_back(stringBits);
 
-                // Zapisz nuty od najwyższej struny (bit 6) do najniższej (bit 1)
                 for (int s = stringCount - 1; s >= 0; --s) {
                     int bitPos = 1 + s;
                     if (!(stringBits & (1u << bitPos))) {
                         continue;
                     }
-                    int fret = 0;
-                    bool tied = false;
-                    for (const auto& n : b.notes) {
-                        if (n.stringIndex == s) {
-                            fret = std::clamp(n.fret, 0, 24);
-                            tied = n.tied;
-                            break;
-                        }
-                    }
-                    buf.push_back(0x20u | 0x10u); // Note flags: ma typ nuty + dynamikę
-                    buf.push_back(tied ? 0x02u : 0x01u); // 1 = normal, 2 = tied
-                    buf.push_back(6); // Dynamic: f (forte)
+                    const TabNote& n = *noteByStr[static_cast<std::size_t>(s)];
+                    const int fret = isPerc
+                        ? std::clamp(n.fret, 0, 127)
+                        : std::clamp(n.fret, 0, 24);
+                    const bool hasSlide = !isPerc && (n.slide || !n.slideType.empty());
+                    const bool hasBend = !isPerc && !n.bendPoints.empty();
+                    const bool hasHarm = !isPerc && n.harmonicType > 0;
+                    const bool hasTrill = !isPerc && n.trill;
+                    const bool hasFx = !isPerc && (
+                        hasBend || n.hammerOn || n.letRing || n.staccato ||
+                        n.palmMute || hasSlide || hasHarm || hasTrill || n.vibrato || n.wideVibrato
+                    );
+
+                    std::uint8_t noteFlags = 0x20u | 0x10u; // typ nuty + dynamika
+                    if (n.heavyAccented) noteFlags |= 0x02u;
+                    if (n.ghostNote) noteFlags |= 0x04u;
+                    if (hasFx) noteFlags |= 0x08u;
+                    if (n.accented) noteFlags |= 0x40u;
+
+                    buf.push_back(noteFlags);
+                    buf.push_back(n.deadNote ? 0x03u : (n.tied ? 0x02u : 0x01u));
+                    buf.push_back(static_cast<std::uint8_t>(std::clamp(b.dynamic, 1, 8)));
                     buf.push_back(static_cast<std::uint8_t>(fret));
                     buf.push_back(0); // Note flags2
+
+                    if (noteFlags & 0x08u) {
+                        std::uint8_t fx1 = 0;
+                        std::uint8_t fx2 = 0;
+                        if (hasBend) fx1 |= 0x01u;
+                        if (n.hammerOn) fx1 |= 0x02u;
+                        if (n.letRing) fx1 |= 0x08u;
+                        if (n.staccato) fx2 |= 0x01u;
+                        if (n.palmMute) fx2 |= 0x02u;
+                        if (hasSlide) fx2 |= 0x08u;
+                        if (hasHarm) fx2 |= 0x10u;
+                        if (hasTrill) fx2 |= 0x20u;
+                        if (n.vibrato || n.wideVibrato) fx2 |= 0x40u;
+
+                        buf.push_back(fx1);
+                        buf.push_back(fx2);
+
+                        if (fx1 & 0x01u) {
+                            int maxVal = 0;
+                            for (const auto& pt : n.bendPoints) {
+                                maxVal = std::max(maxVal, pt.value);
+                            }
+                            buf.push_back(1); // BendType: bend
+                            writeLE32(buf, maxVal);
+                            writeLE32(buf, static_cast<std::int32_t>(n.bendPoints.size()));
+                            for (const auto& pt : n.bendPoints) {
+                                writeLE32(buf, std::clamp(pt.position, 0, 60));
+                                writeLE32(buf, std::clamp(pt.value, -200, 400));
+                                buf.push_back(pt.vibrato ? 1u : 0u);
+                            }
+                        }
+                        if (fx2 & 0x08u) {
+                            std::uint8_t slideBits = 0x01u; // shiftSlideTo
+                            if (n.slideType == "legato") slideBits = 0x02u;
+                            else if (n.slideType == "out_down") slideBits = 0x04u;
+                            else if (n.slideType == "in_below") slideBits = 0x10u;
+                            buf.push_back(slideBits);
+                        }
+                        if (fx2 & 0x10u) {
+                            const std::uint8_t hType = static_cast<std::uint8_t>(std::clamp(n.harmonicType, 1, 5));
+                            buf.push_back(hType);
+                            if (hType == 2) {
+                                buf.push_back(0); // Semitone
+                                buf.push_back(0); // Accidental
+                                buf.push_back(0); // Octave
+                            } else if (hType == 3) {
+                                buf.push_back(static_cast<std::uint8_t>(std::min(24, fret + 12)));
+                            }
+                        }
+                        if (fx2 & 0x20u) {
+                            buf.push_back(static_cast<std::uint8_t>(std::min(24, fret + 2)));
+                            buf.push_back(1); // Sixteenth period
+                        }
+                    }
                 }
 
                 // 2 bajty flag transpozycji/łamania w GP5

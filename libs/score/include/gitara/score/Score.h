@@ -10,24 +10,49 @@
 namespace gitara::score {
 
 /// Wartość rytmiczna uderzenia (zgodna z kodowaniem Guitar Pro / TuxGuitar:
-/// -2 = cała nuta, -1 = półnuta, 0 = ćwierćnuta, 1 = ósemka, 2 = szesnastka, 3 = trzydziestodwójka).
+/// -2 = cała nuta, -1 = półnuta, 0 = ćwierćnuta, 1 = ósemka, 2 = szesnastka, 3 = trzydziestodwójka, 4 = 1/64).
 enum class DurationValue : std::int8_t {
-    Whole       = -2,
-    Half        = -1,
-    Quarter     =  0,
-    Eighth      =  1,
-    Sixteenth   =  2,
-    ThirtySecond = 3
+    Whole        = -2,
+    Half         = -1,
+    Quarter      =  0,
+    Eighth       =  1,
+    Sixteenth    =  2,
+    ThirtySecond =  3,
+    SixtyFourth  =  4
+};
+
+/// Pojedynczy punkt krzywej podciągnięcia (bend) w jednostkach Guitar Pro 5 (pos: 0..60, value: 100 = 1 ton / 25 = 1/4 tonu).
+struct BendPoint {
+    int position{0};
+    int value{0};
+    bool vibrato{false};
 };
 
 /// Pojedyncza nuta na strunie i progu w obrębie uderzenia (Beat).
 struct TabNote {
     int stringIndex{0};  ///< 0 = najniższa struna (np. E2) .. 5 = najwyższa struna (np. E4)
-    int fret{0};         ///< 0 = pusta struna .. 24
+    int fret{0};         ///< 0 = pusta struna .. 24 (lub MIDI perkusji przy isPercussion)
     int velocity{95};    ///< Dynamika MIDI (1..127)
     bool tied{false};    ///< Łuk (przetrzymanie z poprzedniej nuty)
     bool hammerOn{false};///< Legato (hammer-on / pull-off)
     bool slide{false};   ///< Slide
+
+    std::string slideType{};
+    bool palmMute{false};
+    bool letRing{false};
+    bool vibrato{false};
+    bool wideVibrato{false};
+    bool deadNote{false};
+    bool ghostNote{false};
+    bool accented{false};
+    bool heavyAccented{false};
+    bool staccato{false};
+    bool tap{false};
+    bool graceNote{false};
+    bool tremoloPicking{false};
+    bool trill{false};
+    int harmonicType{0}; ///< 0=brak, 1=natural, 2=artificial, 3=tapped, 4=pinch, 5=semi
+    std::vector<BendPoint> bendPoints{};
 };
 
 /// Uderzenie (Beat) w takcie – może być pauzą, pojedynczą nutą lub akordem (wieloma TabNote na różnych strunach).
@@ -39,6 +64,14 @@ struct Beat {
     bool isRest{false};
     std::vector<TabNote> notes;
 
+    int dots{0};              ///< 0, 1 lub 2 kropki (dotted == true traktowane jak 1 kropka)
+    std::string text{};
+    std::string chordSymbol{};
+    int dynamic{6};           ///< Dynamika GP (1..8, 6=f)
+    std::string brushStroke{};
+    int pickStroke{0};        ///< 0=brak, 1=down, 2=up
+    bool fermata{false};
+
     /// Czas trwania uderzenia w jednostkach ćwierćnuty (1.0 = ćwierćnuta, 0.5 = ósemka, 0.25 = szesnastka).
     [[nodiscard]] double quarterNoteLength() const noexcept;
 };
@@ -48,6 +81,13 @@ struct Measure {
     int numerator{4};
     int denominator{4};
     std::vector<Beat> beats;
+
+    bool repeatOpen{false};
+    int repeatClose{0};
+    int voltaMask{0};
+    std::string sectionMarker{};
+    int tripletFeel{0};
+    bool isDoubleBar{false};
 };
 
 /// Ścieżka instrumentu (domyślnie 6-strunowa gitara).
@@ -57,6 +97,9 @@ struct Track {
     int midiChannel{0};
     int midiProgram{24}; ///< 24 = Acoustic Guitar (nylon), 25 = Steel, 27 = Electric Clean
     std::vector<Measure> measures;
+
+    bool isPercussion{false};
+    int capo{0};
 };
 
 /// Pełny utwór / ćwiczenie z metadanymi i ścieżkami (model kompatybilny z TuxGuitar / GP5 / przyszłym importem Rocksmith).
@@ -65,6 +108,10 @@ struct Song {
     std::string artist{"Apka Gitarowa"};
     int tempoBpm{120};
     std::vector<Track> tracks;
+
+    std::string album{"Studio TAB"};
+    int keyRootPc{0};
+    bool keyIsMinor{false};
 };
 
 /// Zdarzenie wykryte na żywo podczas grania z włączoną opcją „Tworzenie tabulatury”.

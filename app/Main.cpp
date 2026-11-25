@@ -5,6 +5,7 @@
 #include "gitara/engine/SessionManager.h"
 #include "gitara/engine/WorkshopGenerator.h"
 #include "gitara/score/Score.h"
+#include "gitara/score/StudioJsonCodec.h"
 #include "gitara/theory/Arpeggio.h"
 #include "gitara/theory/Chord.h"
 #include "gitara/theory/Fretboard.h"
@@ -1265,6 +1266,8 @@ bool tryReadWebAsset(std::string_view urlPath, std::string& outBody, std::string
         outMime = "application/wasm";
     } else if (endsWith(".bin")) {
         outMime = "application/octet-stream";
+    } else if (endsWith(".sf2")) {
+        outMime = "application/octet-stream";
     } else {
         return false;
     }
@@ -1312,7 +1315,22 @@ int main(int argc, char** argv) {
                 tryReadWebAsset("/web/vendor/pitchplease/models/piano.bin", ppModel, binMime) && !ppModel.empty() &&
                 binMime == "application/octet-stream" &&
                 tryReadWebAsset("/web/js/dsp/pitchPleaseBridge.js", ppBridge, bridgeMime) && !ppBridge.empty();
-            return (!initJson.empty() && !fbJson.empty() && webDspOk && pitchPleaseOk) ? 0 : 1;
+            std::string studioCss, studioModelJs, studioPaletteJs, studioInputsJs, studioViewJs, studioSfJs;
+            std::string_view studioCssMime, studioModelMime, studioPaletteMime, studioInputsMime, studioViewMime, studioSfMime;
+            const bool studioAssetsOk =
+                tryReadWebAsset("/web/css/studio.css", studioCss, studioCssMime) &&
+                !studioCss.empty() && studioCssMime.find("css") != std::string_view::npos &&
+                tryReadWebAsset("/web/js/studio/studioModel.js", studioModelJs, studioModelMime) &&
+                !studioModelJs.empty() && studioModelMime.find("javascript") != std::string_view::npos &&
+                tryReadWebAsset("/web/js/studio/studioPalette.js", studioPaletteJs, studioPaletteMime) &&
+                !studioPaletteJs.empty() && studioPaletteMime.find("javascript") != std::string_view::npos &&
+                tryReadWebAsset("/web/js/studio/studioInputs.js", studioInputsJs, studioInputsMime) &&
+                !studioInputsJs.empty() && studioInputsMime.find("javascript") != std::string_view::npos &&
+                tryReadWebAsset("/web/js/studio/studioSoundFont.js", studioSfJs, studioSfMime) &&
+                !studioSfJs.empty() && studioSfMime.find("javascript") != std::string_view::npos &&
+                tryReadWebAsset("/web/js/studio/studioView.js", studioViewJs, studioViewMime) &&
+                !studioViewJs.empty() && studioViewMime.find("javascript") != std::string_view::npos;
+            return (!initJson.empty() && !fbJson.empty() && webDspOk && pitchPleaseOk && studioAssetsOk) ? 0 : 1;
         }
     }
 
@@ -1570,6 +1588,26 @@ int main(int argc, char** argv) {
             std::string fname = prog.id.empty() ? "progresja_tuxguitar.gp5" : (prog.id + "_tuxguitar.gp5");
             std::string disp = "Content-Disposition: attachment; filename=\"" + fname + "\"\r\n";
             sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(), disp);
+        } else if (path == "/api/studio/export_gp5") {
+            Song studioSong{};
+            std::string parseErr;
+            if (!gitara::score::parseStudioSongJson(reqBody, studioSong, &parseErr)) {
+                sendResponse("400 Bad Request", "text/plain; charset=utf-8", parseErr.data(), parseErr.size());
+            } else {
+                auto bytes = exportToGp5Bytes(studioSong);
+                sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
+                             "Content-Disposition: attachment; filename=\"studio_tab.gp5\"\r\n");
+            }
+        } else if (path == "/api/studio/export_mid") {
+            Song studioSong{};
+            std::string parseErr;
+            if (!gitara::score::parseStudioSongJson(reqBody, studioSong, &parseErr)) {
+                sendResponse("400 Bad Request", "text/plain; charset=utf-8", parseErr.data(), parseErr.size());
+            } else {
+                auto bytes = exportToMidiBytes(studioSong);
+                sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
+                             "Content-Disposition: attachment; filename=\"studio_tab.mid\"\r\n");
+            }
         } else {
             const char* notFound = "{}";
             sendResponse("404 Not Found", "application/json", notFound, 2);

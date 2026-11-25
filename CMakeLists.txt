@@ -29,6 +29,7 @@ target_include_directories(gitara_theory PUBLIC
 # ------------------------------------------------------------------------------
 add_library(gitara_score STATIC
     libs/score/src/Score.cpp
+    libs/score/src/StudioJsonCodec.cpp
 )
 target_include_directories(gitara_score PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/score/include
