@@ -65,7 +65,9 @@ std::vector<ArpeggioStep> buildSweepStepsFromNodes(
     int direction,
     int segmentIndex,
     AccidentalMode mode,
-    bool& outHasRoll) {
+    bool& outHasRoll,
+    int startString = -1,
+    int returnString = -1) {
     outHasRoll = false;
     if (nodes.empty()) return {};
 
@@ -77,39 +79,50 @@ std::vector<ArpeggioStep> buildSweepStepsFromNodes(
         return a.position.fret < b.position.fret;
     });
 
+    auto filterNodesMinStr = [](const std::vector<ArpeggioPositionNode>& src, int minStr) {
+        if (minStr < 0) return src;
+        std::vector<ArpeggioPositionNode> dst;
+        for (const auto& n : src) {
+            if (n.position.stringIndex >= minStr) dst.push_back(n);
+        }
+        return dst.empty() ? src : dst;
+    };
+
+    const auto ascNodes = filterNodesMinStr(sorted, startString);
     std::vector<ArpeggioStep> asc;
-    for (std::size_t i = 0; i < sorted.size(); ++i) {
+    for (std::size_t i = 0; i < ascNodes.size(); ++i) {
         std::string tech = "D";
         bool roll = false;
         if (i > 0) {
-            const auto& prev = sorted[i - 1];
-            if (prev.position.stringIndex == sorted[i].position.stringIndex) {
+            const auto& prev = ascNodes[i - 1];
+            if (prev.position.stringIndex == ascNodes[i].position.stringIndex) {
                 tech = "H"; // Hammer-on na tej samej strunie (np. zwrot na strunie E1 lub baza E6)
-            } else if (prev.position.fret > 0 && prev.position.fret == sorted[i].position.fret &&
-                       sorted[i].position.stringIndex == prev.position.stringIndex + 1) {
+            } else if (prev.position.fret > 0 && prev.position.fret == ascNodes[i].position.fret &&
+                       ascNodes[i].position.stringIndex == prev.position.stringIndex + 1) {
                 roll = true;
                 outHasRoll = true;
             }
         }
-        asc.push_back(makeStepFromNode(fretboard, sorted[i], tech, roll, segmentIndex, mode));
+        asc.push_back(makeStepFromNode(fretboard, ascNodes[i], tech, roll, segmentIndex, mode));
     }
 
+    const auto descSrcNodes = filterNodesMinStr(sorted, returnString);
     std::vector<ArpeggioStep> desc;
-    for (int idx = static_cast<int>(sorted.size()) - 1; idx >= 0; --idx) {
+    for (int idx = static_cast<int>(descSrcNodes.size()) - 1; idx >= 0; --idx) {
         std::size_t i = static_cast<std::size_t>(idx);
         std::string tech = "U";
         bool roll = false;
-        if (idx < static_cast<int>(sorted.size()) - 1) {
-            const auto& prev = sorted[static_cast<std::size_t>(idx + 1)];
-            if (prev.position.stringIndex == sorted[i].position.stringIndex) {
+        if (idx < static_cast<int>(descSrcNodes.size()) - 1) {
+            const auto& prev = descSrcNodes[static_cast<std::size_t>(idx + 1)];
+            if (prev.position.stringIndex == descSrcNodes[i].position.stringIndex) {
                 tech = "P"; // Pull-off w dół na tej samej strunie
-            } else if (prev.position.fret > 0 && prev.position.fret == sorted[i].position.fret &&
-                       prev.position.stringIndex == sorted[i].position.stringIndex + 1) {
+            } else if (prev.position.fret > 0 && prev.position.fret == descSrcNodes[i].position.fret &&
+                       prev.position.stringIndex == descSrcNodes[i].position.stringIndex + 1) {
                 roll = true;
                 outHasRoll = true;
             }
         }
-        desc.push_back(makeStepFromNode(fretboard, sorted[i], tech, roll, segmentIndex, mode));
+        desc.push_back(makeStepFromNode(fretboard, descSrcNodes[i], tech, roll, segmentIndex, mode));
     }
 
     if (direction == 1) return asc;
@@ -117,7 +130,9 @@ std::vector<ArpeggioStep> buildSweepStepsFromNodes(
 
     // W górę i w dół bez powtarzania najwyższego ani najniższego dźwięku zwrotnego
     std::vector<ArpeggioStep> full = asc;
-    for (std::size_t i = 1; i + 1 < desc.size(); ++i) {
+    std::size_t descStart = (!full.empty() && !desc.empty() && full.back().midi == desc.front().midi) ? 1 : 0;
+    for (std::size_t i = descStart; i < desc.size(); ++i) {
+        if (i + 1 == desc.size() && !full.empty() && desc[i].midi == full.front().midi) continue;
         full.push_back(desc[i]);
     }
     return full;
@@ -140,10 +155,7 @@ std::vector<SweepShape> generateSweepShapes(
 
     const int nStrings = fretboard.stringCount();
     const int nFrets = fretboard.fretCount();
-    const int span = (stringSpan == 6 && nStrings >= 6) ? 6
-                   : (stringSpan == 5 && nStrings >= 5) ? 5
-                   : (stringSpan == 4 && nStrings >= 4) ? 4
-                   : 3;
+    const int span = std::clamp(stringSpan, 3, std::min(6, nStrings));
 
     // Zestaw kolejnych strun dla sweepu (domyślnie do najcieńszej struny e1, lub przesunięty w dół o stringSetOffset)
     const int safeOffset = std::clamp(stringSetOffset, 0, std::max(0, nStrings - span));
@@ -549,20 +561,17 @@ std::vector<ArpeggioPositionNode> generateArpeggio(
         int startPc = chordNotes[static_cast<std::size_t>(startIdx)].pitchClass();
         int openLowPc = fretboard.midiAt(0, 0) % 12;
         int firstFret = (startPc - openLowPc + 12) % 12;
-        // Trzymaj pozycję startową na niskich/średnich progach, żeby arpeggio zmieściło się na wszystkich 6 strunach!
-        if (firstFret > 9) firstFret = std::max(0, firstFret - 12);
         int minMidi = fretboard.midiAt(0, firstFret);
 
         for (int s = 0; s < nStrings; ++s) {
             int count = 0;
             int firstOnStr = -1;
             for (int f = 0; f <= nFrets; ++f) {
+                if (mask && !mask->isAllowed(s, f)) continue;
                 int m = fretboard.midiAt(s, f);
                 if (m >= minMidi && chord.containsPitchClass(m % 12)) {
                     if (firstOnStr >= 0 && (f - firstOnStr) > maxPerStringSpan) break;
-                    if (!mask || mask->isAllowed(s, f)) {
-                        nodes.push_back(makeArpNode(fretboard, chord, s, f, mode));
-                    }
+                    nodes.push_back(makeArpNode(fretboard, chord, s, f, mode));
                     if (firstOnStr < 0) firstOnStr = f;
                     minMidi = m + 1;
                     ++count;
@@ -763,7 +772,7 @@ std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
 
     if (pattern == ArpeggioPattern::Sweep && seqStyle == 0) {
         bool roll = false;
-        return buildSweepStepsFromNodes(fretboard, nodes, direction, 0, mode, roll);
+        return buildSweepStepsFromNodes(fretboard, nodes, direction, 0, mode, roll, startString, returnString);
     }
 
     // Sortuj rosnąco po wysokości MIDI i ZAWSZE usuń zdublowane unisony (żeby nigdy nie grało dwa razy tej samej nuty)
@@ -800,7 +809,6 @@ std::vector<ArpeggioStep> buildArpeggioSequenceSteps(
                 ordered.push_back(base[i]);
                 ordered.push_back(base[i + 2]);
             }
-            ordered.push_back(base.back());
         } else {
             ordered = base;
         }
@@ -917,11 +925,14 @@ SweepTransition generateSweepTransition(
     const Chord* customChord,
     const Scale* customScale,
     AccidentalMode mode,
-    bool diatonicSevenths) {
+    bool diatonicSevenths,
+    int direction,
+    int stringSetOffset) {
     SweepTransition tr{};
     tr.id = std::string(presetId);
 
-    const int effSpan = (stringSpan == 6) ? 6 : (stringSpan == 5 ? 5 : (stringSpan == 4 ? 4 : 3));
+    const int nStrings = fretboard.stringCount();
+    const int effSpan = std::clamp(stringSpan, 3, std::min(6, nStrings));
 
     struct Spec {
         int semiOffset;
@@ -1040,10 +1051,10 @@ SweepTransition generateSweepTransition(
         if (!def) def = findChordDefinition("minor");
         Chord ch{Note::fromPitchClass(pc, mode), def, std::nullopt};
 
-        int useSpan = sp.overrideSpan > 0 ? sp.overrideSpan : effSpan;
-        auto shapes = generateSweepShapes(fretboard, ch, useSpan, 0, mode, nullptr);
+        int useSpan = std::clamp(sp.overrideSpan > 0 ? sp.overrideSpan : effSpan, 3, std::min(6, nStrings));
+        auto shapes = generateSweepShapes(fretboard, ch, useSpan, direction, mode, nullptr, stringSetOffset);
         if (shapes.empty() && useSpan != 3) {
-            shapes = generateSweepShapes(fretboard, ch, 3, 0, mode, nullptr);
+            shapes = generateSweepShapes(fretboard, ch, 3, direction, mode, nullptr, stringSetOffset);
         }
         if (shapes.empty()) continue;
 
@@ -1102,18 +1113,30 @@ SweepTransition generateSweepTransition(
         seg.nodes = pickedShape.nodes;
 
         bool hasRoll = false;
-        seg.steps = buildSweepStepsFromNodes(fretboard, seg.nodes, 0, static_cast<int>(idx), mode, hasRoll);
+        seg.steps = buildSweepStepsFromNodes(fretboard, seg.nodes, direction, static_cast<int>(idx), mode, hasRoll);
 
         // Oznacz połączenie (slide / płynne wejście) od poprzedniego segmentu
-        if (idx > 0 && !seg.steps.empty() && prevEndFret > 0) {
-            int startFret = seg.steps.front().fret;
-            int startStr = seg.steps.front().stringIndex;
-            int deltaFret = startFret - prevEndFret;
-            if (startStr == prevEndString && std::abs(deltaFret) >= 1 && std::abs(deltaFret) <= 5) {
+        if (idx > 0 && !seg.steps.empty() && prevEndFret >= 0) {
+            const auto& firstSt = seg.steps.front();
+            int startFret = firstSt.fret;
+            int startStr = firstSt.stringIndex;
+            int prevSameStrFret = -1;
+            const auto& prevSeg = tr.segments.back();
+            for (const auto& pn : prevSeg.nodes) {
+                if (pn.position.stringIndex == startStr) {
+                    prevSameStrFret = pn.position.fret;
+                    break;
+                }
+            }
+            if (prevEndString == startStr) {
+                prevSameStrFret = prevEndFret;
+            }
+            int deltaFret = (prevSameStrFret >= 0) ? (startFret - prevSameStrFret) : 99;
+            if (prevSameStrFret >= 0 && std::abs(deltaFret) >= 1 && std::abs(deltaFret) <= 5) {
                 seg.steps.front().technique = "S"; // Slide na tej samej strunie do kolejnego akordu!
-                seg.transitionHint = "Slide " + std::to_string(prevEndFret) + "→" + std::to_string(startFret) +
+                seg.transitionHint = "Slide " + std::to_string(prevSameStrFret) + "→" + std::to_string(startFret) +
                                      " na strunie " + std::to_string(fretboard.stringCount() - startStr);
-            } else if (deltaFret == 0 && startStr == prevEndString) {
+            } else if (deltaFret == 0 && prevSameStrFret >= 0) {
                 seg.transitionHint = "Wspólny dźwięk kotwiczący (próg " + std::to_string(startFret) + ")";
             } else if (std::abs(curCenter - prevCenterFret) <= 2.5) {
                 seg.transitionHint = "Ta sama pozycja (minimalny ruch dłoni)";

@@ -167,7 +167,9 @@ struct DiatonicArpeggio {
     const Chord* customChord = nullptr,
     const Scale* customScale = nullptr,
     AccidentalMode mode = AccidentalMode::Auto,
-    bool diatonicSevenths = false);
+    bool diatonicSevenths = false,
+    int direction = 0,
+    int stringSetOffset = 0);
 
 /// Generuje rodzinę diatonicznych arpeggio (trójdźwięków lub czterodźwięków septymowych) dla zadanej skali.
 [[nodiscard]] std::vector<DiatonicArpeggio> generateDiatonicArpeggios(

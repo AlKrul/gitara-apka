@@ -108,7 +108,7 @@ const std::vector<ScaleDefinition>& allScaleDefinitions() {
         {"augmented", "Zwiększona", "Symetryczne",
          {P1, A2, M3, P5, A5, M7}, "tonal / Levine"},
         {"messiaen_3", "Tryb Messiaena 3", "Symetryczne",
-         {P1, M2, m3, M3, A4, P5, m6, M6, M7}, "Ian Ring"},
+         {P1, M2, m3, M3, A4, P5, m6, m7, M7}, "Ian Ring"},
         {"chromatic", "Chromatyczna", "Symetryczne",
          {P1, m2, M2, m3, M3, P4, A4, P5, m6, M6, m7, M7}, "tonal"},
 

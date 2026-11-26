@@ -251,11 +251,10 @@ std::vector<FretPosition> Fretboard::generateScalePositions(
         for (int s = 0; s < stringCount(); ++s) {
             int addedOnString = 0;
             for (int f = 0; f <= fretCount_; ++f) {
+                if (mask && !mask->isAllowed(s, f)) continue;
                 int m = midiAt(s, f);
                 if (m >= currentMinMidi && scale.containsPitchClass(m % 12)) {
-                    if (!mask || mask->isAllowed(s, f)) {
-                        out.push_back(FretPosition{s, f});
-                    }
+                    out.push_back(FretPosition{s, f});
                     currentMinMidi = m + 1;
                     ++addedOnString;
                     if (addedOnString >= notesPerString) {
@@ -560,81 +559,83 @@ std::vector<ChordVoicing> Fretboard::generateChordVoicings(
         }
     }
 
-    // Pass B i C: „Ostre” (rozciągnięcia 4–5 progów bez tapingu ORAZ tapping prawą ręką T)
-    if (sharpness == VoicingSharpness::Sharp || (includeTapping && sharpness == VoicingSharpness::All)) {
+    // Pass B i C: „Ostre” (rozciągnięcia 4–5 progów bez tapingu ORAZ opcjonalny tapping prawą ręką T)
+    if (sharpness != VoicingSharpness::Mild) {
         exploreBox(5, true, 4);
 
-        // Pass C: Tapping prawą ręką (T) na 3–5 strunowych zestawach
-        for (const auto& ss : subsets) {
-            if (static_cast<int>(ss.size()) < 3 || static_cast<int>(ss.size()) > 5) continue;
-            for (int anchorFret = 1; anchorFret <= std::min(fretCount_, 14); ++anchorFret) {
-                int leftHi = std::min(fretCount_, anchorFret + 3);
-                std::size_t k = ss.size();
+        if (includeTapping) {
+            // Pass C: Tapping prawą ręką (T) na 3–5 strunowych zestawach
+            for (const auto& ss : subsets) {
+                if (static_cast<int>(ss.size()) < 3 || static_cast<int>(ss.size()) > 5) continue;
+                for (int anchorFret = 1; anchorFret <= std::min(fretCount_, 14); ++anchorFret) {
+                    int leftHi = std::min(fretCount_, anchorFret + 3);
+                    std::size_t k = ss.size();
 
-                // Wariant C1: niższe struny w lewej ręce, najwyższa (k-1) tapowana prawą ręką powyżej progu leftHi + 2
-                {
-                    std::vector<int> frets(static_cast<std::size_t>(nStrings), -1);
-                    std::vector<bool> tapFlags(static_cast<std::size_t>(nStrings), false);
-                    bool ok = true;
-                    for (std::size_t i = 0; i + 1 < k; ++i) {
-                        int s = ss[i];
-                        int fPick = -1;
-                        if (i >= 1 && (!mask || mask->isAllowed(s, 0)) && chord.containsPitchClass(midiAt(s, 0) % 12)) {
-                            fPick = 0;
-                        }
-                        if (fPick < 0) {
-                            for (int f = anchorFret; f <= leftHi; ++f) {
-                                if (mask && !mask->isAllowed(s, f)) continue;
-                                if (chord.containsPitchClass(midiAt(s, f) % 12)) { fPick = f; break; }
-                            }
-                        }
-                        if (fPick < 0) { ok = false; break; }
-                        frets[static_cast<std::size_t>(s)] = fPick;
-                    }
-                    if (ok) {
-                        int tapS = ss.back();
-                        int tapF = -1;
-                        for (int f = leftHi + 2; f <= std::min(fretCount_, leftHi + 9); ++f) {
-                            if (mask && !mask->isAllowed(tapS, f)) continue;
-                            if (chord.containsPitchClass(midiAt(tapS, f) % 12)) { tapF = f; break; }
-                        }
-                        if (tapF > 0) {
-                            frets[static_cast<std::size_t>(tapS)] = tapF;
-                            tapFlags[static_cast<std::size_t>(tapS)] = true;
-                            recordVoicing(frets, tapFlags, true);
-                        }
-                    }
-                }
-
-                // Wariant C2: wyższa struna(y) wyżej na gryfie, dolne struny tapowane/trzymane daleko niżej (styl T5-T5-10 / T12-T13-17)
-                if (anchorFret >= 6) {
-                    std::vector<int> frets(static_cast<std::size_t>(nStrings), -1);
-                    std::vector<bool> tapFlags(static_cast<std::size_t>(nStrings), false);
-                    int sHigh = ss.back();
-                    int fHigh = -1;
-                    for (int f = anchorFret + 4; f <= std::min(fretCount_, anchorFret + 10); ++f) {
-                        if (mask && !mask->isAllowed(sHigh, f)) continue;
-                        if (chord.containsPitchClass(midiAt(sHigh, f) % 12)) { fHigh = f; break; }
-                    }
-                    if (fHigh > 0) {
-                        frets[static_cast<std::size_t>(sHigh)] = fHigh;
+                    // Wariant C1: niższe struny w lewej ręce, najwyższa (k-1) tapowana prawą ręką powyżej progu leftHi + 2
+                    {
+                        std::vector<int> frets(static_cast<std::size_t>(nStrings), -1);
+                        std::vector<bool> tapFlags(static_cast<std::size_t>(nStrings), false);
                         bool ok = true;
                         for (std::size_t i = 0; i + 1 < k; ++i) {
                             int s = ss[i];
-                            int fLow = -1;
-                            if (i == k - 2 && (!mask || mask->isAllowed(s, 0)) && chord.containsPitchClass(midiAt(s, 0) % 12)) {
-                                fLow = 0;
-                            } else {
-                                for (int f = std::max(1, anchorFret - 3); f <= anchorFret; ++f) {
+                            int fPick = -1;
+                            if (i >= 1 && (!mask || mask->isAllowed(s, 0)) && chord.containsPitchClass(midiAt(s, 0) % 12)) {
+                                fPick = 0;
+                            }
+                            if (fPick < 0) {
+                                for (int f = anchorFret; f <= leftHi; ++f) {
                                     if (mask && !mask->isAllowed(s, f)) continue;
-                                    if (chord.containsPitchClass(midiAt(s, f) % 12)) { fLow = f; break; }
+                                    if (chord.containsPitchClass(midiAt(s, f) % 12)) { fPick = f; break; }
                                 }
                             }
-                            if (fLow < 0) { ok = false; break; }
-                            frets[static_cast<std::size_t>(s)] = fLow;
-                            if (fLow > 0) tapFlags[static_cast<std::size_t>(s)] = true;
+                            if (fPick < 0) { ok = false; break; }
+                            frets[static_cast<std::size_t>(s)] = fPick;
                         }
-                        if (ok) recordVoicing(frets, tapFlags, true);
+                        if (ok) {
+                            int tapS = ss.back();
+                            int tapF = -1;
+                            for (int f = leftHi + 2; f <= std::min(fretCount_, leftHi + 9); ++f) {
+                                if (mask && !mask->isAllowed(tapS, f)) continue;
+                                if (chord.containsPitchClass(midiAt(tapS, f) % 12)) { tapF = f; break; }
+                            }
+                            if (tapF > 0) {
+                                frets[static_cast<std::size_t>(tapS)] = tapF;
+                                tapFlags[static_cast<std::size_t>(tapS)] = true;
+                                recordVoicing(frets, tapFlags, true);
+                            }
+                        }
+                    }
+
+                    // Wariant C2: dolne struny w lewej ręce (nisko), najwyższa struna szeroko rozciągnięta i tapowana prawą ręką wyżej na gryfie
+                    if (anchorFret >= 6) {
+                        std::vector<int> frets(static_cast<std::size_t>(nStrings), -1);
+                        std::vector<bool> tapFlags(static_cast<std::size_t>(nStrings), false);
+                        int sHigh = ss.back();
+                        int fHigh = -1;
+                        for (int f = anchorFret + 4; f <= std::min(fretCount_, anchorFret + 10); ++f) {
+                            if (mask && !mask->isAllowed(sHigh, f)) continue;
+                            if (chord.containsPitchClass(midiAt(sHigh, f) % 12)) { fHigh = f; break; }
+                        }
+                        if (fHigh > 0) {
+                            frets[static_cast<std::size_t>(sHigh)] = fHigh;
+                            tapFlags[static_cast<std::size_t>(sHigh)] = true;
+                            bool ok = true;
+                            for (std::size_t i = 0; i + 1 < k; ++i) {
+                                int s = ss[i];
+                                int fLow = -1;
+                                if (i == k - 2 && (!mask || mask->isAllowed(s, 0)) && chord.containsPitchClass(midiAt(s, 0) % 12)) {
+                                    fLow = 0;
+                                } else {
+                                    for (int f = std::max(1, anchorFret - 3); f <= anchorFret; ++f) {
+                                        if (mask && !mask->isAllowed(s, f)) continue;
+                                        if (chord.containsPitchClass(midiAt(s, f) % 12)) { fLow = f; break; }
+                                    }
+                                }
+                                if (fLow < 0) { ok = false; break; }
+                                frets[static_cast<std::size_t>(s)] = fLow;
+                            }
+                            if (ok) recordVoicing(frets, tapFlags, true);
+                        }
                     }
                 }
             }
@@ -666,11 +667,15 @@ std::vector<ChordVoicing> Fretboard::generateChordVoicings(
             if (i < sharpStretch.size()) voicings.push_back(std::move(sharpStretch[i]));
         }
     } else {
-        auto& base = !mildCompact.empty() ? mildCompact : mildSpan4Fallback;
+        const bool usedSpan4Fallback = mildCompact.empty();
+        auto& base = !usedSpan4Fallback ? mildCompact : mildSpan4Fallback;
         for (auto& v : base) voicings.push_back(std::move(v));
+        for (auto& v : sharpStretch) {
+            if (usedSpan4Fallback && v.fretSpan == 4) continue; // unika duplikacji po fallbacku span==4
+            voicings.push_back(std::move(v));
+        }
         if (includeTapping) {
             for (auto& v : sharpTapped) voicings.push_back(std::move(v));
-            for (auto& v : sharpStretch) voicings.push_back(std::move(v));
         }
     }
 

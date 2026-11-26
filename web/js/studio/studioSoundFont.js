@@ -465,15 +465,16 @@ export function createSoundFontSynth({ host = null } = {}) {
     env.gain.setValueAtTime(peakGain, t0 + dur);
     env.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + rel);
 
+    const outNode = (host && typeof host.getMasterAudioOut === 'function' ? host.getMasterAudioOut() : null) || ctx.destination;
     if (typeof ctx.createStereoPanner === 'function' && Math.abs(zone.pan) > 0.02) {
       const panner = ctx.createStereoPanner();
       panner.pan.setValueAtTime(zone.pan, t0);
       src.connect(env);
       env.connect(panner);
-      panner.connect(ctx.destination);
+      panner.connect(outNode);
     } else {
       src.connect(env);
-      env.connect(ctx.destination);
+      env.connect(outNode);
     }
 
     src.start(t0);

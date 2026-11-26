@@ -337,11 +337,13 @@ function getDrumNoiseBuffer(ctx) {
  * Odtwarza pojedyncze uderzenie perkusyjne przez hosta (playDrumHit) lub własną syntezę WebAudio
  * dla brakujących instrumentów (ride, tom_high, tom_low).
  */
-export function playStudioDrumHit(kind, velocity = 1.0, host = null) {
+export function playStudioDrumHit(kind, velocity = 1.0, host = null, whenSec = undefined) {
   const vel = Math.max(0.05, Math.min(1.4, Number(velocity) || 1.0));
+  const hasWhen = Number.isFinite(whenSec);
   const hostNativeKinds = ['kick', 'snare', 'hihat_closed', 'hihat_open', 'crash'];
   if (host && typeof host.playDrumHit === 'function' && hostNativeKinds.includes(kind)) {
-    host.playDrumHit(kind, vel);
+    if (hasWhen) host.playDrumHit(kind, vel, whenSec);
+    else host.playDrumHit(kind, vel);
     return;
   }
   if (!host || typeof host.ensureAudioCtx !== 'function' || typeof host.getMasterAudioOut !== 'function') {
@@ -351,7 +353,7 @@ export function playStudioDrumHit(kind, velocity = 1.0, host = null) {
   const ctx = host.ensureAudioCtx();
   const out = host.getMasterAudioOut();
   if (!ctx || !out) return;
-  const now = ctx.currentTime;
+  const now = hasWhen ? Math.max(ctx.currentTime, whenSec) : ctx.currentTime;
 
   if (kind === 'ride') {
     const src = ctx.createBufferSource();
@@ -393,7 +395,7 @@ export function playStudioDrumHit(kind, velocity = 1.0, host = null) {
 export function createEmptyDrumGrid(numerator = 4, denominator = 4, stepsPerBeat = 2) {
   const num = Math.max(1, Math.min(16, Math.round(Number(numerator) || 4)));
   const spb = Number(stepsPerBeat) === 4 ? 4 : 2;
-  const stepCount = Math.max(2, Math.min(32, num * spb));
+  const stepCount = Math.max(2, Math.min(64, num * spb));
   const lanes = {};
   for (const lane of DRUM_GRID_LANES) {
     lanes[lane.id] = new Array(stepCount).fill(0);
@@ -473,7 +475,7 @@ export function expandDrumCustomGridToSteps(customGrid, { numerator = 4, denomin
   const num = Math.max(1, Math.min(16, Math.round(Number(numerator) || 4)));
   const den = [2, 4, 8, 16].includes(Number(denominator)) ? Number(denominator) : 4;
   const capQ = num * (4 / den);
-  const stepCount = Math.max(2, Math.min(32, Math.round(Number(customGrid.stepCount) || (num * (customGrid.stepsPerBeat === 4 ? 4 : 2)))));
+  const stepCount = Math.max(2, Math.min(64, Math.round(Number(customGrid.stepCount) || (num * (customGrid.stepsPerBeat === 4 ? 4 : 2)))));
   const stepQ = capQ / stepCount;
 
   const velByLevel = { 1: 0.42, 2: 0.82, 3: 1.0 };

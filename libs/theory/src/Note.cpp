@@ -9,8 +9,9 @@ Note spellAtLetter(Letter targetLetter, int targetPitchClass) noexcept {
     int diff = pc - base;
     if (diff > 6) diff -= 12;
     if (diff < -6) diff += 12;
-    if (diff < -2) diff = -2;
-    if (diff > 2) diff = 2;
+    if (diff < -2 || diff > 2) {
+        return Note::fromPitchClass(pc, diff < 0 ? AccidentalMode::Flats : AccidentalMode::Sharps);
+    }
     return Note{targetLetter, static_cast<Accidental>(diff)};
 }
 

@@ -2,7 +2,7 @@
  * Paleta narzędzi kompozytora a'la Songsterr (Strefa B) oraz szybka wyszukiwarka komend Ctrl+K.
  * Bez zewnętrznych zależności DOM — generuje HTML i filtruje komendy po polsku i angielsku.
  */
-import { BEND_PRESETS, DYNAMIC_LEVELS } from './studioModel.js';
+import { BEND_PRESETS, DYNAMIC_LEVELS, WHAMMY_PRESETS } from './studioModel.js';
 import { escapeHtml } from './studioRenderer.js';
 
 export const STUDIO_COMMANDS = Object.freeze([
@@ -45,6 +45,11 @@ export const STUDIO_COMMANDS = Object.freeze([
   { id: 'bend:one_half', label: 'Bend +1½ tonu', shortLabel: '↗ +1½', category: 'Legato & Bend', shortcut: '', keywords: 'bend 1.5' },
   { id: 'bend:bend_release', label: 'Bend + Release', shortLabel: '↗ B+R', category: 'Legato & Bend', shortcut: '', keywords: 'bend release' },
   { id: 'bend:pre_bend', label: 'Pre-bend', shortLabel: '↗ Pre', category: 'Legato & Bend', shortcut: '', keywords: 'pre bend' },
+  { id: 'whammy:dive_full', label: 'Wajcha Dive -1 ton (↘W)', shortLabel: '↘W -1', category: 'Legato & Bend', shortcut: 'W', keywords: 'whammy wajcha tremolo bar dive' },
+  { id: 'whammy:dive_bomb', label: 'Wajcha Dive Bomb -2½', shortLabel: '↘W -2½', category: 'Legato & Bend', shortcut: '', keywords: 'whammy wajcha dive bomb' },
+  { id: 'whammy:dip_full', label: 'Wajcha Dip v -1', shortLabel: 'v-1', category: 'Legato & Bend', shortcut: '', keywords: 'whammy wajcha dip' },
+  { id: 'whammy:scoop', label: 'Wajcha Scoop /-1→0', shortLabel: '/-1', category: 'Legato & Bend', shortcut: '', keywords: 'whammy wajcha scoop' },
+  { id: 'whammy:raise_half', label: 'Wajcha Pull Up +½', shortLabel: '↗W +½', category: 'Legato & Bend', shortcut: '', keywords: 'whammy wajcha pull up raise' },
   { id: 'effect:vibrato', label: 'Vibrato (~)', shortLabel: '~ Vib', category: 'Legato & Bend', shortcut: 'V', keywords: 'vibrato wibrato' },
   { id: 'effect:wideVibrato', label: 'Szerokie Vibrato (w)', shortLabel: 'w~', category: 'Legato & Bend', shortcut: '', keywords: 'wide vibrato szerokie' },
   { id: 'pick:1', label: 'Kostkowanie w dół (⊓)', shortLabel: '⊓ Dół', category: 'Legato & Bend', shortcut: '', keywords: 'downstroke kostka dol' },
@@ -166,6 +171,7 @@ export function renderInlinePromptBar(inlinePrompt) {
  * Renderuje zwartą paletę kompozytora w prawym panelu (kafelki symboli + bogate dymki hover).
  */
 export function renderStudioPaletteHtml(ctx = {}) {
+  const isPro = ctx.uiMode === 'pro';
   const track = ctx.track;
   const beat = ctx.beat;
   const note = ctx.note || (!beat?.isRest && beat?.notes?.[0]) || null;
@@ -191,7 +197,7 @@ export function renderStudioPaletteHtml(ctx = {}) {
     selLabel = `T.${Math.min(ctx.selectionStart, ctx.selectionEnd ?? ctx.selectionStart) + 1}–${Math.max(ctx.selectionStart, ctx.selectionEnd ?? ctx.selectionStart) + 1}`;
   }
 
-  const durs = [
+  const allDurs = [
     { d: -2, lbl: '1/1',  name: 'Cała nuta (1/1)',            desc: 'Ustawia długość uderzenia na całą nutę (4 ćwierćnuty).',    k: 'Alt+1' },
     { d: -1, lbl: '1/2',  name: 'Półnuta (1/2)',              desc: 'Ustawia długość uderzenia na półnutę (2 ćwierćnuty).',      k: 'Alt+2' },
     { d: 0,  lbl: '1/4',  name: 'Ćwierćnuta (1/4)',           desc: 'Ustawia długość uderzenia na ćwierćnutę.',                  k: 'Alt+3' },
@@ -200,14 +206,102 @@ export function renderStudioPaletteHtml(ctx = {}) {
     { d: 3,  lbl: '1/32', name: 'Trzydziestodwójka (1/32)',   desc: 'Ustawia długość uderzenia na trzydziestodwójkę.',           k: 'Alt+6' },
     { d: 4,  lbl: '1/64', name: 'Sześćdziesięcioczwórka',     desc: 'Ustawia długość uderzenia na 1/64.',                        k: 'Alt+7' }
   ];
+  const durs = isPro ? allDurs : allDurs.slice(0, 5);
 
   const bendOptions = Object.values(BEND_PRESETS).map(bp =>
     `<option value="${escapeHtml(bp.id)}" ${note?.bendPreset === bp.id ? 'selected' : ''}>↗ ${escapeHtml(bp.label)}</option>`
   ).join('');
 
+  const whammyOptions = Object.values(WHAMMY_PRESETS).map(wp =>
+    `<option value="${escapeHtml(wp.id)}" ${note?.whammyPreset === wp.id ? 'selected' : ''}>↘W ${escapeHtml(wp.label)}</option>`
+  ).join('');
+
   const dynOptions = DYNAMIC_LEVELS.map(dl =>
     `<option value="${dl.value}" ${(beat?.dynamic ?? 6) === dl.value ? 'selected' : ''}>${escapeHtml(dl.label)}</option>`
   ).join('');
+
+  const bendSelectHtml = `<div class="studio-rail-select-row">
+    <span style="font-size:10.5px;color:var(--text-muted);font-weight:700;">Krzywa</span>
+    <select class="studio-pal-select" data-action="palette-bend" data-tip-name="Krzywa podciągnięcia (Bend)" data-tip-desc="Wybierz wysokość (+½, +1, +1½) lub bend + release / pre-bend.">
+      <option value="clear" ${!note?.bendPreset ? 'selected' : ''}>↗ Krzywa…</option>
+      ${bendOptions}
+    </select>
+  </div>`;
+
+  const whammySelectHtml = `<div class="studio-rail-select-row">
+    <span style="font-size:10.5px;color:var(--text-muted);font-weight:700;">Wajcha</span>
+    <select class="studio-pal-select" data-action="palette-whammy" data-tip-name="Wajcha (Tremolo Bar / Whammy)" data-tip-desc="Obniżanie (Dive/Dip/Bomb) lub podnoszenie dźwięku mostkiem tremolo. Rysuje krzywą w/bar jak na Songsterr i gra w WebAudio.">
+      <option value="clear" ${!note?.whammyPreset ? 'selected' : ''}>↘ Wajcha…</option>
+      ${whammyOptions}
+    </select>
+  </div>`;
+
+  const techGroupsHtml = isPro
+    ? `<!-- 2. Artykulacja, tłumienia i flażolety -->
+      <div class="studio-rail-group">
+        <div class="studio-rail-head"><span>Artykulacja</span></div>
+        <div class="studio-rail-grid">
+          ${palBtn('effect:ghostNote', '(0)', Boolean(note?.ghostNote), 'Ghost Note', 'Cichsza nuta widmowa zapisana w nawiasie.', 'G')}
+          ${palBtn('effect:accented', '>', Boolean(note?.accented), 'Akcent (>)', 'Wyraźnie podkreślone uderzenie kostką lub palcem.', '')}
+          ${palBtn('effect:heavyAccented', '^', Boolean(note?.heavyAccented), 'Mocny akcent (^)', 'Silny akcent Marcato o większej dynamice.', '')}
+          ${palBtn('effect:staccato', '•', Boolean(note?.staccato), 'Staccato', 'Szybko skrócona, urywana artykulacja dźwięku.', '')}
+          ${palBtn('effect:letRing', 'LR', Boolean(note?.letRing), 'Let Ring', 'Pozwala strunom swobodnie wybrzmiewać (arpeggio / akordy).', '')}
+          ${palBtn('effect:palmMute', 'PM', Boolean(note?.palmMute), 'Palm Mute (P.M.)', 'Tłumienie strun nasadą dłoni przy mostku.', 'P')}
+          ${palBtn('effect:deadNote', 'X', Boolean(note?.deadNote), 'Dead Note (-X-)', 'Tłumiona nuta perkusyjna bez określonej wysokości.', 'X')}
+          ${palBtn('harmonic:1', '◇', note?.harmonicType === 1, 'Flażolet naturalny', 'Krystaliczny flażolet nad progami 5, 7, 12.', 'O')}
+          ${palBtn('harmonic:2', '◆', note?.harmonicType === 2, 'Flażolet sztuczny / Pinch', 'Wyciskany flażolet (pinch / artificial harmonic).', '')}
+        </div>
+      </div>
+
+      <!-- 3. Legato, Slide, Bend, Kostkowanie -->
+      <div class="studio-rail-group">
+        <div class="studio-rail-head"><span>Legato &amp; Bend</span></div>
+        <div class="studio-rail-grid">
+          ${palBtn('effect:hammerOn', 'H/P', Boolean(note?.hammerOn), 'Hammer-On / Pull-Off', 'Płynne przejście legato bez ponownego szarpania.', 'H')}
+          ${palBtn('slide:shift', '/', note?.slideType === 'shift', 'Shift Slide', 'Przesunięcie palcem do następnego dźwięku.', 'S')}
+          ${palBtn('slide:legato', '⌒/', note?.slideType === 'legato', 'Legato Slide', 'Połączony ślizg legato ze wspólnym atakiem.', '')}
+          ${palBtn('slide:in_below', '/0', note?.slideType === 'in_below', 'Slide-in od dołu', 'Wjazd ślizgiem z niższych progów do docelowej nuty.', '')}
+          ${palBtn('slide:out_down', '0\\', note?.slideType === 'out_down', 'Slide-out w dół', 'Zjazd ślizgiem z nuty w stronę gryfu/główki.', '')}
+          ${palBtn('bend:full', '↗', Boolean(note?.bendPreset), 'Bend +1 ton', 'Podciągnięcie struny w górę o cały ton.', 'B')}
+          ${palBtn('whammy:dive_full', '↘W', Boolean(note?.whammyPreset), 'Wajcha / Tremolo Bar', 'Obniżenie lub podniesienie dźwięku mostkiem tremolo (Dive / Dip / Scoop).', 'W')}
+          ${palBtn('effect:vibrato', '~', Boolean(note?.vibrato), 'Vibrato', 'Delikatna modulacja wysokości dźwięku na progu.', 'V')}
+          ${palBtn('effect:wideVibrato', 'w~', Boolean(note?.wideVibrato), 'Szerokie Vibrato', 'Mocne rockowe vibrato o większej amplitudzie.', '')}
+          ${palBtn('pick:1', '⊓', beat?.pickStroke === 1, 'Kostkowanie w dół', 'Oznacza ruch kostki z góry na dół.', '')}
+          ${palBtn('pick:2', '∨', beat?.pickStroke === 2, 'Kostkowanie w górę', 'Oznacza ruch kostki z dołu do góry.', '')}
+          ${palBtn('brush:down', '↓↑', Boolean(beat?.brushStroke), 'Rozbicie akordu', 'Płynne przejechanie po strunach akordu (strum / arpeggiate).', '')}
+          ${palBtn('effect:tap', 'T', Boolean(note?.tap), 'Tapping', 'Uderzenie progu palcem prawej ręki.', '')}
+          ${palBtn('effect:graceNote', '♪', Boolean(note?.graceNote), 'Przednutka (Grace Note)', 'Krótka ozdobna nuta poprzedzająca właściwy dźwięk.', '')}
+          ${palBtn('effect:tremoloPicking', '///', Boolean(note?.tremoloPicking), 'Tremolo Picking', 'Szybkie repetycyjne kostkowanie jednej nuty.', '')}
+          ${palBtn('effect:trill', 'tr', Boolean(note?.trill), 'Trill', 'Szybka naprzemienna oscylacja między dwoma progami.', '')}
+        </div>
+        ${bendSelectHtml}
+        ${whammySelectHtml}
+      </div>`
+    : `<!-- 2. Techniki mające wpływ na brzmienie (tryb uproszczony — bez wajchy) -->
+      <div class="studio-rail-group">
+        <div class="studio-rail-head"><span>Techniki (brzmienie)</span></div>
+        <div class="studio-rail-grid">
+          ${palBtn('effect:tied', '⌣+', Boolean(note?.tied), 'Przedłuż ostatni dźwięk (Tie)', 'Kliknij puste pole po nucie i wciśnij ten przycisk (lub L), aby przedłużyć wybrzmiewanie poprzedniego dźwięku.', 'L')}
+          ${palBtn('effect:hammerOn', 'H/P', Boolean(note?.hammerOn), 'Legato (Hammer-On / Pull-Off)', 'Płynne przejście legato bez ponownego szarpania.', 'H')}
+          ${palBtn('bend:full', '↗', Boolean(note?.bendPreset), 'Bend +1 ton', 'Podciągnięcie struny w górę o cały ton.', 'B')}
+          ${palBtn('effect:vibrato', '~', Boolean(note?.vibrato), 'Vibrato', 'Delikatna modulacja wysokości dźwięku na progu.', 'V')}
+          ${palBtn('effect:palmMute', 'PM', Boolean(note?.palmMute), 'Palm Mute (P.M.)', 'Tłumienie strun nasadą dłoni przy mostku.', 'P')}
+          ${palBtn('slide:shift', '/', note?.slideType === 'shift', 'Shift Slide', 'Przesunięcie palcem do następnego dźwięku.', 'S')}
+          ${palBtn('effect:letRing', 'LR', Boolean(note?.letRing), 'Let Ring', 'Pozwala strunom swobodnie wybrzmiewać.', '')}
+          ${palBtn('effect:deadNote', 'X', Boolean(note?.deadNote), 'Dead Note (-X-)', 'Tłumiona nuta perkusyjna.', 'X')}
+          ${palBtn('effect:ghostNote', '(0)', Boolean(note?.ghostNote), 'Ghost Note', 'Cichsza nuta widmowa.', 'G')}
+          ${palBtn('effect:accented', '>', Boolean(note?.accented), 'Akcent (>)', 'Wyraźnie podkreślone uderzenie.', '')}
+          ${palBtn('effect:staccato', '•', Boolean(note?.staccato), 'Staccato', 'Krótka, urywana artykulacja dźwięku.', '')}
+          ${palBtn('harmonic:1', '◇', note?.harmonicType === 1, 'Flażolet naturalny', 'Krystaliczny flażolet nad progami 5, 7, 12.', 'O')}
+          ${palBtn('harmonic:2', '◆', note?.harmonicType === 2, 'Flażolet sztuczny / Pinch', 'Wyciskany flażolet (pinch).', '')}
+          ${palBtn('effect:tap', 'T', Boolean(note?.tap), 'Tapping', 'Uderzenie progu palcem prawej ręki.', '')}
+        </div>
+        ${bendSelectHtml}
+      </div>`;
+
+  const effectiveDur = (!isDrum && beat?.isRest && Number.isInteger(ctx.activeDuration))
+    ? ctx.activeDuration
+    : beat?.duration;
 
   return `<div class="studio-rail-palette">
     ${ctx.includeInlinePrompt !== false ? renderInlinePromptBar(ctx.inlinePrompt) : ''}
@@ -219,16 +313,16 @@ export function renderStudioPaletteHtml(ctx = {}) {
         <span style="color:var(--accent);">${escapeHtml(selLabel)}</span>
       </div>
       <div class="studio-rail-grid">
-        ${durs.map(x => palBtn(`dur:${x.d}`, x.lbl, !isDrum && beat?.duration === x.d, x.name, x.desc, x.k)).join('')}
+        ${durs.map(x => palBtn(`dur:${x.d}`, x.lbl, !isDrum && effectiveDur === x.d, x.name, x.desc, x.k)).join('')}
         ${palBtn('dot:1', '|.', !isDrum && beat?.dots === 1, 'Kropka rytmiczna', 'Wydłuża wartość uderzenia o połowę (×1.5).', '.')}
-        ${palBtn('dot:2', '|..', !isDrum && beat?.dots === 2, 'Podwójna kropka', 'Wydłuża wartość uderzenia o 75% (×1.75).', '')}
+        ${isPro ? palBtn('dot:2', '|..', !isDrum && beat?.dots === 2, 'Podwójna kropka', 'Wydłuża wartość uderzenia o 75% (×1.75).', '') : ''}
         ${palBtn('rest', '𝄽', !isDrum && Boolean(beat?.isRest), 'Pauza', 'Zamienia zaznaczone uderzenie na pauzę (lub z powrotem).', 'R / Ins')}
         ${palBtn('edit:insertBeat', '+B', false, 'Dodaj uderzenie', 'Wstawia nową pauzę bezpośrednio po kursorze.', '')}
         ${palBtn('tuplet:3:2', '3:2', !isDrum && beat?.tupletNumerator === 3, 'Triola (3:2)', 'Dzieli grupę rytmiczną na 3 równe uderzenia zamiast 2.', 'Alt+T')}
-        ${palBtn('tuplet:5:4', '5:4', !isDrum && beat?.tupletNumerator === 5, 'Kwintola (5:4)', 'Grupuje 5 uderzeń w czasie 4.', '')}
+        ${isPro ? palBtn('tuplet:5:4', '5:4', !isDrum && beat?.tupletNumerator === 5, 'Kwintola (5:4)', 'Grupuje 5 uderzeń w czasie 4.', '') : ''}
         ${palBtn('tuplet:6:4', '6:4', !isDrum && beat?.tupletNumerator === 6, 'Sekstola (6:4)', 'Grupuje 6 uderzeń w czasie 4 (np. sweep picking).', '')}
-        ${palBtn('effect:tied', '⌣', Boolean(note?.tied), 'Ligatura / Tie', 'Przetrzymuje dźwięk z poprzedniego uderzenia bez ponownego ataku.', 'L')}
-        ${palBtn('beat:fermata', '𝄐', Boolean(beat?.fermata), 'Fermata', 'Chwilowe zatrzymanie / wydłużenie wybrzmienia taktu.', '')}
+        ${palBtn('effect:tied', '⌣+', Boolean(note?.tied), 'Przedłuż dźwięk (Tie)', 'Kliknij puste pole po nucie i wciśnij ten przycisk (lub L), aby przedłużyć wybrzmiewanie poprzedniego dźwięku.', 'L')}
+        ${isPro ? palBtn('beat:fermata', '𝄐', Boolean(beat?.fermata), 'Fermata', 'Chwilowe zatrzymanie / wydłużenie wybrzmienia taktu.', '') : ''}
       </div>
       <div class="studio-rail-select-row">
         <span style="font-size:10.5px;color:var(--text-muted);font-weight:700;">Dynamika</span>
@@ -238,70 +332,27 @@ export function renderStudioPaletteHtml(ctx = {}) {
       </div>
     </div>
 
-    <!-- 2. Artykulacja, tłumienia i flażolety -->
-    <div class="studio-rail-group">
-      <div class="studio-rail-head"><span>Artykulacja</span></div>
-      <div class="studio-rail-grid">
-        ${palBtn('effect:ghostNote', '(0)', Boolean(note?.ghostNote), 'Ghost Note', 'Cichsza nuta widmowa zapisana w nawiasie.', 'G')}
-        ${palBtn('effect:accented', '>', Boolean(note?.accented), 'Akcent (>)', 'Wyraźnie podkreślone uderzenie kostką lub palcem.', '')}
-        ${palBtn('effect:heavyAccented', '^', Boolean(note?.heavyAccented), 'Mocny akcent (^)', 'Silny akcent Marcato o większej dynamice.', '')}
-        ${palBtn('effect:staccato', '•', Boolean(note?.staccato), 'Staccato', 'Szybko skrócona, urywana artykulacja dźwięku.', '')}
-        ${palBtn('effect:letRing', 'LR', Boolean(note?.letRing), 'Let Ring', 'Pozwala strunom swobodnie wybrzmiewać (arpeggio / akordy).', '')}
-        ${palBtn('effect:palmMute', 'PM', Boolean(note?.palmMute), 'Palm Mute (P.M.)', 'Tłumienie strun nasadą dłoni przy mostku.', 'P')}
-        ${palBtn('effect:deadNote', 'X', Boolean(note?.deadNote), 'Dead Note (-X-)', 'Tłumiona nuta perkusyjna bez określonej wysokości.', 'X')}
-        ${palBtn('harmonic:1', '◇', note?.harmonicType === 1, 'Flażolet naturalny', 'Krystaliczny flażolet nad progami 5, 7, 12.', 'O')}
-        ${palBtn('harmonic:2', '◆', note?.harmonicType === 2, 'Flażolet sztuczny / Pinch', 'Wyciskany flażolet (pinch / artificial harmonic).', '')}
-      </div>
-    </div>
+    ${techGroupsHtml}
 
-    <!-- 3. Legato, Slide, Bend, Kostkowanie -->
-    <div class="studio-rail-group">
-      <div class="studio-rail-head"><span>Legato &amp; Bend</span></div>
-      <div class="studio-rail-grid">
-        ${palBtn('effect:hammerOn', 'H/P', Boolean(note?.hammerOn), 'Hammer-On / Pull-Off', 'Płynne przejście legato bez ponownego szarpania.', 'H')}
-        ${palBtn('slide:shift', '/', note?.slideType === 'shift', 'Shift Slide', 'Przesunięcie palcem do następnego dźwięku.', 'S')}
-        ${palBtn('slide:legato', '⌒/', note?.slideType === 'legato', 'Legato Slide', 'Połączony ślizg legato ze wspólnym atakiem.', '')}
-        ${palBtn('slide:in_below', '/0', note?.slideType === 'in_below', 'Slide-in od dołu', 'Wjazd ślizgiem z niższych progów do docelowej nuty.', '')}
-        ${palBtn('slide:out_down', '0\\', note?.slideType === 'out_down', 'Slide-out w dół', 'Zjazd ślizgiem z nuty w stronę gryfu/główki.', '')}
-        ${palBtn('bend:full', '↗', Boolean(note?.bendPreset), 'Bend +1 ton', 'Podciągnięcie struny w górę o cały ton.', 'B')}
-        ${palBtn('effect:vibrato', '~', Boolean(note?.vibrato), 'Vibrato', 'Delikatna modulacja wysokości dźwięku na progu.', 'V')}
-        ${palBtn('effect:wideVibrato', 'w~', Boolean(note?.wideVibrato), 'Szerokie Vibrato', 'Mocne rockowe vibrato o większej amplitudzie.', '')}
-        ${palBtn('pick:1', '⊓', beat?.pickStroke === 1, 'Kostkowanie w dół', 'Oznacza ruch kostki z góry na dół.', '')}
-        ${palBtn('pick:2', '∨', beat?.pickStroke === 2, 'Kostkowanie w górę', 'Oznacza ruch kostki z dołu do góry.', '')}
-        ${palBtn('brush:down', '↓↑', Boolean(beat?.brushStroke), 'Rozbicie akordu', 'Płynne przejechanie po strunach akordu (strum / arpeggiate).', '')}
-        ${palBtn('effect:tap', 'T', Boolean(note?.tap), 'Tapping', 'Uderzenie progu palcem prawej ręki.', '')}
-        ${palBtn('effect:graceNote', '♪', Boolean(note?.graceNote), 'Przednutka (Grace Note)', 'Krótka ozdobna nuta poprzedzająca właściwy dźwięk.', '')}
-        ${palBtn('effect:tremoloPicking', '///', Boolean(note?.tremoloPicking), 'Tremolo Picking', 'Szybkie repetycyjne kostkowanie jednej nuty.', '')}
-        ${palBtn('effect:trill', 'tr', Boolean(note?.trill), 'Trill', 'Szybka naprzemienna oscylacja między dwoma progami.', '')}
-      </div>
-      <div class="studio-rail-select-row">
-        <span style="font-size:10.5px;color:var(--text-muted);font-weight:700;">Krzywa</span>
-        <select class="studio-pal-select" data-action="palette-bend" data-tip-name="Krzywa podciągnięcia (Bend)" data-tip-desc="Wybierz wysokość (+½, +1, +1½) lub bend + release / pre-bend.">
-          <option value="clear" ${!note?.bendPreset ? 'selected' : ''}>↗ Krzywa…</option>
-          ${bendOptions}
-        </select>
-      </div>
-    </div>
-
-    <!-- 4. Struktura utworu -->
+    <!-- Struktura utworu -->
     <div class="studio-rail-group">
       <div class="studio-rail-head"><span>Struktura</span></div>
       <div class="studio-rail-grid">
-        ${palBtn('struct:repeatOpen', '||:', Boolean(measure?.repeatOpen), 'Początek repetycji', 'Oznacza początek powtarzanego fragmentu partytury.', '')}
-        ${palBtn('prompt:repeatClose', measure?.repeatClose >= 2 ? `:${measure.repeatClose}|` : ':||', (measure?.repeatClose || 0) >= 2, 'Koniec repetycji', 'Zamyka repetycję i ustawia liczbę powtórzeń (np. ×2, ×4).', '')}
-        ${palBtn('struct:volta:1', '1.', Boolean((measure?.voltaMask || 0) & 1), 'Volta 1.', 'Pierwsze zakończenie przed powtórzeniem repetycji.', '')}
-        ${palBtn('struct:volta:2', '2.', Boolean((measure?.voltaMask || 0) & 2), 'Volta 2.', 'Drugie zakończenie grane przy kolejnym przejściu.', '')}
+        ${isPro ? palBtn('struct:repeatOpen', '🔁|:', Boolean(measure?.repeatOpen), 'Początek pętli / repetycji', 'Oznacza początek powtarzanego fragmentu partytury (||:).', '') : ''}
+        ${isPro ? palBtn('prompt:repeatClose', measure?.repeatClose >= 2 ? `🔁×${measure.repeatClose}` : ':||🔁', (measure?.repeatClose || 0) >= 2, 'Koniec pętli / liczba powtórzeń', 'Zamyka repetycję (:||) i ustawia liczbę powtórzeń (np. ×2, ×4).', '') : ''}
+        ${isPro ? palBtn('struct:volta:1', '1.', Boolean((measure?.voltaMask || 0) & 1), 'Volta 1.', 'Pierwsze zakończenie przed powtórzeniem repetycji.', '') : ''}
+        ${isPro ? palBtn('struct:volta:2', '2.', Boolean((measure?.voltaMask || 0) & 2), 'Volta 2.', 'Drugie zakończenie grane przy kolejnym przejściu.', '') : ''}
         ${palBtn('struct:addBefore', '+▬', false, 'Dodaj takt przed', 'Wstawia nowy pusty takt przed bieżącym taktem.', '')}
         ${palBtn('struct:addAfter', '▬+', false, 'Dodaj takt po', 'Dopisuje nowy pusty takt za bieżącym taktem.', '')}
         ${palBtn('prompt:section', '§', Boolean(measure?.sectionMarker), measure?.sectionMarker ? `Sekcja: ${measure.sectionMarker}` : 'Znacznik sekcji', 'Nadaje taktom etykietę sekcji (Intro, Riff, Zwrotka, Refren).', 'M')}
-        ${palBtn('prompt:text', 'Aa', Boolean(beat?.text), beat?.text ? `Tekst: ${beat.text}` : 'Tekst / Adnotacja', 'Wpisuje dowolną wskazówkę wykonawczą nad uderzeniem.', 'T')}
+        ${isPro ? palBtn('prompt:text', 'Aa', Boolean(beat?.text), beat?.text ? `Tekst: ${beat.text}` : 'Tekst / Adnotacja', 'Wpisuje dowolną wskazówkę wykonawczą nad uderzeniem.', 'T') : ''}
         ${palBtn('prompt:chord', '[C]', Boolean(beat?.chordSymbol), beat?.chordSymbol ? `Akord: ${beat.chordSymbol}` : 'Symbol akordu', 'Umieszcza nazwę akordu (np. Em, G5, Cmaj7) nad uderzeniem.', '')}
       </div>
     </div>
 
-    <!-- 5. Przekształcenia, Schowek i Kasowanie -->
+    <!-- Przekształcenia, Schowek i Kasowanie -->
     <div class="studio-rail-group">
-      <div class="studio-rail-head"><span>Przekształcenia &amp; Schowek</span></div>
+      <div class="studio-rail-head"><span>${isPro ? 'Przekształcenia &amp; Schowek' : 'Edycja &amp; Schowek'}</span></div>
       <div class="studio-rail-grid">
         ${palBtn('transform:strUp', 'Str↑', false, 'Wyższa struna', 'Przenosi nutę lub cały zaznaczony fragment na sąsiednią cieńszą strunę bez zmiany wysokości MIDI.', 'Alt+↑')}
         ${palBtn('transform:strDown', 'Str↓', false, 'Niższa struna', 'Przenosi nutę lub cały zaznaczony fragment na sąsiednią grubszą strunę bez zmiany wysokości MIDI.', 'Alt+↓')}
@@ -309,26 +360,26 @@ export function renderStudioPaletteHtml(ctx = {}) {
         ${palBtn('transform:semiUp', '+½', false, 'Pół tonu w górę', 'Podnosi pojedynczą nutę lub całe zaznaczenie na TAB o 1 półton (+1 próg).', 'Shift+→')}
         ${palBtn('transform:octDown', '-8', false, 'Oktawa w dół', 'Obniża nutę lub cały zaznaczony fragment o 12 półtonów.', 'Shift+↓')}
         ${palBtn('transform:octUp', '+8', false, 'Oktawa w górę', 'Podnosi nutę lub cały zaznaczony fragment o 12 półtonów.', 'Shift+↑')}
-        ${palBtn('transform:moveBeatLeft', '←B', false, 'Przesuń Beat w lewo', 'Zamienia bieżące uderzenie miejscami z poprzednim.', '')}
-        ${palBtn('transform:moveBeatRight', 'B→', false, 'Przesuń Beat w prawo', 'Zamienia bieżące uderzenie miejscami z następnym.', '')}
+        ${isPro ? palBtn('transform:moveBeatLeft', '←B', false, 'Przesuń Beat w lewo', 'Zamienia bieżące uderzenie miejscami z poprzednim.', '') : ''}
+        ${isPro ? palBtn('transform:moveBeatRight', 'B→', false, 'Przesuń Beat w prawo', 'Zamienia bieżące uderzenie miejscami z następnym.', '') : ''}
         ${palBtn('prompt:transpose', 'A⇅', false, 'Transpozycja zaznaczenia', 'Przesuwa wszystkie dźwięki w zaznaczonym fragmencie lub taktach o zadaną liczbę półtonów.', '')}
         ${palBtn('clip:cut', '✂', false, 'Wytnij fragment / takty', 'Kopiuje zaznaczony fragment uderzeń (lub takty) do schowka i czyści zawartość.', 'Ctrl+X')}
         ${palBtn('clip:copy', '📋', false, 'Kopiuj fragment / takty', 'Kopiuje zaznaczone uderzenia na TAB lub wybrany zakres taktów.', 'Ctrl+C')}
-        ${palBtn('clip:paste', pasteLabel, pasteActive, 'Wklej w kliknięte miejsce', 'Wkleja skopiowany fragment uderzeń od klikniętego taktu/uderzenia (lub pełne takty).', 'Ctrl+V')}
+        ${palBtn('clip:paste', pasteLabel, pasteActive, 'Wklej w kliknięte miejsce', ctx.clipboard?.label ? `Wkleja ze schowka: ${ctx.clipboard.label} (${beatClipCount || clipCount}) od klikniętego taktu/uderzenia.` : 'Wkleja skopiowany fragment uderzeń od klikniętego taktu/uderzenia (lub pełne takty).', 'Ctrl+V')}
         ${palBtn('clip:dup1', '×1', false, 'Duplikuj (×1)', 'Powiela bieżący takt bezpośrednio po nim.', 'D')}
-        ${palBtn('clip:dup2', '×2', false, 'Duplikuj ×2', 'Powiela wybrany takt lub zakres dwukrotnie.', '')}
-        ${palBtn('clip:dup4', '×4', false, 'Duplikuj ×4', 'Powiela wybrany takt lub zakres czterokrotnie.', '')}
+        ${isPro ? palBtn('clip:dup2', '×2', false, 'Duplikuj ×2', 'Powiela wybrany takt lub zakres dwukrotnie.', '') : ''}
+        ${isPro ? palBtn('clip:dup4', '×4', false, 'Duplikuj ×4', 'Powiela wybrany takt lub zakres czterokrotnie.', '') : ''}
         ${palBtn('del:note', 'N🗑', false, 'Usuń nutę', 'Kasuje pojedynczą nutę pod pomarańczowym kursorem.', 'Del', 'danger')}
         ${palBtn('del:beat', 'B🗑', false, 'Usuń uderzenie', 'Usuwa całe uderzenie (Beat) z taktu.', 'Ctrl+Del', 'danger')}
         ${palBtn('del:barClear', 'T🗑', false, 'Wyczyść takt', 'Zamienia wszystkie uderzenia bieżącego taktu na pauzy.', 'Shift+Del', 'danger')}
         ${palBtn('del:barRemove', '−T', false, 'Usuń takt z utworu', 'Trwale usuwa bieżący takt ze wszystkich ścieżek.', 'Ctrl+Shift+Del', 'danger')}
       </div>
-      <div class="studio-rail-grid-4" style="margin-top:2px;">
+      ${isPro ? `<div class="studio-rail-grid-4" style="margin-top:2px;">
         <button type="button" class="studio-pal-btn ${clipScope === 'track' ? 'active' : ''}" data-action="set-clip-scope" data-scope="track" data-tip-name="Zakres: 1 ścieżka" data-tip-desc="Kopiuj i wklejaj tylko aktywną ścieżkę.">1 Śc.</button>
         <button type="button" class="studio-pal-btn ${clipScope === 'all' ? 'active' : ''}" data-action="set-clip-scope" data-scope="all" data-tip-name="Zakres: Wszystkie ścieżki" data-tip-desc="Kopiuj i wklejaj pełny układ całego zespołu.">Wsz.</button>
         <button type="button" class="studio-pal-btn ${pasteMode === 'overwrite' ? 'active' : ''}" data-action="set-paste-mode" data-mode="overwrite" data-tip-name="Tryb wklejania: Nadpisz" data-tip-desc="Zastępuje istniejące takty zawartością ze schowka.">Nadp.</button>
         <button type="button" class="studio-pal-btn ${pasteMode === 'insert' ? 'active' : ''}" data-action="set-paste-mode" data-mode="insert" data-tip-name="Tryb wklejania: Wstaw nowe" data-tip-desc="Wstawia nowe takty po bieżącym takcie.">Wstaw</button>
-      </div>
+      </div>` : ''}
     </div>
   </div>`;
 }

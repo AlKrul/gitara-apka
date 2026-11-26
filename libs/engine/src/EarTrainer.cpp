@@ -77,6 +77,12 @@ EarQuestion EarTrainer::nextQuestion() {
     }
 
     int secondMidi = asc ? (rootMidi + chosenIv.semitones) : (rootMidi - chosenIv.semitones);
+    if (config_.rootMode != RootNoteMode::FixedPitch) {
+        while (std::min(rootMidi, secondMidi) < 40 && std::max(rootMidi, secondMidi) + 12 <= 84) {
+            rootMidi += 12;
+            secondMidi += 12;
+        }
+    }
 
     EarQuestion q{};
     q.roundNumber = completedRounds_ + 1;
@@ -108,11 +114,10 @@ bool EarTrainer::submitIntervalAnswer(int guessedSemitones, double reactionTimeM
 
 bool EarTrainer::submitPlayedGuitarMidi(int detectedMidiNote, double reactionTimeMs) {
     int expectedMidi = currentQuestion_.secondPitch.midiNumber();
-    int guessedSemitones = std::abs(detectedMidiNote - currentQuestion_.rootPitch.midiNumber());
     if (detectedMidiNote == expectedMidi) {
         return submitIntervalAnswer(currentQuestion_.interval.semitones, reactionTimeMs);
     }
-    return submitIntervalAnswer(guessedSemitones, reactionTimeMs);
+    return submitIntervalAnswer(-1, reactionTimeMs);
 }
 
 bool EarTrainer::isSessionFinished() const noexcept {

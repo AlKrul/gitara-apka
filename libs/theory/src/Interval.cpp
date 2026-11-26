@@ -42,7 +42,7 @@ std::string_view Interval::shortCode() const noexcept {
         case 1:  return "m2";
         case 2:  return "M2";
         case 3:  return degree == 2 ? "A2" : "m3";
-        case 4:  return "M3";
+        case 4:  return degree == 4 ? "d4" : "M3";
         case 5:  return "P4";
         case 6:  return degree == 4 ? "A4" : (degree == 5 ? "d5" : "TT");
         case 7:  return "P5";
@@ -68,7 +68,7 @@ std::string_view Interval::polishName() const noexcept {
         case 1:  return "Sekunda mała";
         case 2:  return "Sekunda wielka";
         case 3:  return degree == 2 ? "Sekunda zwiększona" : "Tercja mała";
-        case 4:  return "Tercja wielka";
+        case 4:  return degree == 4 ? "Kwarta zmniejszona" : "Tercja wielka";
         case 5:  return "Kwarta czysta";
         case 6:  return degree == 4 ? "Kwarta zwiększona (tryton)" : "Kwinta zmniejszona (tryton)";
         case 7:  return "Kwinta czysta";
@@ -89,6 +89,9 @@ std::string_view Interval::polishName() const noexcept {
 }
 
 std::string_view Interval::songHintAscending() const noexcept {
+    if (semitones > 0 && semitones % 12 == 0) {
+        return "Somewhere Over the Rainbow (oktawa)";
+    }
     switch (semitones % 12) {
         case 0:  return "Powtórzony ten sam dźwięk";
         case 1:  return "Szczęki (Jaws) – temat główny";

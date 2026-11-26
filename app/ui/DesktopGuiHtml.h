@@ -438,32 +438,269 @@ select, input[type="number"] {
   background: rgba(243, 146, 55, 0.12);
 }
 
-/* Kształcenie słuchu – wyśrodkowany układ 2-kolumnowy z czytelnymi kafelkami */
-.ear-config-layout {
-  display: flex;
-  gap: 28px;
-  align-items: flex-start;
+/* Studio Kształcenia Słuchu (.et-*) – autorski, modularny układ na tokenach motywu */
+.et-shell {
   width: 100%;
-  max-width: 1360px;
+  max-width: 1380px;
   margin: 0 auto;
-}
-.ear-config-main {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  padding-bottom: 12px;
 }
-.ear-summary-box {
-  width: 340px;
-  flex-shrink: 0;
-  background: #171310;
+.et-topbar {
+  background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+.et-topbar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.et-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.et-title-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.et-title-line h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text);
+}
+.et-subtitle {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.et-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.et-badge.accent {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.et-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.et-mode-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.et-mode-tab {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: 0.14s ease;
+}
+.et-mode-tab:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.et-mode-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #140e08;
+}
+.et-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.38fr) minmax(320px, 0.88fr);
+  gap: 16px;
+  align-items: start;
+}
+.et-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.et-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.et-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.et-card-head h3 {
+  font-size: 15.5px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text);
+}
+.et-preset-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.et-preset-chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.12s;
+}
+.et-preset-chip:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.et-preset-chip.active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.et-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 8px;
+}
+.et-tile {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 10px 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 74px;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.12s;
+}
+.et-tile:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+.et-tile.selected {
+  background: var(--accent-glow);
+  border: 1.5px solid var(--accent);
+}
+.et-tile-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.et-tile-code {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.et-tile.selected .et-tile-code {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #140e08;
+}
+.et-tile-play {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-main);
+  color: var(--text-muted);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+.et-tile-play:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.et-tile-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.et-tile-meta {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+.et-note-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.et-weak-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+@media (max-width: 1100px) {
+  .et-config-grid {
+    grid-template-columns: 1fr;
+  }
 }
 /* Praktyka skal – pełny, wyśrodkowany układ studyjny z kartami i sticky podsumowaniem */
 .sp-shell {
@@ -587,69 +824,6 @@ select, input[type="number"] {
   .sp-summary-card { position: static; }
   .sp-two-col { grid-template-columns: 1fr; }
 }
-.ear-intervals-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 92px);
-  gap: 8px;
-}
-.ear-interval-tile {
-  width: 92px;
-  height: 64px;
-  background: #181411;
-  border: 1px solid #2e2721;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  cursor: pointer;
-  text-align: center;
-  gap: 3px;
-  transition: 0.12s;
-}
-.ear-interval-tile:hover {
-  border-color: #6b5744;
-}
-.ear-interval-tile.selected {
-  background: rgba(243, 146, 55, 0.10);
-  border: 1.5px solid var(--accent);
-}
-.ear-interval-tile .iv-name {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #a8a096;
-  line-height: 1.15;
-}
-.ear-interval-tile .iv-code {
-  font-size: 11px;
-  font-weight: 700;
-  color: #787067;
-}
-.ear-interval-tile.selected .iv-name,
-.ear-interval-tile.selected .iv-code {
-  color: var(--accent);
-}
-.ear-chord-pill {
-  min-width: 96px;
-  height: 44px;
-  padding: 0 16px;
-  background: #181411;
-  border: 1px solid #2e2721;
-  border-radius: 8px;
-  color: #a8a096;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.ear-chord-pill.selected {
-  background: rgba(243, 146, 55, 0.10);
-  border: 1.5px solid var(--accent);
-  color: var(--accent);
-}
 .ear-seg-row {
   display: flex;
   background: #16120f;
@@ -700,49 +874,430 @@ select, input[type="number"] {
   left: 23px;
   background: #140e08;
 }
-/* Aktywny ekran Treningu Słuchu (Quiz / Nauka / Zagraj / Akordy) */
-.ear-trainer-screen {
-  max-width: 760px;
-  margin: 0 auto;
-  width: 100%;
+/* Aktywna arena oraz podsumowanie Kształcenia słuchu (.et-*) */
+.et-hud {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 18px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 12px 0;
+  gap: 10px;
 }
-.ear-answer-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 220px);
-  justify-content: center;
+.et-hud-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
-.ear-answer-btn {
-  width: 220px;
-  height: 68px;
-  background: #191512;
-  border: 1px solid #2e2721;
-  border-radius: 10px;
+.et-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.et-hud-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.et-stat-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 5px 11px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.et-stat-pill strong {
   color: var(--text);
-  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.et-progress-track {
+  width: 100%;
+  height: 5px;
+  background: var(--bg-card);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.et-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+.et-arena {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.et-arena.single-col {
+  grid-template-columns: minmax(0, 1fr);
+}
+.et-prompt-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  transition: 0.12s;
+  text-align: center;
+  gap: 12px;
+  min-height: 220px;
 }
-.ear-answer-btn:hover { border-color: var(--accent); }
-.ear-answer-btn.selected {
+.et-sound-orb {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: var(--bg-card);
   border: 2px solid var(--accent);
-  background: rgba(243, 146, 55, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+  cursor: pointer;
+  transition: 0.14s ease;
 }
-.ear-answer-btn.correct {
+.et-sound-orb:hover {
+  transform: scale(1.04);
+  background: var(--bg-hover);
+}
+.et-sound-orb.correct {
+  border-color: var(--green);
+  color: var(--green);
+}
+.et-sound-orb.wrong {
+  border-color: var(--red);
+  color: var(--red);
+}
+.et-fret-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+.et-fret-wrap {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  overflow-x: auto;
+}
+.et-answer-deck {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.et-answer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
+  gap: 10px;
+}
+.et-answer-btn {
+  position: relative;
+  min-height: 66px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  text-align: left;
+  transition: 0.12s ease;
+}
+.et-answer-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+.et-answer-btn.selected {
+  border: 2px solid var(--accent);
+  background: var(--accent-glow);
+}
+.et-answer-btn.correct {
   border: 2px solid var(--green);
-  background: rgba(74, 222, 128, 0.16);
+  background: rgba(74, 222, 128, 0.15);
 }
-.ear-answer-btn.wrong {
+.et-answer-btn.wrong {
   border: 2px solid var(--red);
-  background: rgba(248, 113, 113, 0.16);
+  background: rgba(248, 113, 113, 0.15);
+}
+.et-kbd {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: monospace;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.et-play-detected {
+  min-width: 128px;
+  padding: 12px 22px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.et-play-detected.answered {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(74, 222, 128, 0.12);
+}
+.et-shortcuts-bar {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  padding-top: 4px;
+}
+.et-summary-hero {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.et-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.et-kpi-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.et-kpi-card strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+}
+.et-kpi-card span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.et-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.et-summary-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(120px, 1.8fr) auto auto auto;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+.et-meter-track {
+  height: 7px;
+  background: var(--bg-main);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.et-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+.et-summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+.et-seq-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+}
+.et-seq-slot {
+  min-width: 78px;
+  min-height: 58px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: 0.12s ease;
+}
+.et-seq-slot:hover {
+  border-color: var(--accent);
+}
+.et-seq-slot.filled {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.et-seq-slot.active-play {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+  transform: translateY(-1px);
+}
+.et-seq-slot.correct {
+  border-color: var(--green);
+  background: rgba(74, 222, 128, 0.14);
+}
+.et-seq-slot.wrong {
+  border-color: var(--red);
+  background: rgba(248, 113, 113, 0.14);
+}
+.et-seq-idx {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.et-seq-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+.et-seq-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+.et-rhythm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+.et-rhythm-beat {
+  height: 44px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: 0.1s;
+}
+.et-rhythm-beat.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.et-rhythm-beat.hit-perfect {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: var(--green);
+  color: var(--green);
+}
+.et-rhythm-beat.hit-close {
+  background: rgba(250, 204, 21, 0.18);
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+.et-rhythm-beat.hit-miss {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: var(--red);
+  color: var(--red);
+}
+.et-rhythm-pad {
+  width: 100%;
+  max-width: 340px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  border: 2px solid var(--accent);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: 0.08s ease;
+}
+.et-rhythm-pad:hover {
+  background: var(--accent-glow);
+}
+.et-rhythm-pad:active {
+  transform: scale(0.98);
+}
+.et-timing-verdict {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+.et-timing-verdict.perfect { color: var(--green); border-color: var(--green); }
+.et-timing-verdict.close { color: var(--yellow); border-color: var(--yellow); }
+.et-timing-verdict.early,
+.et-timing-verdict.late { color: var(--red); border-color: var(--red); }
+@media (max-width: 1040px) {
+  .et-arena { grid-template-columns: 1fr; }
+  .et-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .et-summary-row { grid-template-columns: 1fr auto auto; }
 }
 .changes-workspace {
   max-width: 1240px;
@@ -1314,26 +1869,30 @@ body.ui-mode-fhd .midi-keys {
   height: 68px;
   min-height: 68px;
 }
-body.ui-mode-fhd .ear-config-layout {
-  gap: 20px;
+body.ui-mode-fhd .et-shell {
+  gap: 12px;
 }
-body.ui-mode-fhd .ear-summary-box {
-  width: 310px;
-  padding: 16px;
+body.ui-mode-fhd .et-config-grid {
+  grid-template-columns: minmax(0, 1.32fr) minmax(295px, 0.88fr);
+  gap: 12px;
 }
-body.ui-mode-fhd .ear-intervals-grid {
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+body.ui-mode-fhd .et-card {
+  padding: 14px 16px;
+  gap: 11px;
 }
-body.ui-mode-fhd .ear-interval-tile {
-  width: auto;
-  height: 58px;
+body.ui-mode-fhd .et-tile-grid {
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
 }
-body.ui-mode-fhd .ear-answer-grid {
-  grid-template-columns: repeat(3, minmax(170px, 210px));
+body.ui-mode-fhd .et-tile {
+  min-height: 66px;
+  padding: 8px 9px;
 }
-body.ui-mode-fhd .ear-answer-btn {
-  width: auto;
-  height: 62px;
+body.ui-mode-fhd .et-answer-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+body.ui-mode-fhd .et-answer-btn {
+  min-height: 58px;
+  padding: 8px 10px;
 }
 body.ui-mode-fhd .sp-grid {
   grid-template-columns: minmax(0, 1fr) 330px;
@@ -1562,6 +2121,25 @@ body.ui-mode-fhd .sp-card {
 :root[data-theme="light"] .ear-toggle-switch.on {
   background: var(--accent);
   border-color: var(--accent);
+}
+:root[data-theme="light"] .et-mode-tab.active,
+:root[data-theme="light"] .et-tile.selected .et-tile-code,
+:root[data-ui-style="modern"] .et-mode-tab.active,
+:root[data-ui-style="modern"] .et-tile.selected .et-tile-code,
+:root[data-ui-style="bento"] .et-mode-tab.active,
+:root[data-ui-style="bento"] .et-tile.selected .et-tile-code {
+  color: #ffffff;
+}
+:root[data-theme="light"] .et-card,
+:root[data-theme="light"] .et-topbar,
+:root[data-theme="light"] .et-hud,
+:root[data-theme="light"] .et-prompt-card,
+:root[data-theme="light"] .et-fret-card,
+:root[data-theme="light"] .et-answer-deck,
+:root[data-theme="light"] .et-summary-hero,
+:root[data-theme="light"] .et-kpi-card,
+:root[data-theme="light"] .et-summary-actions {
+  box-shadow: 0 2px 10px rgba(28, 25, 23, 0.05);
 }
 :root[data-theme="light"] .ex-staff-toggle-bar {
   background: #f3eee7;
@@ -2337,6 +2915,7 @@ button:focus-visible, select:focus-visible, input:focus-visible {
         <button class="subtab-btn" data-subtab="search" onclick="switchPracticeSubtab('search', this)">Szukaj</button>
         <button class="subtab-btn" data-subtab="arpeggio" onclick="switchPracticeSubtab('arpeggio', this)">Arpeggio</button>
         <button class="subtab-btn" data-subtab="sweep" onclick="switchPracticeSubtab('sweep', this)">⚡ Sweep Picking</button>
+        <button class="subtab-btn" data-subtab="scale_practice" onclick="switchPracticeSubtab('scale_practice', this)">🎯 Praktyka skal</button>
         <button class="subtab-btn" data-subtab="exercise" onclick="switchPracticeSubtab('exercise', this)">✏️ Ćwiczenie (TAB)</button>
       </div>
       <div id="viewHeaderTitle" style="display:none;font-size:20px;font-weight:800;">Tuner</div>
@@ -2623,23 +3202,47 @@ const state = {
   changesAlmostCount: 0,
   changesCloseCount: 0,
   changesEvaluatedBar: -1,
-  // Kompletny stan Kształcenia Słuchu (Zrzuty 1–7)
+  // Stan modułu Kształcenie słuchu
   earScreen: 'config', // 'config' | 'active' | 'summary'
-  earMode: 'identify', // 'learn' (Nauka) | 'identify' (Rozpoznaj) | 'play' (Zagraj) | 'chords' (Akordy)
-  earSelectedSemis: new Set([0, 3, 4, 5, 7, 12]), // Domyślnie 6 interwałów: P1, m3, M3, P4, P5, P8
-  earSelectedChords: new Set(['major', 'minor', 'dim', 'maj7', '7', 'm7', 'm7b5']), // 7 rodzajów akordów
+  earMode: 'identify', // 'identify' | 'learn' | 'play' | 'chords' | 'scales' | 'degrees' | 'dictation' | 'progressions' | 'rhythm'
+  earSelectedSemis: new Set([0, 3, 4, 5, 7, 12]), // Domyślnie: P1, m3, M3, P4, P5, P8
+  earSelectedChords: new Set(['major', 'minor', 'dim', 'maj7', '7', 'm7', 'm7b5']),
   earSelectedInversions: new Set([0, 1, 2, 3]), // Zasadn., 1., 2., 3.
+  earSelectedScales: new Set(['major', 'minor', 'dorian', 'mixolydian', 'pent_minor', 'blues']),
+  earScaleDirection: 'asc', // 'asc' | 'desc' | 'updown'
+  earDegreeTonality: 'major', // 'major' | 'minor'
+  earSelectedDegrees: new Set([0, 2, 4, 5, 7, 9, 11]),
+  earDegreeAutoCadence: true,
+  earDictationScaleId: 'pent_minor',
+  earDictationLength: 4, // 3 | 4 | 5
+  earDictationStartOnRoot: true,
+  earDictationLastLiveMs: 0,
+  earSelectedProgressions: new Set(['pop_1564', 'cad_1451', 'fifties_1645', 'jazz_2516', 'min_1637', 'min_1451']),
+  earProgUserSlots: [],
+  earRhythmPatternId: 'eighths',
+  earRhythmBpm: 90,
+  earRhythmBars: 4,
+  earRhythmGuideSound: false,
+  earRhythmRunning: false,
+  earRhythmState: null,
   earInstrument: 'guitar', // 'guitar' | 'piano'
   earPlaybackStyle: 'melodic', // 'melodic' | 'harmonic'
+  earTempo: 'normal', // 'slow' | 'normal' | 'fast'
   earDirection: 'asc', // 'asc' | 'desc' | 'rand'
   earRootMode: 'random', // 'random' | 'fixed_note' | 'fixed_pitch'
   earFixedRootPc: 0,
   earFixedOctave: 3, // Oktawa bazowa dla trybu „Nuta + oktawa”
   earSessionType: 'fixed', // 'fixed' (Ustalony) | 'endless' (Bez końca)
-  earTargetRounds: 10, // Dowolna wybrana liczba rund (np. 5, 10, 15, 20, 30, 50 lub własna)
+  earTargetRounds: 10,
   earMeasureReaction: false,
   earShowSongHints: false,
-  // Stan aktywnego quizu i podsumowania Treningu Słuchu
+  earShowFretboard: true,
+  earPlayHearTarget: false,
+  earPlayFretHint: false,
+  earRandomRollInfo: '',
+  earLearnLastItem: null,
+  earPersistentStats: null, // Leniwie wczytywane przez getEarPersistentStats()
+  // Stan aktywnego quizu i podsumowania Kształcenia słuchu
   earRound: 1,
   earScore: 0,
   earAttempts: 0,
@@ -2649,8 +3252,8 @@ const state = {
   earSessionDurationSec: 0,
   earQuestionAskedMs: 0,
   earReactionTimesMs: [],
-  earHistory: [], // [{ key, name, code, correct, total }]
-  earCurrentQuestion: null, // { rootMidi, targetMidi, semi, asc, chordId, inversion, askedAtMs, answered }
+  earHistory: [], // [{ key, name, code, correct, total, totalMs }]
+  earCurrentQuestion: null,
   earPickedChordId: null,
   earPickedInversion: 0,
   earCompareMode: false,
@@ -2728,6 +3331,8 @@ const state = {
   arpFilterByScale: false,
   arpAutoTempo: false,
   savedSweepCompositions: [],
+  sweepToastMsg: '',
+  tabToastMsg: '',
   arpDiatonicScaleId: 'major',
   arpDiatonicScaleRootPc: 0,
   arpBpm: 90,
@@ -2744,6 +3349,7 @@ const state = {
   exerciseStaffPrefV2: false,
   exerciseTabWrapRows: true, // Domyślnie zawijane wiersze jak tekst (bez poziomego paska przewijania)
   exerciseBarsPerRow: 0, // 0 = Auto (zawijaj gdy takt się nie mieści), lub 2 / 4 / 6 / 8 taktów w wierszu
+  exerciseTabZoom: 100,
   tempoBpm: 120,
   timeSigNum: 4,
   timeSigDen: 4,
@@ -2754,7 +3360,10 @@ const state = {
   exerciseMinFret: 0,
   exerciseMaxFret: 24,
   exerciseTitle: 'Twoje ćwiczenie',
-  exerciseSubView: 'composer', // 'composer' | 'scale_practice' | 'harmonics'
+  exerciseSubView: 'composer', // 'composer' | 'harmonics'
+  exerciseTabAppendNotice: '',
+  scaleOctaveHighlight: false,
+  scaleOctaveAnchorPc: null,
   exercisePlayerActive: false,
   exercisePlayerMode: 'listen', // 'listen' | 'play'
   exercisePlayerView: 'tab', // 'tab' (Partytura TAB + Gryf) | 'ribbon' (Ścieżka skali / wolny gryf — Zdjęcie 3)
@@ -3060,55 +3669,6 @@ function updateGuitarToKeyboardSync() {
         const el = resolvePianoKeyElement(st.midi);
         if (el) el.classList.add('guitar-play-sync');
       }
-      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
     }
   }
@@ -3122,55 +3682,6 @@ function updateGuitarToKeyboardSync() {
 
   if (focusPc !== null && focusPc !== undefined) {
     if (state.mainView === 'practice' && state.subtab === 'scale' && !isScaleDegreeHighlightEnabled(focusPc)) {
-      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
     }
     for (let m = 40; m <= 88; m++) {
@@ -3185,55 +3696,6 @@ function updateGuitarToKeyboardSync() {
   activeMidis.forEach(am => {
     const pc = ((Math.round(am) % 12) + 12) % 12;
     if (state.mainView === 'practice' && state.subtab === 'scale' && !isScaleDegreeHighlightEnabled(pc)) {
-      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
     }
     const el = resolvePianoKeyElement(am);
@@ -3297,18 +3759,17 @@ function makeTubeOverdriveCurve(driveAmount) {
 
 // Bezszumowy generator drgającej struny gitarowej (rozwiązanie równania falowego sztywnej struny
 // ze składowymi harmonicznymi 1..K – ZERO losowego białego szumu Math.random() i 100% czysta intonacja!)
-function buildCleanGuitarStringBuffer(ctx, freqHz, durationSec, tone) {
+function buildCleanGuitarStringBuffer(ctx, freqHz, durationSec, tone, decayHintSec = 0, isPalmMute = false) {
   const sr = ctx.sampleRate;
   const totalSamples = Math.max(64, Math.floor(sr * durationSec));
   const buffer = ctx.createBuffer(1, totalSamples, sr);
   const data = buffer.getChannelData(0);
 
-  // Punkt pobudzenia struny (wzdłuż menzury) oraz charakterystyka tłumienia wyższych harmonicznych
   const pluckPos = (tone === 'nylon') ? 0.29
                  : (tone === 'acoustic') ? 0.19
                  : (tone === 'clean' || tone === 'chorus') ? 0.23
                  : (tone === 'crunch') ? 0.25
-                 : 0.22; // lead
+                 : 0.22;
   const rollOffPower = (tone === 'nylon') ? 1.48
                      : (tone === 'acoustic') ? 1.08
                      : (tone === 'clean' || tone === 'chorus') ? 1.18
@@ -3319,19 +3780,24 @@ function buildCleanGuitarStringBuffer(ctx, freqHz, durationSec, tone) {
                      : (tone === 'clean' || tone === 'chorus') ? 1.95
                      : (tone === 'crunch') ? 2.15
                      : 2.45;
+  let effDecayTau = baseDecayTau;
+  if (isPalmMute) {
+    effDecayTau = Math.min(baseDecayTau, Math.max(0.16, (decayHintSec || durationSec) * 0.72));
+  } else if (decayHintSec > baseDecayTau * 1.1) {
+    effDecayTau = Math.max(baseDecayTau, Math.min(7.5, decayHintSec * 0.85));
+  }
   const inharmB = (tone === 'acoustic') ? 0.000038 : 0.000010;
   const maxHarm = Math.min(10, Math.max(3, Math.floor(9500 / Math.max(40, freqHz))));
 
-  // Oblicz parametry poszczególnych składowych harmonicznych struny
   const partials = [];
   let ampSum = 0;
   for (let k = 1; k <= maxHarm; k++) {
     const fn = freqHz * k * Math.sqrt(1 + inharmB * k * k);
     if (fn >= sr * 0.44) break;
     let amp = Math.abs(Math.sin(k * Math.PI * pluckPos)) / Math.pow(k, rollOffPower);
-    if (k === 1) amp = Math.max(amp, 0.95); // Wyraźny, mocny ton podstawowy w każdym brzmieniu
+    if (k === 1) amp = Math.max(amp, 0.95);
     if (k === 2) amp = Math.max(amp, 0.42);
-    const tau = baseDecayTau / (1.0 + 0.42 * Math.pow(k - 1, 1.45));
+    const tau = effDecayTau / (1.0 + 0.42 * Math.pow(k - 1, 1.45));
     const decayPerSample = Math.exp(-1.0 / (sr * tau));
     partials.push({
       dPhase: (2.0 * Math.PI * fn) / sr,
@@ -3634,23 +4100,56 @@ function stopCurrentScalePreview(clearHighlight = false) {
   }
 }
 
-function pluckGuitarFrequency(freqHz, durationSec = 1.45, gainScale = 1.0, trackAsPreview = false) {
+function pluckGuitarFrequency(freqHz, durationSec = 1.45, gainScale = 1.0, trackAsPreview = false, opts = null) {
+  const reqDur = Math.max(0.045, Number(durationSec) || 1.45);
+  const strictDur = !!(opts && opts.strictDuration);
+  const isPalmMute = !!(opts && opts.palmMute);
+  const isHammerOn = !!(opts && opts.hammerOn);
   if (state.syncGuitarToKeyboard && freqHz > 20) {
     const m = Math.round(69 + 12 * Math.log2(freqHz / (state.a4ReferenceHz || 440.0)));
-    flashGuitarNoteOnKeyboard(m, Math.min(850, Math.max(240, Math.round(durationSec * 460))));
+    const flashMs = strictDur
+      ? Math.min(2200, Math.max(65, Math.round(reqDur * 950)))
+      : Math.min(850, Math.max(240, Math.round(reqDur * 460)));
+    flashGuitarNoteOnKeyboard(m, flashMs);
   }
   const ctx = ensureAudioCtx();
   const now = ctx.currentTime;
+  const t0 = (opts && Number.isFinite(opts.whenSec)) ? Math.max(now, opts.whenSec) : now;
   const tone = state.guitarTonePreset || 'acoustic';
-  const effDur = (tone === 'lead') ? Math.max(durationSec, 1.85) : Math.max(durationSec, 1.40);
+  const releaseSec = strictDur
+    ? (isPalmMute ? Math.min(0.035, Math.max(0.015, reqDur * 0.35)) : Math.min(0.055, Math.max(0.02, reqDur * 0.22)))
+    : 0.05;
+  const effDur = strictDur
+    ? Math.min(8.5, reqDur + releaseSec + 0.03)
+    : ((tone === 'lead') ? Math.max(reqDur, 1.85) : Math.max(reqDur, 1.40));
 
-  const buffer = buildCleanGuitarStringBuffer(ctx, freqHz, effDur, tone);
+  const decayHint = strictDur ? reqDur : (reqDur > 1.8 ? reqDur : 0);
+  const buffer = buildCleanGuitarStringBuffer(ctx, freqHz, effDur, tone, decayHint, isPalmMute);
   const src = ctx.createBufferSource();
   src.buffer = buffer;
 
+  const pitchCurve = (opts && Array.isArray(opts.pitchCurve) && opts.pitchCurve.length >= 2) ? opts.pitchCurve : null;
+  if (pitchCurve) {
+    const curveSpanSec = Math.max(0.06, reqDur);
+    pitchCurve.forEach((pt, pIdx) => {
+      const rawPos = (pt && pt.pos !== undefined) ? pt.pos : (pt && pt.position);
+      const rawVal = (pt && pt.val !== undefined) ? pt.val : (pt && pt.value);
+      const pRatio = Math.max(0, Math.min(1, (Number(rawPos) || 0) / 60));
+      const semiShift = (Number(rawVal) || 0) / 50;
+      const rate = Math.max(0.25, Math.min(3.0, Math.pow(2, semiShift / 12)));
+      const at = t0 + pRatio * curveSpanSec;
+      if (pIdx === 0) {
+        src.playbackRate.setValueAtTime(rate, t0);
+      } else {
+        src.playbackRate.linearRampToValueAtTime(rate, at);
+      }
+    });
+  }
+
   const noteOutGain = ctx.createGain();
   const volMul = (state.synthVolume !== undefined) ? state.synthVolume : 0.85;
-  noteOutGain.gain.setValueAtTime(Math.max(0.03, Math.min(1.5, gainScale * volMul)), now);
+  const peakGain = Math.max(0.03, Math.min(1.5, gainScale * (isHammerOn ? 0.84 : 1.0) * volMul));
+  noteOutGain.gain.setValueAtTime(peakGain, t0);
   noteOutGain.connect(getMasterAudioOut());
 
   if (trackAsPreview) {
@@ -3659,30 +4158,56 @@ function pluckGuitarFrequency(freqHz, durationSec = 1.45, gainScale = 1.0, track
     src.onended = () => activePreviewVoices.delete(voiceRec);
   }
 
-  connectGuitarToneChain(ctx, src, noteOutGain, tone, now, now + effDur, null);
-  src.start(now);
+  const holdEnd = t0 + Math.max(0.02, reqDur - releaseSec * 0.35);
+  const fadeEnd = holdEnd + releaseSec;
+  const voiceEndSec = strictDur ? fadeEnd : (t0 + effDur);
+
+  if (opts && (opts.vibrato || opts.wideVibrato) && reqDur >= 0.16 && src.detune) {
+    try {
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(opts.wideVibrato ? 6.0 : 5.3, t0);
+      lfoGain.gain.setValueAtTime(opts.wideVibrato ? 38 : 18, t0);
+      lfo.connect(lfoGain);
+      lfoGain.connect(src.detune);
+      lfo.start(t0 + Math.min(0.06, reqDur * 0.25));
+      lfo.stop(voiceEndSec + 0.04);
+    } catch (e) {}
+  }
+
+  if (strictDur) {
+    noteOutGain.gain.setValueAtTime(peakGain, holdEnd);
+    noteOutGain.gain.exponentialRampToValueAtTime(0.0005, fadeEnd);
+    connectGuitarToneChain(ctx, src, noteOutGain, tone, t0, fadeEnd + 0.04, null);
+    src.start(t0);
+    src.stop(fadeEnd + 0.025);
+  } else {
+    connectGuitarToneChain(ctx, src, noteOutGain, tone, t0, t0 + effDur, null);
+    src.start(t0);
+  }
 }
 
-// Krystaliczny dzwonkowy dźwięk flażoletu naturalnego (czyste alikwoty + szybki błysk ataku)
-function playHarmonicBellFrequency(freqHz, durationSec = 1.65) {
+function playHarmonicBellFrequency(freqHz, durationSec = 1.65, whenSec = undefined) {
   if (!freqHz || freqHz < 40) return;
+  const dur = Math.max(0.08, Number(durationSec) || 1.65);
   if (state.syncGuitarToKeyboard) {
     const m = Math.round(69 + 12 * Math.log2(freqHz / (state.a4ReferenceHz || 440.0)));
-    flashGuitarNoteOnKeyboard(m, Math.min(900, Math.max(260, Math.round(durationSec * 460))));
+    flashGuitarNoteOnKeyboard(m, Math.min(1800, Math.max(85, Math.round(dur * 850))));
   }
   const ctx = ensureAudioCtx();
-  const now = ctx.currentTime;
+  const now = Number.isFinite(whenSec) ? Math.max(ctx.currentTime, whenSec) : ctx.currentTime;
   const volMul = (state.synthVolume !== undefined) ? state.synthVolume : 0.85;
   const master = ctx.createGain();
   master.gain.setValueAtTime(0.0001, now);
-  master.gain.linearRampToValueAtTime(0.42 * volMul, now + 0.008);
-  master.gain.exponentialRampToValueAtTime(0.0008, now + durationSec);
+  master.gain.linearRampToValueAtTime(0.42 * volMul, now + Math.min(0.008, dur * 0.25));
+  master.gain.exponentialRampToValueAtTime(0.0008, now + dur);
   master.connect(getMasterAudioOut());
 
   const partials = [
-    { mult: 1.0, amp: 0.78, dur: durationSec },
-    { mult: 2.0, amp: 0.24, dur: durationSec * 0.58 },
-    { mult: 3.0, amp: 0.08, dur: durationSec * 0.34 }
+    { mult: 1.0, amp: 0.78, dur: dur },
+    { mult: 2.0, amp: 0.24, dur: Math.max(0.05, dur * 0.58) },
+    { mult: 3.0, amp: 0.08, dur: Math.max(0.04, dur * 0.34) }
   ];
   partials.forEach(p => {
     const osc = ctx.createOscillator();
@@ -3699,31 +4224,33 @@ function playHarmonicBellFrequency(freqHz, durationSec = 1.65) {
 }
 
 // Synteza brzmień klawiatury wirtualnej (Fortepian, Organy Hammonda B3, Organy klasyczne, Rhodes, Gitara, Syntezator)
-function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0) {
+function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0, whenSec = undefined) {
+  const dur = Math.max(0.06, Number(durationSec) || 1.15);
   const preset = state.keyboardPreset || 'piano';
   if (preset === 'guitar') {
-    pluckGuitarFrequency(freqHz, durationSec, gainScale);
+    const hasWhen = Number.isFinite(whenSec);
+    pluckGuitarFrequency(freqHz, dur, gainScale, true, hasWhen ? { whenSec, strictDuration: true } : { strictDuration: true });
     return;
   }
   const ctx = ensureAudioCtx();
-  const now = ctx.currentTime;
+  const now = Number.isFinite(whenSec) ? Math.max(ctx.currentTime, whenSec) : ctx.currentTime;
   const voiceScale = ctx.createGain();
-  voiceScale.gain.setValueAtTime(Math.max(0.05, Math.min(1.5, gainScale)), now);
+  const volMulP = (state.synthVolume !== undefined) ? state.synthVolume : 0.85;
+  voiceScale.gain.setValueAtTime(Math.max(0.03, Math.min(1.5, gainScale * volMulP)), now);
   voiceScale.connect(getMasterAudioOut());
   const master = ctx.createGain();
   master.connect(voiceScale);
 
   if (preset === 'piano') {
-    // 🎹 Fortepian (addytywne harmoniczne z młoteczkowym atakiem i naturalnym wybrzmiewaniem)
     const harmonics = [
-      { mult: 1.0, amp: 0.42, decay: durationSec },
-      { mult: 2.0, amp: 0.20, decay: durationSec * 0.72 },
-      { mult: 3.0, amp: 0.09, decay: durationSec * 0.50 },
-      { mult: 4.0, amp: 0.04, decay: durationSec * 0.35 }
+      { mult: 1.0, amp: 0.42, decay: dur },
+      { mult: 2.0, amp: 0.20, decay: Math.max(0.04, dur * 0.72) },
+      { mult: 3.0, amp: 0.09, decay: Math.max(0.035, dur * 0.50) },
+      { mult: 4.0, amp: 0.04, decay: Math.max(0.03, dur * 0.35) }
     ];
     master.gain.setValueAtTime(0.001, now);
-    master.gain.linearRampToValueAtTime(0.55, now + 0.007);
-    master.gain.exponentialRampToValueAtTime(0.0008, now + durationSec);
+    master.gain.linearRampToValueAtTime(0.55, now + Math.min(0.007, dur * 0.2));
+    master.gain.exponentialRampToValueAtTime(0.0008, now + dur);
 
     harmonics.forEach((h, idx) => {
       const osc = ctx.createOscillator();
@@ -3736,10 +4263,9 @@ function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0) {
       osc.connect(g);
       g.connect(master);
       osc.start(now);
-      osc.stop(now + durationSec);
+      osc.stop(now + dur + 0.01);
     });
   } else if (preset === 'hammond') {
-    // 🎛️ Organy Hammonda B3 (drawbary 16', 5 1/3', 8', 4', 2 2/3', 2' + klik perkusyjny + wirnik Leslie LFO)
     const drawbars = [
       { mult: 0.5, amp: 0.16 },
       { mult: 1.0, amp: 0.28 },
@@ -3750,15 +4276,17 @@ function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0) {
     ];
     const lfo = ctx.createOscillator();
     const lfoGain = ctx.createGain();
-    lfo.frequency.value = 6.2; // Wirnik Leslie (Tremolo)
+    lfo.frequency.value = 6.2;
     lfoGain.gain.value = 7.5;
     lfo.start(now);
-    lfo.stop(now + durationSec);
+    lfo.stop(now + dur + 0.01);
 
+    const hAtk = Math.min(0.012, dur * 0.2);
+    const hHold = Math.max(hAtk + 0.005, Math.min(dur * 0.85, dur - 0.09));
     master.gain.setValueAtTime(0.001, now);
-    master.gain.linearRampToValueAtTime(0.42, now + 0.012);
-    master.gain.setValueAtTime(0.38, now + Math.max(0.05, durationSec - 0.12));
-    master.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+    master.gain.linearRampToValueAtTime(0.42, now + hAtk);
+    master.gain.setValueAtTime(0.38, now + hHold);
+    master.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
     drawbars.forEach(d => {
       const osc = ctx.createOscillator();
@@ -3771,22 +4299,20 @@ function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0) {
       osc.connect(g);
       g.connect(master);
       osc.start(now);
-      osc.stop(now + durationSec);
+      osc.stop(now + dur + 0.01);
     });
 
-    // Hammond Percussion (3rd harmonic click)
     const perc = ctx.createOscillator();
     const pg = ctx.createGain();
     perc.type = 'sine';
     perc.frequency.setValueAtTime(freqHz * 3.0, now);
     pg.gain.setValueAtTime(0.18, now);
-    pg.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+    pg.gain.exponentialRampToValueAtTime(0.001, now + Math.min(0.085, dur * 0.9));
     perc.connect(pg);
     pg.connect(master);
     perc.start(now);
-    perc.stop(now + 0.09);
+    perc.stop(now + Math.min(0.09, dur));
   } else if (preset === 'organ') {
-    // ⛪ Organy klasyczne (piszczałkowe – bogate rejestry oktawowe i kwintowe z łagodnym zadęciem)
     const pipes = [
       { mult: 0.5, type: 'triangle', amp: 0.16 },
       { mult: 1.0, type: 'triangle', amp: 0.24 },
@@ -3794,10 +4320,12 @@ function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0) {
       { mult: 3.0, type: 'sine', amp: 0.09 },
       { mult: 4.0, type: 'sine', amp: 0.11 }
     ];
+    const oAtk = Math.min(0.045, dur * 0.22);
+    const oHold = Math.max(oAtk + 0.005, Math.min(dur * 0.85, dur - 0.14));
     master.gain.setValueAtTime(0.001, now);
-    master.gain.linearRampToValueAtTime(0.40, now + 0.045);
-    master.gain.setValueAtTime(0.38, now + Math.max(0.08, durationSec - 0.18));
-    master.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+    master.gain.linearRampToValueAtTime(0.40, now + oAtk);
+    master.gain.setValueAtTime(0.38, now + oHold);
+    master.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
     pipes.forEach((p, idx) => {
       const osc = ctx.createOscillator();
@@ -3809,13 +4337,12 @@ function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0) {
       osc.connect(g);
       g.connect(master);
       osc.start(now);
-      osc.stop(now + durationSec);
+      osc.stop(now + dur + 0.01);
     });
   } else if (preset === 'rhodes') {
-    // ✨ Pianino elektryczne Fender Rhodes (ciepły dzwonek FM + tremolo)
     master.gain.setValueAtTime(0.001, now);
-    master.gain.linearRampToValueAtTime(0.48, now + 0.008);
-    master.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+    master.gain.linearRampToValueAtTime(0.48, now + Math.min(0.008, dur * 0.2));
+    master.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
     const carrier = ctx.createOscillator();
     const mod = ctx.createOscillator();
@@ -3823,29 +4350,28 @@ function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0) {
     carrier.type = 'sine';
     carrier.frequency.setValueAtTime(freqHz, now);
     mod.type = 'sine';
-    mod.frequency.setValueAtTime(freqHz * 7.0, now); // Dzwonkowy przydźwięk tine
+    mod.frequency.setValueAtTime(freqHz * 7.0, now);
     modGain.gain.setValueAtTime(freqHz * 1.4, now);
-    modGain.gain.exponentialRampToValueAtTime(0.5, now + 0.22);
+    modGain.gain.exponentialRampToValueAtTime(0.5, now + Math.min(0.22, dur));
 
     mod.connect(modGain);
     modGain.connect(carrier.frequency);
     carrier.connect(master);
     mod.start(now);
     carrier.start(now);
-    mod.stop(now + durationSec);
-    carrier.stop(now + durationSec);
+    mod.stop(now + dur + 0.01);
+    carrier.stop(now + dur + 0.01);
   } else if (preset === 'synth') {
-    // 🚀 Syntezator Lead (2 rozstrojone przebiegi piłokształtne + rezonansowy filtr dolnoprzepustowy)
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.Q.value = 4.5;
     filter.frequency.setValueAtTime(freqHz * 6.5, now);
-    filter.frequency.exponentialRampToValueAtTime(freqHz * 1.6, now + 0.35);
+    filter.frequency.exponentialRampToValueAtTime(freqHz * 1.6, now + Math.min(0.35, dur));
     filter.connect(master);
 
     master.gain.setValueAtTime(0.001, now);
-    master.gain.linearRampToValueAtTime(0.28, now + 0.015);
-    master.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+    master.gain.linearRampToValueAtTime(0.28, now + Math.min(0.015, dur * 0.2));
+    master.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
     [-7, 7].forEach(det => {
       const osc = ctx.createOscillator();
@@ -3854,7 +4380,7 @@ function playKeyboardPresetNote(freqHz, durationSec = 1.15, gainScale = 1.0) {
       osc.detune.setValueAtTime(det, now);
       osc.connect(filter);
       osc.start(now);
-      osc.stop(now + durationSec);
+      osc.stop(now + dur + 0.01);
     });
   }
 }
@@ -3901,7 +4427,8 @@ function startGuitarSustainedVoice(voiceKey, freqHz, maxHoldSec = 18.0) {
   const tone = state.guitarTonePreset || 'acoustic';
 
   const voiceGain = ctx.createGain();
-  voiceGain.gain.setValueAtTime(1.0, now);
+  const volMulSus = (state.synthVolume !== undefined) ? state.synthVolume : 0.85;
+  voiceGain.gain.setValueAtTime(Math.max(0.03, Math.min(1.5, volMulSus)), now);
   voiceGain.connect(getMasterAudioOut());
 
   const nodesToStop = [];
@@ -3988,7 +4515,8 @@ function startKeyboardSustainedVoice(voiceKey, midi, maxHoldSec = 20.0) {
   const ctx = ensureAudioCtx();
   const now = ctx.currentTime;
   const voiceGain = ctx.createGain();
-  voiceGain.gain.setValueAtTime(1.0, now);
+  const volMulKbd = (state.synthVolume !== undefined) ? state.synthVolume : 0.85;
+  voiceGain.gain.setValueAtTime(Math.max(0.03, Math.min(1.5, volMulKbd)), now);
   voiceGain.connect(getMasterAudioOut());
 
   const master = ctx.createGain();
@@ -4799,31 +5327,37 @@ function updateMicPitchTracker(det, nowMs, a4Hz) {
 
 function identifyPolyChordLabel(polyMidis, noteNames) {
   if (!polyMidis || polyMidis.length < 2) return '';
-  if (polyMidis.length === 2) {
-    const semi = ((polyMidis[1] - polyMidis[0]) % 12 + 12) % 12;
-    const root = noteNames[((polyMidis[0] % 12) + 12) % 12];
+  const sorted = polyMidis.slice().sort((a, b) => a - b);
+  const pcs = [...new Set(sorted.map(m => ((m % 12) + 12) % 12))];
+  if (pcs.length === 1) {
+    const root = noteNames[pcs[0]];
+    return `Dwudźwięk: ${root} (Oktawa)`;
+  }
+  if (pcs.length === 2) {
+    const semi = ((pcs[1] - pcs[0]) % 12 + 12) % 12;
+    const root = noteNames[pcs[0]];
     if (semi === 7) return `Dwudźwięk: ${root}5 (Kwinta)`;
-    if (semi === 0) return `Dwudźwięk: ${root} (Oktawa)`;
+    if (semi === 5) return `Dwudźwięk: ${noteNames[pcs[1]]}5 (Kwarta)`;
     if (semi === 4) return `Dwudźwięk: ${root} (Tercja wielka)`;
     if (semi === 3) return `Dwudźwięk: ${root} (Tercja mała)`;
-    if (semi === 5) return `Dwudźwięk: ${root} (Kwarta)`;
-    return `Dwudźwięk (${polyMidis.length} nuty)`;
+    return `Dwudźwięk (${pcs.length} nuty)`;
   }
-  const pcs = [...new Set(polyMidis.map(m => ((m % 12) + 12) % 12))];
   const tpl = [
-    ['dur', [0, 4, 7]], ['mol', [0, 3, 7]], ['5', [0, 7]],
-    ['7', [0, 4, 7, 10]], ['maj7', [0, 4, 7, 11]], ['m7', [0, 3, 7, 10]],
-    ['sus4', [0, 5, 7]], ['sus2', [0, 2, 7]], ['dim', [0, 3, 6]], ['aug', [0, 4, 8]]
+    ['maj7', [0, 4, 7, 11]], ['m7', [0, 3, 7, 10]], ['7', [0, 4, 7, 10]],
+    ['dur', [0, 4, 7]], ['mol', [0, 3, 7]], ['dim', [0, 3, 6]], ['aug', [0, 4, 8]],
+    ['sus4', [0, 5, 7]], ['sus2', [0, 2, 7]], ['5', [0, 7]]
   ];
-  for (const r of pcs) {
-    const rel = new Set(pcs.map(p => (p - r + 12) % 12));
-    for (const [nm, ivs] of tpl) {
-      if (ivs.every(x => rel.has(x)) && pcs.length <= ivs.length + 1) {
-        return `Akord: ${noteNames[r]} ${nm}`;
+  for (const allowExtra of [0, 1]) {
+    for (const r of pcs) {
+      const rel = new Set(pcs.map(p => (p - r + 12) % 12));
+      for (const [nm, ivs] of tpl) {
+        if (ivs.every(x => rel.has(x)) && pcs.length <= ivs.length + allowExtra) {
+          return `Akord: ${noteNames[r]} ${nm}`;
+        }
       }
     }
   }
-  return `Wielodźwięk (${polyMidis.length} nuty)`;
+  return `Wielodźwięk (${pcs.length} nuty)`;
 }
 
 async function refreshAudioDevices(requestPermissionFirst = false) {
@@ -5001,6 +5535,7 @@ function applyUiLanguage() {
     search:    ['Szukaj', 'Search'],
     arpeggio:  ['Arpeggio', 'Arpeggio'],
     sweep:     ['⚡ Sweep Picking', '⚡ Sweep Picking'],
+    scale_practice: ['🎯 Praktyka skal', '🎯 Scale Practice'],
     exercise:  ['✏️ Ćwiczenie (TAB)', '✏️ Practice (TAB)']
   };
   document.querySelectorAll('#practiceSubtabs .subtab-btn').forEach(btn => {
@@ -5033,6 +5568,7 @@ function resetAppSettings() {
   state.uiScaleMode = 'auto';
   state.maxDisplayedFret = 24;
   state.fretboardZoom = 0;
+  state.exerciseTabZoom = 100;
   state.lockUnmarkedNotes = false;
   state.tabCreationEnabled = true;
   state.exerciseClef = 'treble';
@@ -5149,6 +5685,78 @@ async function setDspModel(modelId) {
   if (state.mainView === 'settings') renderStageAndInspector();
 }
 
+function dspSensitivityOffsetToThresholds(offset = 0, fineHighOffset = 0) {
+  const off = Number.isFinite(Number(offset)) ? Math.max(-5, Math.min(5, Math.round(Number(offset)))) : 0;
+  const fine = Number.isFinite(Number(fineHighOffset)) ? Math.max(-3, Math.min(3, Math.round(Number(fineHighOffset)))) : 0;
+  const rawOn = off === 0 ? 0.58 : (off > 0 ? (0.58 - off * 0.03) : (0.58 - off * 0.04));
+  const thresholdOn = Math.round(Math.max(0.40, Math.min(0.78, rawOn)) * 100) / 100;
+  const baseHigh = off === 0 ? 0.42 : (off > 0 ? (0.42 - off * 0.025) : (0.42 - off * 0.04));
+  const rawHigh = fine === 0 ? baseHigh : (fine > 0 ? (baseHigh - fine * 0.025) : (baseHigh - fine * 0.035));
+  const highThresholdOn = Math.round(Math.max(0.28, Math.min(thresholdOn, Math.min(0.66, rawHigh))) * 100) / 100;
+  return { offset: off, fineHighOffset: fine, thresholdOn, highThresholdOn };
+}
+
+function dspThresholdToSensOffset(thresholdOn = state.dspThresholdOn) {
+  const v = Number(thresholdOn);
+  if (!Number.isFinite(v) || Math.abs(v - 0.58) < 0.015) return 0;
+  const raw = v < 0.58 ? (0.58 - v) / 0.03 : (0.58 - v) / 0.04;
+  return Math.max(-5, Math.min(5, Math.round(raw)));
+}
+
+function dspHighToFineOffset(highVal = state.dspHighThresholdOn, mainOffset = dspThresholdToSensOffset()) {
+  const baseHigh = dspSensitivityOffsetToThresholds(mainOffset, 0).highThresholdOn;
+  const v = Number(highVal);
+  if (!Number.isFinite(v) || Math.abs(v - baseHigh) < 0.015) return 0;
+  const raw = v < baseHigh ? (baseHigh - v) / 0.025 : (baseHigh - v) / 0.035;
+  return Math.max(-3, Math.min(3, Math.round(raw)));
+}
+
+function formatDspSensOffset(offset = 0, includeHint = true) {
+  const off = Math.max(-5, Math.min(5, Math.round(Number(offset) || 0)));
+  if (off === 0) return t('Domyślna', 'Default');
+  if (!includeHint) return off > 0 ? `+${off}` : String(off);
+  return off > 0 ? `+${off} (${t('czulsza', 'more sens.')})` : `${off} (${t('mniej czuła', 'less sens.')})`;
+}
+
+function setDspSensitivityOffset(offset) {
+  const fine = dspHighToFineOffset(state.dspHighThresholdOn, dspThresholdToSensOffset(state.dspThresholdOn));
+  const mapped = dspSensitivityOffsetToThresholds(offset, fine);
+  state.dspThresholdOn = mapped.thresholdOn;
+  state.dspHighThresholdOn = mapped.highThresholdOn;
+  saveSettings();
+  if (livePitchPleaseDetector) {
+    livePitchPleaseDetector.updateConfig({
+      thresholdOn: state.dspThresholdOn,
+      highThresholdOn: state.dspHighThresholdOn
+    });
+  }
+  if (state.mainView === 'settings') renderStageAndInspector();
+}
+
+function setDspThinSensitivityOffset(fineOffset) {
+  const mainOff = dspThresholdToSensOffset(state.dspThresholdOn);
+  const mapped = dspSensitivityOffsetToThresholds(mainOff, fineOffset);
+  state.dspHighThresholdOn = mapped.highThresholdOn;
+  saveSettings();
+  if (livePitchPleaseDetector) {
+    livePitchPleaseDetector.updateConfig({ highThresholdOn: state.dspHighThresholdOn });
+  }
+  if (state.mainView === 'settings') renderStageAndInspector();
+}
+
+function resetDspSensitivityDefault() {
+  state.dspThresholdOn = 0.58;
+  state.dspHighThresholdOn = 0.42;
+  saveSettings();
+  if (livePitchPleaseDetector) {
+    livePitchPleaseDetector.updateConfig({
+      thresholdOn: state.dspThresholdOn,
+      highThresholdOn: state.dspHighThresholdOn
+    });
+  }
+  if (state.mainView === 'settings') renderStageAndInspector();
+}
+
 function setDspThresholdOn(val) {
   const clamped = Math.max(0.38, Math.min(0.84, Number(val) || 0.58));
   state.dspThresholdOn = Math.round(clamped * 100) / 100;
@@ -5226,9 +5834,11 @@ async function startGuitarMicCalibration() {
       state.dspCalibrated = true;
       state.dspDefaultsV2 = true;
       const gateDb = Math.round(20 * Math.log10(Math.max(1e-5, res.noiseGateRms)));
+      const calOff = dspThresholdToSensOffset(res.thresholdOn);
+      const calThinOff = dspHighToFineOffset(res.highThresholdOn, calOff);
       state.dspCalibStatus = t(
-        `✓ Skalibrowano! Grube ${Math.round(res.thresholdOn * 100)}% · Cienkie ${Math.round(res.highThresholdOn * 100)}% · Bramka ${gateDb} dB`,
-        `✓ Calibrated! Thick ${Math.round(res.thresholdOn * 100)}% · Thin ${Math.round(res.highThresholdOn * 100)}% · Gate ${gateDb} dB`
+        `✓ Skalibrowano pod Twoją gitarę · Wrażliwość ${formatDspSensOffset(calOff, false)} · Cienkie ${calThinOff === 0 ? 'Domyślna' : (calThinOff > 0 ? '+' + calThinOff : calThinOff)} · Bramka ${gateDb} dB`,
+        `✓ Calibrated for your guitar · Sensitivity ${formatDspSensOffset(calOff, false)} · Thin ${calThinOff === 0 ? 'Default' : (calThinOff > 0 ? '+' + calThinOff : calThinOff)} · Gate ${gateDb} dB`
       );
     } else {
       state.dspCalibStatus = t(
@@ -5372,8 +5982,8 @@ async function toggleLiveAudio() {
                   }
                 }
               }
-              if (state.mainView === 'ear' && state.earScreen === 'active' && state.earMode === 'play') {
-                checkEarPlayGuitarMidi(playedMidi);
+              if (state.mainView === 'ear' && state.earScreen === 'active') {
+                handleEarLiveInputMidi(playedMidi);
               }
               if (state.mainView === 'changes' && state.changesScreen === 'practice_active') {
                 checkChangesPracticePlayedMidi(playedMidi);
@@ -5533,55 +6143,6 @@ async function toggleLiveAudio() {
         };
         renderLoop();
         return;
-        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
       } else {
         ppDetector.stop();
@@ -5689,8 +6250,8 @@ async function toggleLiveAudio() {
                 }
               }
             }
-            if (state.mainView === 'ear' && state.earScreen === 'active' && state.earMode === 'play') {
-              checkEarPlayGuitarMidi(playedMidi);
+            if (state.mainView === 'ear' && state.earScreen === 'active') {
+              handleEarLiveInputMidi(playedMidi);
             }
             if (state.mainView === 'changes' && state.changesScreen === 'practice_active') {
               checkChangesPracticePlayedMidi(playedMidi);
@@ -5706,55 +6267,6 @@ async function toggleLiveAudio() {
 
         if (!anyVisualChange && (nowMs - lastUiRefreshMs) < 34) {
           return;
-          const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
         }
         lastUiRefreshMs = nowMs;
@@ -5896,55 +6408,6 @@ async function toggleLiveAudio() {
         audioLoopId = requestAnimationFrame(renderLoop);
       };
       renderLoop();
-      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
     }
 
@@ -6043,8 +6506,8 @@ async function toggleLiveAudio() {
                 recordMidiNoteToTab(playedMidi);
               }
             }
-            if (state.mainView === 'ear' && state.earScreen === 'active' && state.earMode === 'play') {
-              for (const pm of activePoly) checkEarPlayGuitarMidi(pm);
+            if (state.mainView === 'ear' && state.earScreen === 'active') {
+              for (const pm of activePoly) handleEarLiveInputMidi(pm);
             }
             if (state.mainView === 'changes' && state.changesScreen === 'practice_active') {
               checkChangesPracticePlayedMidi(playedMidi);
@@ -6292,6 +6755,26 @@ async function initApp() {
   applyUiScale(false);
   applyPanelCollapseStates();
   state.initData = await fetchJson('/api/init');
+  if (state.initData && Array.isArray(state.initData.progressions)) {
+    window.__builtinProgressionsSnapshot = state.initData.progressions.map(p => Object.assign({}, p, { _builtin: true }));
+  } else {
+    window.__builtinProgressionsSnapshot = [];
+  }
+  window.__builtinWorkshopExercises = [
+    { id: 'ex_1', title: 'C Durowa · 3NPS · Grupy po 4', category: 'Technique Drill', level: 'Średniozaawansowany', rootPc: 0, scaleId: 'major', posSystem: 1, pattern: 4, octaves: 2 },
+    { id: 'ex_2', title: 'A Pentatonika molowa · Blues Lick', category: 'Lick', level: 'Początkujący', rootPc: 9, scaleId: 'minor_pentatonic', posSystem: 0, pattern: 3, octaves: 1 },
+    { id: 'ex_3', title: 'E Molowa naturalna · Riff kostkowany', category: 'Riff', level: 'Początkujący', rootPc: 4, scaleId: 'natural_minor', posSystem: 1, pattern: 0, octaves: 1 },
+    { id: 'ex_4', title: 'A Molowa harmoniczna · Skoki tercjowe', category: 'Arpeggio', level: 'Zaawansowany', rootPc: 9, scaleId: 'harmonic_minor', posSystem: 2, pattern: 5, octaves: 2 }
+  ];
+  try {
+    window.UserLibrary = await import('/web/js/userLibrary.js');
+    window.userLibraryStore = window.UserLibrary.createUserLibraryStore({ fetchFn: fetch, storage: localStorage });
+    await window.userLibraryStore.load();
+    await migrateLegacyLocalItemsToLibrary();
+    syncAllUserLibrariesIntoState();
+  } catch (e) {
+    console.warn('UserLibrary init failed:', e);
+  }
   if (state.initData && Array.isArray(state.initData.sessions) && Array.isArray(state.customSavedSessions)) {
     const existingIds = new Set(state.initData.sessions.map(s => s.id));
     state.customSavedSessions.forEach(cs => {
@@ -6492,11 +6975,214 @@ function buildFretboardZoomControlsHtml() {
     </div>`;
 }
 
+
+const OCTAVE_BAND_PALETTE = [
+  { band: 'rgba(245, 158, 11, 0.14)', bandLight: 'rgba(245, 158, 11, 0.17)', noteFill: '#92400e', stroke: '#f59e0b', anchorFill: '#d97706', txt: '#fff7ed' },
+  { band: 'rgba(16, 185, 129, 0.14)', bandLight: 'rgba(16, 185, 129, 0.17)', noteFill: '#065f46', stroke: '#10b981', anchorFill: '#059669', txt: '#ecfdf5' },
+  { band: 'rgba(14, 165, 233, 0.14)', bandLight: 'rgba(14, 165, 233, 0.17)', noteFill: '#075985', stroke: '#38bdf8', anchorFill: '#0284c7', txt: '#f0f9ff' },
+  { band: 'rgba(139, 92, 246, 0.15)', bandLight: 'rgba(139, 92, 246, 0.18)', noteFill: '#5b21b6', stroke: '#a78bfa', anchorFill: '#7c3aed', txt: '#f5f3ff' },
+  { band: 'rgba(236, 72, 153, 0.14)', bandLight: 'rgba(236, 72, 153, 0.17)', noteFill: '#9d174d', stroke: '#f472b6', anchorFill: '#db2777', txt: '#fdf2f8' }
+];
+
+function getActiveOctaveScaleContext() {
+  const labels = getRootLabels();
+  const isExerciseTab = (state.mainView === 'practice' && state.subtab === 'exercise');
+  let rootPc = ((parseInt(state.rootPc, 10) || 0) % 12 + 12) % 12;
+  const pcSet = new Set();
+
+  if (isExerciseTab) {
+    const nExStr = getActiveStringCount();
+    const lowOpen = (state.customStringMidis && state.customStringMidis[0] !== undefined) ? state.customStringMidis[0] : 40;
+    rootPc = ((lowOpen % 12) + 12) % 12;
+    for (let pc = 0; pc < 12; pc++) pcSet.add(pc);
+  } else if (state.subtab === 'chord' && state.chordFilterByScale) {
+    rootPc = ((parseInt(state.chordScaleRootPc, 10) || 0) % 12 + 12) % 12;
+    const isMin = (state.chordScaleId === 'natural_minor' || state.chordScaleId === 'minor');
+    (isMin ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11]).forEach(o => pcSet.add((rootPc + o) % 12));
+  } else if ((state.subtab === 'arpeggio' || state.subtab === 'sweep') && state.arpData && Array.isArray(state.arpData.scaleDegrees) && state.arpData.scaleDegrees.length > 0) {
+    rootPc = (state.arpData.scaleRootPc !== undefined) ? (((state.arpData.scaleRootPc % 12) + 12) % 12) : rootPc;
+    state.arpData.scaleDegrees.forEach(d => {
+      if (d && d.pc !== undefined) pcSet.add(((d.pc % 12) + 12) % 12);
+    });
+  } else if (state.fretboardData && Array.isArray(state.fretboardData.cells)) {
+    state.fretboardData.cells.forEach(c => {
+      if (c && c.inScale) pcSet.add(((c.midi % 12) + 12) % 12);
+    });
+  }
+
+  if (pcSet.size === 0) {
+    [0, 2, 4, 5, 7, 9, 11].forEach(o => pcSet.add((rootPc + o) % 12));
+  }
+  const ordered = Array.from(pcSet)
+    .map(pc => {
+      const semi = (((pc - rootPc) % 12) + 12) % 12;
+      return {
+        pc,
+        semi,
+        noteName: labels[pc],
+        intervalLabel: isExerciseTab ? '' : computeIntervalLabel(pc, rootPc, false)
+      };
+    })
+    .sort((a, b) => isExerciseTab ? (a.pc - b.pc) : (a.semi - b.semi));
+
+  const savedAnchor = state.scaleOctaveAnchorPc;
+  const anchorPc = (savedAnchor !== null && savedAnchor !== undefined && Number.isInteger(Number(savedAnchor)) && pcSet.has(((Number(savedAnchor) % 12) + 12) % 12))
+    ? (((Number(savedAnchor) % 12) + 12) % 12)
+    : rootPc;
+
+  return { rootPc, anchorPc, isChromatic: isExerciseTab, scalePcs: pcSet, scalePcsOrdered: ordered, labels };
+}
+
+function computeOctaveRange(openMidis, maxFret, anchorPc) {
+  let minM = Infinity;
+  let maxM = -Infinity;
+  (openMidis || [40, 45, 50, 55, 59, 64]).forEach(m => {
+    if (m < minM) minM = m;
+    if (m + maxFret > maxM) maxM = m + maxFret;
+  });
+  const minOct = Math.floor((minM - anchorPc) / 12);
+  const maxOct = Math.floor((maxM - anchorPc) / 12);
+  return { minOct, maxOct };
+}
+
+function escapeOctHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildOctaveHighlightControlsHtml(compact = false) {
+  const on = !!state.scaleOctaveHighlight;
+  const ctx = getActiveOctaveScaleContext();
+  const nStr = getActiveStringCount();
+  const openMidis = Array.from({ length: nStr }, (_, s) =>
+    (state.customStringMidis && state.customStringMidis[s] !== undefined)
+      ? state.customStringMidis[s]
+      : [40, 45, 50, 55, 59, 64][s]
+  );
+  const maxFret = state.maxDisplayedFret || 24;
+
+  let extraHtml = '';
+  if (on) {
+    const opts = ctx.scalePcsOrdered.map(item =>
+      `<option value="${item.pc}" ${item.pc === ctx.anchorPc ? 'selected' : ''}>Od: ${escapeOctHtml(item.noteName)}${item.intervalLabel ? ` (${escapeOctHtml(item.intervalLabel)})` : ''}</option>`
+    ).join('');
+    extraHtml += `<select style="padding:3px 7px;font-size:11.5px;border-radius:7px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);font-weight:700;"
+                          onchange="setScaleOctaveAnchorPc(this.value)"
+                          title="${t('Wybierz dźwięk wyznaczający granicę oktaw', 'Select note anchoring octave boundaries')}">${opts}</select>`;
+    if (!compact) {
+      const { minOct, maxOct } = computeOctaveRange(openMidis, maxFret, ctx.anchorPc);
+      const count = Math.min(5, Math.max(1, maxOct - minOct + 1));
+      const chips = [];
+      for (let idx = 0; idx < count; idx++) {
+        const b = OCTAVE_BAND_PALETTE[idx % OCTAVE_BAND_PALETTE.length];
+        const bandStartMidi = (minOct + idx) * 12 + ctx.anchorPc;
+        const baseSciOct = Math.floor(bandStartMidi / 12) - 1;
+        const nextBandEndMidi = bandStartMidi + 11;
+        const endNoteName = ctx.labels[((nextBandEndMidi % 12) + 12) % 12];
+        const endSciOct = Math.floor(nextBandEndMidi / 12) - 1;
+        const aName = ctx.labels[ctx.anchorPc];
+        const rangeTxt = (idx === 0 && (openMidis[0] < ((minOct + 1) * 12 + ctx.anchorPc)) && (((openMidis[0] - ctx.anchorPc) % 12 + 12) % 12) !== 0)
+          ? `<${aName}${baseSciOct + 1}`
+          : `${aName}${baseSciOct}–${endNoteName}${endSciOct}`;
+        chips.push(`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--text-muted);background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:2px 6px;white-space:nowrap;">
+          <span style="width:8px;height:8px;border-radius:99px;background:${b.stroke};display:inline-block;"></span>${escapeOctHtml(rangeTxt)}
+        </span>`);
+      }
+      extraHtml += `<span style="display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;">${chips.join('')}</span>`;
+    }
+  }
+  return `<div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <button class="chip-btn ${on ? 'active' : ''}" style="padding:4px 10px;font-size:11.5px;font-weight:700;"
+            onclick="toggleScaleOctaveHighlight()"
+            title="${t('Oznacz oktawy ukośnymi pasami oraz połącz powtarzający się dźwięk liniami unisono', 'Highlight octave bands diagonally and connect unison anchor notes')}">
+      ◈ ${t('Oznacz oktawy', 'Mark octaves')}
+    </button>
+    ${extraHtml}
+  </div>`;
+}
+
+function toggleScaleOctaveHighlight() {
+  state.scaleOctaveHighlight = !state.scaleOctaveHighlight;
+  saveSettings();
+  renderFretboardToolbarForActiveTab();
+  drawFretboard();
+  if (state.mainView === 'practice' && state.subtab === 'exercise') {
+    renderStageAndInspector();
+  }
+}
+
+function setScaleOctaveAnchorPc(rawPc) {
+  const parsed = parseInt(rawPc, 10);
+  state.scaleOctaveAnchorPc = Number.isInteger(parsed) ? (((parsed % 12) + 12) % 12) : null;
+  saveSettings();
+  renderFretboardToolbarForActiveTab();
+  drawFretboard();
+  if (state.mainView === 'practice' && state.subtab === 'exercise') {
+    renderStageAndInspector();
+  }
+}
+
+function buildFretboardOctaveOverlaySvg({
+  openMidis, nStrings, viewStartFret, viewEndFret, showOpenCol,
+  leftNutX, boardEndX, fretW, topY, strGap, boardH, xForFret, anchorPc, lightMode
+}) {
+  const { minOct } = computeOctaveRange(openMidis, viewEndFret, anchorPc);
+  const bandIdxForMidi = (m) => Math.max(0, Math.min(OCTAVE_BAND_PALETTE.length - 1, Math.floor((m - anchorPc) / 12) - minOct));
+  const firstGridFret = Math.max(1, viewStartFret);
+
+  let bandsSvg = '';
+  const unisonMap = new Map();
+  const minBoundY = topY - 10;
+  const maxBoundY = topY + boardH + 10;
+
+  for (let s = 0; s < nStrings; s++) {
+    const row = nStrings - 1 - s;
+    const bandTop = (row === 0) ? minBoundY : (topY + (row - 0.5) * strGap);
+    const bandBot = (row === nStrings - 1) ? maxBoundY : (topY + (row + 0.5) * strGap);
+    const bandH = bandBot - bandTop;
+    const cy = topY + row * strGap;
+    const om = openMidis[s];
+
+    if (showOpenCol) {
+      const m0 = om;
+      if (((m0 % 12) + 12) % 12 === anchorPc) {
+        if (!unisonMap.has(m0)) unisonMap.set(m0, []);
+        unisonMap.get(m0).push({ s, cx: xForFret(0), cy });
+      }
+    }
+
+    for (let f = firstGridFret; f <= viewEndFret; f++) {
+      const m = om + f;
+      const bIdx = bandIdxForMidi(m);
+      const pal = OCTAVE_BAND_PALETTE[bIdx];
+      const fill = lightMode ? pal.bandLight : pal.band;
+      const rx = leftNutX + (f - firstGridFret) * fretW;
+      bandsSvg += `<rect class="fb-oct-band" x="${rx.toFixed(1)}" y="${bandTop.toFixed(1)}" width="${fretW.toFixed(1)}" height="${bandH.toFixed(1)}" fill="${fill}" pointer-events="none"/>`;
+
+      if (((m % 12) + 12) % 12 === anchorPc) {
+        if (!unisonMap.has(m)) unisonMap.set(m, []);
+        unisonMap.get(m).push({ s, cx: xForFret(f), cy });
+      }
+    }
+  }
+
+  let linksSvg = '';
+  const linkStroke = lightMode ? 'rgba(28, 25, 23, 0.56)' : 'rgba(255, 255, 255, 0.62)';
+  unisonMap.forEach((pts) => {
+    if (pts.length < 2) return;
+    pts.sort((a, b) => a.s - b.s);
+    const ptStr = pts.map(p => `${p.cx.toFixed(1)},${p.cy.toFixed(1)}`).join(' ');
+    linksSvg += `<polyline class="fb-oct-link" points="${ptStr}" fill="none" stroke="${linkStroke}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`;
+  });
+
+  return { bandsSvg, linksSvg, minOct, bandIdxForMidi };
+}
+
 function renderFretboardToolbarForActiveTab() {
   const bar = document.getElementById('fretboardToolbarContent');
   if (!bar || !state.fretboardData) return;
 
   const zoomCtrl = buildFretboardZoomControlsHtml();
+  const octCtrl = buildOctaveHighlightControlsHtml(false);
 
   if (state.subtab === 'scale') {
     const isRec = !!state.scaleRecognitionOn;
@@ -6507,6 +7193,7 @@ function renderFretboardToolbarForActiveTab() {
                 onclick="state.scaleRecognitionOn=!state.scaleRecognitionOn;renderFretboardToolbarForActiveTab();drawFretboard()">
           🎯 Tryb rozpoznawania na gryfie
         </button>
+        ${octCtrl}
         ${isRec ? `
           <button class="chip-btn" style="padding:3px 8px;font-size:11px;" onclick="simulateDetectedNote(64)">Symuluj E 4</button>
           <button class="chip-btn" style="padding:3px 8px;font-size:11px;" onclick="simulateDetectedNote(57)">Symuluj A 3</button>
@@ -6515,9 +7202,9 @@ function renderFretboardToolbarForActiveTab() {
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         ${zoomCtrl}
         <span>Aktywne progi:</span>
-        <input type="number" id="maskMinFret" value="0" min="0" max="24" style="width:48px;padding:3px 5px;" onchange="applyFretRangeMask()">
+        <input type="number" id="maskMinFret" value="${(state.maskLeft && state.maskLeft[0] !== undefined) ? state.maskLeft[0] : 0}" min="0" max="24" style="width:48px;padding:3px 5px;" onchange="applyFretRangeMask()">
         <span>–</span>
-        <input type="number" id="maskMaxFret" value="${state.maxDisplayedFret}" min="0" max="24" style="width:48px;padding:3px 5px;" onchange="applyFretRangeMask()">
+        <input type="number" id="maskMaxFret" value="${(state.maskRight && state.maskRight[0] !== undefined) ? state.maskRight[0] : state.maxDisplayedFret}" min="0" max="24" style="width:48px;padding:3px 5px;" onchange="applyFretRangeMask()">
         <button class="chip-btn" style="padding:3px 8px;font-size:11px;" onclick="resetFretMask()">Odmaskuj wszystko</button>
       </div>`;
   } else if (state.subtab === 'chord') {
@@ -6537,6 +7224,7 @@ function renderFretboardToolbarForActiveTab() {
                 onclick="state.chordShowScaleOnFretboard=!state.chordShowScaleOnFretboard;renderFretboardToolbarForActiveTab();drawFretboard()">
           🎵 Pokaż skalę w tle (${state.fretboardData.scaleFullName})
         </button>
+        ${octCtrl}
       </div>
       <div style="display:flex;gap:10px;align-items:center;font-size:12px;flex-wrap:wrap;">
         ${zoomCtrl}
@@ -6557,9 +7245,9 @@ function renderFretboardToolbarForActiveTab() {
       ${zoomCtrl}`;
   } else if (state.subtab === 'search') {
     bar.innerHTML = `
-      <div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <strong style="color:var(--text);font-size:14px;">Gryf Ról Harmonicznych (Szukaj: Akord ↔ Skale)</strong>
-        <span style="margin-left:10px;">Wybierz skalę w panelu po prawej, aby zobaczyć jej dźwięki pokolorowane wg roli.</span>
+        ${octCtrl}
       </div>
       <div style="display:flex;gap:14px;align-items:center;font-size:12px;flex-wrap:wrap;">
         ${zoomCtrl}
@@ -6600,6 +7288,7 @@ function renderFretboardToolbarForActiveTab() {
                 onclick="state.arpShowScaleOnFretboard=!state.arpShowScaleOnFretboard;saveSettings();renderFretboardToolbarForActiveTab();drawFretboard()">
           🎵 Pokaż skalę w tle (${arpScaleName})
         </button>
+        ${octCtrl}
       </div>
       <div style="display:flex;gap:8px;align-items:center;font-size:12px;flex-wrap:wrap;">
         ${zoomCtrl}
@@ -6655,9 +7344,10 @@ function isCellMasked(s, f) {
 
 function applyFretRangeMask() {
   const minF = Math.max(0, Math.min(24, parseInt(document.getElementById('maskMinFret').value || '0', 10)));
-  const maxF = Math.max(minF, Math.min(24, parseInt(document.getElementById('maskMaxFret').value || '22', 10)));
-  state.maskLeft = [minF, minF, minF, minF, minF, minF];
-  state.maskRight = [maxF, maxF, maxF, maxF, maxF, maxF];
+  const maxF = Math.max(minF, Math.min(24, parseInt(document.getElementById('maskMaxFret').value || String(state.maxDisplayedFret || 24), 10)));
+  const nMask = Math.max(6, getActiveStringCount());
+  state.maskLeft = new Array(nMask).fill(minF);
+  state.maskRight = new Array(nMask).fill(maxF);
   state.maskedCells.clear();
   drawFretboard();
 }
@@ -6668,8 +7358,9 @@ function resetFretMask() {
   const maxIn = document.getElementById('maskMaxFret');
   if (minIn) minIn.value = 0;
   if (maxIn) maxIn.value = maxF;
-  state.maskLeft = [0, 0, 0, 0, 0, 0];
-  state.maskRight = [maxF, maxF, maxF, maxF, maxF, maxF];
+  const nMask = Math.max(6, getActiveStringCount());
+  state.maskLeft = new Array(nMask).fill(0);
+  state.maskRight = new Array(nMask).fill(maxF);
   state.maskedCells.clear();
   drawFretboard();
 }
@@ -6710,6 +7401,7 @@ function drawFretboard() {
   const isChordTab = (state.mainView === 'practice' && state.subtab === 'chord');
   const isSweepTab = (state.mainView === 'practice' && state.subtab === 'sweep');
   const isArpeggioTab = (state.mainView === 'practice' && (state.subtab === 'arpeggio' || state.subtab === 'sweep'));
+  const showOctavesOnFb = !!state.scaleOctaveHighlight && !isHarmonicsTab;
   const activeChordVoicing = isChordTab && state.chordVoicingsList && state.chordVoicingsList.length > 0
     ? (state.chordVoicingsList[state.selectedChordVoicingIdx] || state.chordVoicingsList[0])
     : null;
@@ -6808,6 +7500,33 @@ function drawFretboard() {
   }
 
   svg += `<rect x="${leftNutX}" y="${topPad - 10}" width="${boardW}" height="${boardH + 20}" fill="${boardBg}" rx="4" stroke="${boardStroke}" stroke-width="1"/>`;
+  const octCtx = showOctavesOnFb ? getActiveOctaveScaleContext() : null;
+  const octOpenMidis = Array.from({ length: nStrings }, (_, s) =>
+    (state.customStringMidis && state.customStringMidis[s] !== undefined)
+      ? state.customStringMidis[s]
+      : [40, 45, 50, 55, 59, 64][s]
+  );
+  const octOverlay = (showOctavesOnFb && octCtx)
+    ? buildFretboardOctaveOverlaySvg({
+        openMidis: octOpenMidis,
+        nStrings,
+        viewStartFret: 0,
+        viewEndFret: maxFret,
+        showOpenCol: true,
+        leftNutX,
+        boardEndX: leftNutX + boardW,
+        fretW,
+        strGap: stringH,
+        topY: topPad,
+        boardH,
+        xForFret: (f) => (f === 0) ? (leftNutX * 0.48) : (leftNutX + (f - 0.5) * fretW),
+        anchorPc: octCtx.anchorPc,
+        lightMode
+      })
+    : null;
+  if (octOverlay && octOverlay.bandsSvg) {
+    svg += octOverlay.bandsSvg;
+  }
 
   const markerFrets = [3,5,7,9,12,15,17,19,21,24];
   const dotsMode = (state.fretMarkersMode === 'dots');
@@ -7095,6 +7814,9 @@ function drawFretboard() {
     cofFretTriadSet = new Set(triadOffsets.map(o => (cofFretKeyRootPc + o) % 12));
   }
 
+  if (octOverlay && octOverlay.linksSvg) {
+    svg += octOverlay.linksSvg;
+  }
   for (const cell of state.fretboardData.cells) {
     const s = cell.s, f = cell.f;
     if (s >= nStrings || f > maxFret) continue;
@@ -7301,6 +8023,18 @@ function drawFretboard() {
         fillAttr = 'url(#chordRoleGrad)';
         strokeAttr = '#86efac';
         textColor = '#08170e';
+      } else if (octOverlay && octCtx) {
+        const obIdx = octOverlay.bandIdxForMidi(cell.midi);
+        const obPal = OCTAVE_BAND_PALETTE[obIdx % OCTAVE_BAND_PALETTE.length];
+        if (pc === octCtx.anchorPc) {
+          fillAttr = obPal.anchorFill;
+          strokeAttr = '#fff7ed';
+          textColor = obPal.txt;
+        } else {
+          fillAttr = obPal.noteFill;
+          strokeAttr = obPal.stroke;
+          textColor = obPal.txt;
+        }
       } else if (cell.isRoot) {
         fillAttr = 'url(#rootGrad)';
         strokeAttr = '#d97724';
@@ -7372,8 +8106,17 @@ function drawFretboard() {
     } else if (isCapoOpenNode) {
       svg += `<circle cx="${cx}" cy="${cy}" r="${(radius + 3.6).toFixed(1)}" fill="none" stroke="#fbbf24" stroke-width="2.1" stroke-dasharray="3,2" opacity="0.95"/>`;
     }
+    if (octOverlay && octCtx && pc === octCtx.anchorPc) {
+      const obPalRing = OCTAVE_BAND_PALETTE[octOverlay.bandIdxForMidi(cell.midi) % OCTAVE_BAND_PALETTE.length];
+      svg += `<circle cx="${cx}" cy="${cy}" r="${(radius + 3.2).toFixed(1)}" fill="none" stroke="${obPalRing.stroke}" stroke-width="1.8" opacity="0.92"/>`;
+    }
     svg += `<circle class="fb-note-dot" cx="${cx}" cy="${cy}" r="${radius}" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${arpIsCurPlay ? '2.5' : '1.5'}"/>`;
-    svg += `<text x="${cx}" y="${cy + noteFontSize * 0.34}" fill="${textColor}" font-family="Segoe UI, system-ui, sans-serif" font-size="${isTappedVoicingNode ? Math.max(9.5, noteFontSize - 2) : noteFontSize}" font-weight="700" text-anchor="middle">${label}</text>`;
+    if (octOverlay && octCtx && pc === octCtx.anchorPc && state.subtab === 'scale' && activeLblType !== 'intervals' && !isTappedVoicingNode) {
+      const sciOct = Math.floor(cell.midi / 12) - 1;
+      svg += `<text x="${cx}" y="${cy + noteFontSize * 0.34}" fill="${textColor}" font-family="Segoe UI, system-ui, sans-serif" font-size="${Math.max(9, noteFontSize - 2)}" font-weight="800" text-anchor="middle">${label}<tspan baseline-shift="sub" font-size="7.5" opacity="0.92">${sciOct}</tspan></text>`;
+    } else {
+      svg += `<text x="${cx}" y="${cy + noteFontSize * 0.34}" fill="${textColor}" font-family="Segoe UI, system-ui, sans-serif" font-size="${isTappedVoicingNode ? Math.max(9.5, noteFontSize - 2) : noteFontSize}" font-weight="700" text-anchor="middle">${label}</text>`;
+    }
     if (isSweepTab && arpTechMap) {
       const stInfo = arpTechMap.get(`${s}:${f}`);
       if (stInfo && arpNodeMap && arpNodeMap.has(`${s}:${f}`)) {
@@ -7396,38 +8139,39 @@ function drawFretboard() {
     const bandTop = (row) => (row === 0) ? (topPad - 12) : (topPad + (row - 0.5) * stringH);
     const bandBot = (row) => (row === 5) ? (topPad + boardH + 12) : (topPad + (row + 0.5) * stringH);
 
-    // 1. Lewa kurtyna przyciemniająca + schodkowa linia podziału (6 segmentów strun)
+    const maskLastRow = nStrings - 1;
+    // 1. Lewa kurtyna przyciemniająca + schodkowa linia podziału (dynamiczna liczba strun)
     let leftPoly = `6,${bandTop(0)} `;
     let leftLinePts = '';
-    for (let row = 0; row < 6; row++) {
-      const s = 5 - row;
+    for (let row = 0; row < nStrings; row++) {
+      const s = maskLastRow - row;
       const lx = leftEdgeX(state.maskLeft[s]);
       const y1 = bandTop(row);
       const y2 = bandBot(row);
       leftPoly += `${lx},${y1} ${lx},${y2} `;
       leftLinePts += `${lx},${y1} ${lx},${y2} `;
     }
-    leftPoly += `6,${bandBot(5)}`;
+    leftPoly += `6,${bandBot(maskLastRow)}`;
     svg += `<polygon points="${leftPoly}" fill="rgba(7, 5, 4, 0.58)" pointer-events="none"/>`;
     svg += `<polyline points="${leftLinePts}" fill="none" stroke="#f39237" stroke-width="2.6" stroke-dasharray="none" pointer-events="none"/>`;
 
-    // 2. Prawa kurtyna przyciemniająca + schodkowa linia podziału (6 segmentów strun)
+    // 2. Prawa kurtyna przyciemniająca + schodkowa linia podziału
     const farRightX = leftNutX + boardW + 10;
     let rightPoly = `${farRightX},${bandTop(0)} `;
     let rightLinePts = '';
-    for (let row = 0; row < 6; row++) {
-      const s = 5 - row;
+    for (let row = 0; row < nStrings; row++) {
+      const s = maskLastRow - row;
       const rx = rightEdgeX(state.maskRight[s]);
       const y1 = bandTop(row);
       const y2 = bandBot(row);
       rightPoly += `${rx},${y1} ${rx},${y2} `;
       rightLinePts += `${rx},${y1} ${rx},${y2} `;
     }
-    rightPoly += `${farRightX},${bandBot(5)}`;
+    rightPoly += `${farRightX},${bandBot(maskLastRow)}`;
     svg += `<polygon points="${rightPoly}" fill="rgba(7, 5, 4, 0.58)" pointer-events="none"/>`;
     svg += `<polyline points="${rightLinePts}" fill="none" stroke="#f39237" stroke-width="2.6" pointer-events="none"/>`;
 
-    // 3. SZYNA SUWAKA POD GRYFEM (z podpisem „Maskowanie”) do płynnego przesuwania linii!
+    // 3. Szyna suwaka pod gryfem
     const botLeftX = leftEdgeX(state.maskLeft[0]);
     const botRightX = rightEdgeX(state.maskRight[0]);
     const botLeftThumbX = Math.max(42, Math.min(W - 42, botLeftX));
@@ -7436,15 +8180,14 @@ function drawFretboard() {
     const railRight = leftNutX + boardW;
     const botRailY = topPad + boardH + 54;
 
-    // Dolna szyna suwaka (poniżej gryfu – przesuwa linię maskowania w lewo/prawo!)
     svg += `
       <rect x="${railLeft}" y="${botRailY - 4}" width="${railRight - railLeft}" height="8" rx="4"
             fill="#1c1612" stroke="#3b3028" stroke-width="1" style="cursor:pointer"
             onmousedown="onMaskRailTrackMouseDown(event, 'shift')"/>
       <rect x="${Math.min(botLeftX, botRightX)}" y="${botRailY - 3}" width="${Math.max(2, Math.abs(botRightX - botLeftX))}" height="6" rx="3"
             fill="rgba(243, 146, 55, 0.35)" pointer-events="none"/>
-      <line x1="${botLeftX}" y1="${bandBot(5)}" x2="${botLeftX}" y2="${botRailY}" stroke="#f39237" stroke-width="2" stroke-dasharray="2,2" pointer-events="none"/>
-      <line x1="${botRightX}" y1="${bandBot(5)}" x2="${botRightX}" y2="${botRailY}" stroke="#f39237" stroke-width="2" stroke-dasharray="2,2" pointer-events="none"/>
+      <line x1="${botLeftX}" y1="${bandBot(maskLastRow)}" x2="${botLeftX}" y2="${botRailY}" stroke="#f39237" stroke-width="2" stroke-dasharray="2,2" pointer-events="none"/>
+      <line x1="${botRightX}" y1="${bandBot(maskLastRow)}" x2="${botRightX}" y2="${botRailY}" stroke="#f39237" stroke-width="2" stroke-dasharray="2,2" pointer-events="none"/>
       <g style="cursor:ew-resize" onmousedown="startMaskCurtainDrag(event, 'left', 'shift', -1)">
         <rect x="${botLeftThumbX - 40}" y="${botRailY - 9}" width="80" height="18" rx="5" fill="#f39237" stroke="#14100d" stroke-width="1.5"/>
         <text x="${botLeftThumbX}" y="${botRailY + 3.5}" fill="#14100d" font-size="9.5" font-weight="800" text-anchor="middle">◄ Maskowanie ►</text>
@@ -7454,9 +8197,8 @@ function drawFretboard() {
         <text x="${botRightThumbX}" y="${botRailY + 3.5}" fill="#14100d" font-size="9.5" font-weight="800" text-anchor="middle">◄ Maskowanie ►</text>
       </g>`;
 
-    // 4. Uchwyty schodkowe NA KAŻDEJ STRUNIE (przeciąganie między strunami tworzy schodki w obie strony!)
-    for (let row = 0; row < 6; row++) {
-      const s = 5 - row;
+    for (let row = 0; row < nStrings; row++) {
+      const s = maskLastRow - row;
       const cy = topPad + row * stringH;
       const lx = leftEdgeX(state.maskLeft[s]);
       const rx = rightEdgeX(state.maskRight[s]);
@@ -7680,55 +8422,6 @@ function onFretCellMouseEnter(e, s, f) {
   // Jeśli przytrzymujemy lewy przycisk myszy na gryfie, przesunięcie na inny próg daje płynne legato / slide!
   if (state.isHoldingFretNote && state.fretboardData) {
     if (state.lockUnmarkedNotes && (!state.markedFretCells || !state.markedFretCells.has(`${s}:${f}`))) {
-      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
     }
     if (state.lastHandPos && state.lastHandPos.s === s && state.lastHandPos.f === f) return;
@@ -7873,11 +8566,17 @@ function playCurrentScalePreview() {
 function switchMainView(view, btn) {
   stopCurrentScalePreview(false);
   stopDetectScalePolling();
+  if (typeof stopExercisePlayer === 'function' && state.exercisePlayerActive) {
+    stopExercisePlayer(false);
+  }
   if (typeof stopArpeggioPlayback === 'function') {
     stopArpeggioPlayback(false);
   }
   if (view !== 'changes' && typeof stopChangesPlayback === 'function' && state.changesIsPlaying) {
     stopChangesPlayback();
+  }
+  if (view !== 'ear' && typeof clearEarAudioTimers === 'function') {
+    clearEarAudioTimers();
   }
   if (view !== 'studio' && window.StudioTab && typeof window.StudioTab.stopPlayback === 'function') {
     window.StudioTab.stopPlayback();
@@ -7889,7 +8588,11 @@ function switchMainView(view, btn) {
   }
   state.mainView = view;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  const activeNavBtn = btn || Array.from(document.querySelectorAll('.nav-btn')).find(b => {
+    const oc = b.getAttribute('onclick') || '';
+    return oc.includes(`'${view}'`);
+  });
+  if (activeNavBtn) activeNavBtn.classList.add('active');
 
   const subtabs = document.getElementById('practiceSubtabs');
   const title = document.getElementById('viewHeaderTitle');
@@ -7921,12 +8624,7 @@ function switchPracticeSubtab(sub, btn) {
   if (typeof stopArpeggioPlayback === 'function') {
     stopArpeggioPlayback(false);
   }
-  if (sub === 'scale_practice') {
-    state.subtab = 'exercise';
-    state.exerciseSubView = 'scale_practice';
-  } else {
-    state.subtab = sub;
-  }
+  state.subtab = sub;
   document.querySelectorAll('.subtab-btn').forEach(b => {
     const isMatch = btn ? (b === btn) : (b.getAttribute('data-subtab') === state.subtab);
     b.classList.toggle('active', isMatch);
@@ -7934,9 +8632,20 @@ function switchPracticeSubtab(sub, btn) {
   renderAll();
 }
 
+function buildExerciseSubViewBarHtml(activeKey) {
+  const tabs = [
+    { id: 'composer', icon: '✏️', pl: 'Edytor TAB', en: 'TAB Editor' },
+    { id: 'harmonics', icon: '✨', pl: 'Flażolety', en: 'Harmonics' }
+  ];
+  return `<div class="ear-seg-row" style="width:auto;flex-wrap:wrap;">${tabs.map(tb =>
+    `<button class="ear-seg-btn ${activeKey === tb.id ? 'active' : ''}" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('${tb.id}')">${tb.icon} ${t(tb.pl, tb.en)}</button>`
+  ).join('')}</div>`;
+}
+
 function setExerciseSubView(viewName) {
   if (typeof stopExercisePlayer === 'function') stopExercisePlayer(false);
-  state.exerciseSubView = viewName || 'composer';
+  state.exerciseSubView = (viewName === 'harmonics') ? 'harmonics' : 'composer';
+  state.exerciseTabAppendNotice = '';
   state.mainView = 'practice';
   state.subtab = 'exercise';
   document.querySelectorAll('#practiceSubtabs .subtab-btn').forEach(b => {
@@ -8769,774 +9478,17 @@ async function renderStageAndInspector() {
       </div>
       <div>
         <div class="section-label">KALIBRACJA A4 (Hz)</div>
-        <input type="number" value="${state.a4ReferenceHz}" min="430" max="450" step="0.5" onchange="state.a4ReferenceHz=parseFloat(this.value)">
+        <input type="number" value="${state.a4ReferenceHz}" min="415" max="466" step="0.5" onchange="state.a4ReferenceHz=Math.max(415,Math.min(466,parseFloat(this.value)||440));saveSettings();renderTunerCanvas();">
       </div>`;
     renderTunerCanvas();
     return;
   }
 
   // =========================================================================
-  // WIDOK: KSZTAŁCENIE SŁUCHU (TRENING SŁUCHU – ZRZUTY 1–7)
+  // WIDOK: KSZTAŁCENIE SŁUCHU (STUDIO SŁUCHU)
   // =========================================================================
   if (state.mainView === 'ear') {
-    const allIntervals = [
-      { semi: 0,  name: 'Pryma',          code: 'P1', hint: 'Powtórzony ten sam dźwięk' },
-      { semi: 1,  name: 'Sekunda mała',   code: 'm2', hint: 'Szczęki (Jaws)' },
-      { semi: 2,  name: 'Sekunda wielka', code: 'M2', hint: 'Sto lat / Happy Birthday' },
-      { semi: 3,  name: 'Tercja mała',    code: 'm3', hint: 'Smoke on the Water' },
-      { semi: 4,  name: 'Tercja wielka',  code: 'M3', hint: 'Oh When the Saints' },
-      { semi: 5,  name: 'Kwarta czysta',  code: 'P4', hint: 'Marsz weselny' },
-      { semi: 6,  name: 'Tryton',         code: 'TT', hint: 'The Simpsons' },
-      { semi: 7,  name: 'Kwinta czysta',  code: 'P5', hint: 'Gwiezdne Wojny (Star Wars)' },
-      { semi: 8,  name: 'Seksta mała',    code: 'm6', hint: 'The Entertainer' },
-      { semi: 9,  name: 'Seksta wielka',  code: 'M6', hint: 'My Bonnie Lies Over the Ocean' },
-      { semi: 10, name: 'Septyma mała',   code: 'm7', hint: 'The Winner Takes It All' },
-      { semi: 11, name: 'Septyma wielka', code: 'M7', hint: 'Take On Me (refren)' },
-      { semi: 12, name: 'Oktawa',         code: 'P8', hint: 'Somewhere Over the Rainbow' }
-    ];
-
-    const earChordCatalog = [
-      { id: 'major', label: 'Durowy',      group: 'triad', intervals: [0, 4, 7] },
-      { id: 'minor', label: 'Molowy',      group: 'triad', intervals: [0, 3, 7] },
-      { id: 'dim',   label: 'Zmniejszony', group: 'triad', intervals: [0, 3, 6] },
-      { id: 'maj7',  label: 'maj7',        group: 'seventh', intervals: [0, 4, 7, 11] },
-      { id: '7',     label: '7',           group: 'seventh', intervals: [0, 4, 7, 10] },
-      { id: 'm7',    label: 'm7',          group: 'seventh', intervals: [0, 3, 7, 10] },
-      { id: 'm7b5',  label: 'm7b5',        group: 'seventh', intervals: [0, 3, 6, 10] }
-    ];
-
-    // EKRAN AKTYWNEGO TRENINGU SŁUCHU (po kliknięciu „Graj” – Zrzuty 2, 3, 4, 6, 7)
-    if (state.earScreen === 'active') {
-      const selectedIvObjs = allIntervals.filter(iv => state.earSelectedSemis.has(iv.semi));
-      const selectedChObjs = earChordCatalog.filter(c => state.earSelectedChords.has(c.id));
-      const roundLabel = state.earSessionType === 'endless'
-        ? `${state.earRound} / ∞`
-        : `${state.earRound} / ${state.earTargetRounds}`;
-
-      const modeTitleMap = {
-        learn: `Nauka · ${selectedIvObjs.length} interwałów`,
-        identify: `Rozpoznaj · ${selectedIvObjs.length} interwałów`,
-        play: `Zagraj · ${selectedIvObjs.length} interwałów`,
-        chords: `Akordy · ${selectedChObjs.length} rodzajów akordów`
-      };
-
-      const topHeaderHtml = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;gap:14px;">
-            <button class="chip-btn" style="width:36px;height:36px;font-size:16px;" onclick="exitEarActiveSession()">✕</button>
-            <div>
-              <h2 style="font-size:22px;font-weight:800;">Trening słuchu</h2>
-              <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">${modeTitleMap[state.earMode]}</div>
-            </div>
-          </div>
-          ${state.earMode !== 'learn' ? `<div style="font-family:monospace;font-size:15px;color:var(--text-muted);">${roundLabel}</div>` : ''}
-        </div>`;
-
-      // WARIANT 1: NAUKA (Zrzut 3)
-      if (state.earMode === 'learn') {
-        stage.innerHTML = `
-          <div class="ear-trainer-screen">
-            ${topHeaderHtml}
-            <div style="text-align:center;color:var(--text-muted);font-size:14px;margin-top:10px;">
-              ${state.earCompareMode ? 'Wybierz dwa interwały, aby odsłuchać je jeden po drugim' : 'Dotknij interwału, aby go usłyszeć'}
-            </div>
-            <div class="ear-answer-grid">
-              ${selectedIvObjs.map(iv => {
-                const isComp = state.earCompareSelection.includes(iv.semi);
-                return `
-                  <button class="ear-answer-btn ${isComp?'selected':''}" onclick="onEarLearnTileClick(${iv.semi})">
-                    <span style="font-size:15px;font-weight:700;">${iv.name}</span>
-                    <span style="font-size:12px;color:var(--text-muted);">${iv.code}</span>
-                    ${state.earShowSongHints ? `<span style="font-size:10px;color:var(--accent);">🎵 ${iv.hint}</span>` : ''}
-                  </button>`;
-              }).join('')}
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:684px;margin:12px auto 0;width:100%;">
-              <button class="chip-btn ${state.earCompareMode?'active':''}" style="padding:14px;font-size:14px;"
-                      onclick="toggleEarCompareMode()">Wybierz dwa, aby porównać</button>
-              <button class="action-btn" style="padding:14px;font-size:14px;"
-                      onclick="state.earMode='identify';startEarTrainingSession()">Sprawdź się</button>
-            </div>
-          </div>`;
-        return;
-        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
-      return;
-      }
-
-      const q = state.earCurrentQuestion || {};
-
-      // WARIANT 2: ROZPOZNAJ INTERWAŁ (Zrzut 2)
-      if (state.earMode === 'identify') {
-        const badgeText = q.answered ? q.correctCode : '?';
-        const badgeBorder = q.answered ? (q.wasCorrect ? 'var(--green)' : 'var(--red)') : 'var(--accent)';
-        stage.innerHTML = `
-          <div class="ear-trainer-screen" style="align-items:center;margin-top:24px;">
-            <div style="width:100%;">${topHeaderHtml}</div>
-            <div style="width:92px;height:92px;border-radius:50%;border:2px solid ${badgeBorder};display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--accent);margin-top:16px;cursor:pointer;"
-                 onclick="replayCurrentEarQuestion()">${badgeText}</div>
-            <div style="font-size:17px;font-weight:700;color:var(--text-muted);">
-              ${q.answered ? (q.wasCorrect ? '✅ Poprawnie! To ' + q.correctName : '❌ To była ' + q.correctName) : 'Jaki interwał?'}
-            </div>
-            ${state.earShowSongHints && q.answered ? `<div style="font-size:12px;color:var(--accent);">🎵 Skojarzenie: ${q.hint}</div>` : ''}
-            <div style="background:#171310;border:1px solid #2b241e;border-radius:8px;padding:8px 22px;display:flex;gap:28px;align-items:center;font-size:13px;">
-              <div><b style="font-size:19px;">${state.earScore}</b> <span style="color:var(--text-muted);">/ ${state.earAttempts}</span></div>
-              <div style="color:var(--text-muted);">Seria: <b>${state.earStreak}</b></div>
-            </div>
-            <div class="ear-answer-grid">
-              ${selectedIvObjs.map(iv => {
-                let cls = '';
-                if (q.answered) {
-                  if (iv.semi === q.semi) cls = 'correct';
-                  else if (iv.semi === q.guessedSemi) cls = 'wrong';
-                }
-                return `
-                  <button class="ear-answer-btn ${cls}" onclick="submitEarIdentifyAnswer(${iv.semi})">
-                    <span style="font-size:14.5px;font-weight:700;">${iv.name}</span>
-                    <span style="font-size:12px;color:var(--text-muted);">${iv.code}</span>
-                  </button>`;
-              }).join('')}
-            </div>
-            <div style="display:flex;gap:12px;margin-top:6px;">
-              <button class="chip-btn" style="padding:9px 22px;border-radius:20px;" onclick="replayCurrentEarQuestion()">▷ Odtwórz ponownie</button>
-              ${q.answered ? `<button class="action-btn" style="padding:9px 22px;border-radius:20px;" onclick="nextEarActiveRound()">${(state.earSessionType === 'fixed' && state.earRound >= state.earTargetRounds) ? 'Podsumowanie →' : 'Następna runda →'}</button>` : ''}
-            </div>
-          </div>`;
-        return;
-        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
-      return;
-      }
-
-      // WARIANT 3: ZAGRAJ NA GITARZE (Zrzut 4)
-      if (state.earMode === 'play') {
-        const sharpNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-        const rootName = sharpNames[((q.rootMidi || 59) % 12 + 12) % 12];
-        const dirText = q.asc ? `w górę od ${rootName}` : `w dół od ${rootName}`;
-        const detectedText = state.detectedMidi !== null
-          ? sharpNames[((state.detectedMidi % 12) + 12) % 12] + (Math.floor(state.detectedMidi / 12) - 1)
-          : '—';
-
-        stage.innerHTML = `
-          <div class="ear-trainer-screen" style="align-items:center;margin-top:28px;">
-            <div style="width:100%;">${topHeaderHtml}</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-top:16px;">Zagraj lub zaśpiewaj (albo użyj klawiatury na dole)</div>
-            <div style="font-size:38px;font-weight:800;line-height:1.1;">${q.correctName || 'Tercja mała'}</div>
-            <div style="font-size:21px;font-weight:700;color:var(--accent);">${dirText}</div>
-            <button class="chip-btn" style="padding:9px 22px;border-radius:20px;margin-top:4px;"
-                    onclick="pluckGuitarFrequency(midiToFreq(${q.rootMidi || 59}), 1.5)">▷ Odtwórz ${rootName}</button>
-            <div id="earPlayDetectedBox" ${q.answered ? 'data-answered="1"' : ''} style="width:96px;height:78px;background:#171310;border:1px solid ${q.answered?'var(--green)':'#2b241e'};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:${q.answered?'var(--green)':'var(--text-muted)'};margin:12px 0;">
-              ${q.answered ? '✔ ' + q.targetNoteName : detectedText}
-            </div>
-            <div style="background:#171310;border:1px solid #2b241e;border-radius:8px;padding:10px 28px;display:flex;gap:80px;align-items:center;font-size:13px;">
-              <div><b style="font-size:20px;">${state.earScore}</b> <span style="color:var(--text-muted);">/ ${state.earAttempts}</span></div>
-              <div style="color:var(--text-muted);">Seria: <b>${state.earStreak}</b></div>
-            </div>
-            ${q.answered ? `<button class="action-btn" style="padding:9px 22px;border-radius:20px;" onclick="nextEarActiveRound()">${(state.earSessionType === 'fixed' && state.earRound >= state.earTargetRounds) ? 'Podsumowanie →' : 'Następna runda →'}</button>` : ''}
-          </div>`;
-        return;
-        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
-      return;
-      }
-
-      // WARIANT 4: AKORDY (Zrzuty 6 i 7)
-      if (state.earMode === 'chords') {
-        const invLabels = ['Zasadn.', '1.', '2.', '3.'];
-        const activeInvs = [0,1,2,3].filter(inv => state.earSelectedInversions.has(inv));
-        stage.innerHTML = `
-          <div class="ear-trainer-screen" style="align-items:center;margin-top:16px;">
-            <div style="width:100%;">${topHeaderHtml}</div>
-            <div style="font-size:20px;font-weight:700;color:var(--text-muted);">
-              ${q.answered ? (q.wasCorrect ? '✅ Brawo! To akord ' + q.correctName : '❌ To był akord ' + q.correctName) : 'Jaki to akord?'}
-            </div>
-            <div style="background:#171310;border:1px solid #2b241e;border-radius:8px;padding:10px 28px;display:flex;gap:90px;align-items:center;font-size:13px;">
-              <div><b style="font-size:20px;">${state.earScore}</b> <span style="color:var(--text-muted);">/ ${state.earAttempts}</span></div>
-              <div style="color:var(--text-muted);">Seria: <b>${state.earStreak}</b></div>
-            </div>
-            <button class="chip-btn" style="padding:9px 22px;border-radius:20px;" onclick="replayCurrentEarQuestion()">▷ Odtwórz ponownie</button>
-
-            <div style="width:100%;max-width:660px;">
-              <div class="section-label">AKORDY</div>
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-                ${selectedChObjs.map(ch => {
-                  let cls = (state.earPickedChordId === ch.id) ? 'selected' : '';
-                  if (q.answered) {
-                    if (ch.id === q.chordId) cls = 'correct';
-                    else if (ch.id === state.earPickedChordId) cls = 'wrong';
-                  }
-                  return `
-                    <button class="ear-answer-btn ${cls}" style="width:100%;height:54px;"
-                            onclick="state.earPickedChordId='${ch.id}';renderStageAndInspector()">
-                      <span style="font-size:14px;font-weight:700;">${ch.label}</span>
-                    </button>`;
-                }).join('')}
-              </div>
-            </div>
-
-            ${activeInvs.length > 1 ? `
-            <div style="width:100%;max-width:660px;">
-              <div class="section-label">PRZEWROTY</div>
-              <div class="ear-seg-row">
-                ${activeInvs.map(inv => `
-                  <button class="ear-seg-btn ${state.earPickedInversion===inv?'active':''}"
-                          onclick="state.earPickedInversion=${inv};renderStageAndInspector()">${invLabels[inv]}</button>
-                `).join('')}
-              </div>
-            </div>` : ''}
-
-            <div style="width:100%;max-width:660px;">
-              ${!q.answered ? `
-                <button class="action-btn" style="width:100%;padding:14px;font-size:15px;"
-                        onclick="submitEarChordAnswer()">Sprawdź</button>
-              ` : `
-                <button class="action-btn" style="width:100%;padding:14px;font-size:15px;"
-                        onclick="nextEarActiveRound()">${(state.earSessionType === 'fixed' && state.earRound >= state.earTargetRounds) ? 'Podsumowanie →' : 'Następna runda →'}</button>
-              `}
-            </div>
-          </div>`;
-        return;
-        const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
-      return;
-      }
-    }
-
-    const isChordsMode = (state.earMode === 'chords');
-    const selectedCount = isChordsMode ? state.earSelectedChords.size : state.earSelectedSemis.size;
-    const modeLabelMap = { learn: 'Nauka', identify: 'Rozpoznaj', play: 'Zagraj', chords: 'Akordy' };
-    const summaryTitle = isChordsMode
-      ? `Akordy · ${selectedCount} rodzajów akordów`
-      : `${modeLabelMap[state.earMode]} · ${selectedCount} interwałów`;
-    const pbText = (state.earPlaybackStyle === 'harmonic') ? 'Harmoniczne' : 'Melodyczne';
-    const dirText = (state.earDirection === 'asc') ? 'Rosnąco' : (state.earDirection === 'desc' ? 'Malejąco' : 'Losowo');
-    const roundsText = (state.earSessionType === 'endless') ? 'Bez końca' : `${state.earTargetRounds} rund`;
-    const showDirectionOption = (!isChordsMode && state.earPlaybackStyle !== 'harmonic');
-    const summarySub = showDirectionOption ? `${pbText} · ${dirText} · ${roundsText}` : `${pbText} · ${roundsText}`;
-
-    // EKRAN PODSUMOWANIA PO UKOŃCZENIU WYBRANEJ LICZBY RUND (Zrzut ekranu podsumowania!)
-    if (state.earScreen === 'summary') {
-      const totalRounds = Math.max(1, state.earAttempts || state.earTargetRounds);
-      const accuracyPct = Math.round((state.earScore / totalRounds) * 100);
-      const headline = (accuracyPct >= 85)
-        ? 'Świetny słuch! Tak trzymaj'
-        : (accuracyPct >= 55 ? 'Dobra robota, robisz postępy!' : 'Słuchaj dalej, będzie łatwiej');
-      const fullSub = `${summaryTitle} · ${summarySub}`;
-
-      const reactArr = Array.isArray(state.earReactionTimesMs) && state.earReactionTimesMs.length > 0
-        ? state.earReactionTimesMs
-        : [900];
-      const avgReactSec = (reactArr.reduce((a, b) => a + b, 0) / reactArr.length / 1000).toFixed(1).replace('.', ',');
-
-      const histList = Array.isArray(state.earHistory) ? state.earHistory : [];
-      const weakItems = histList.filter(h => h.correct < h.total);
-      const weakCount = weakItems.length;
-
-      stage.innerHTML = `
-        <div class="ear-config-layout" style="margin-top:12px;">
-          <div class="ear-config-main" style="align-items:center;">
-            <!-- Koło dokładności -->
-            <div style="width:94px;height:94px;border-radius:50%;background:var(--bg-card);border:2px solid ${accuracyPct >= 70 ? 'var(--green)' : 'var(--border)'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
-              <div style="font-size:23px;font-weight:800;color:var(--text);">${accuracyPct}%</div>
-              <div style="font-size:10.5px;color:var(--text-muted);">${t('Dokładność', 'Accuracy')}</div>
-            </div>
-
-            <div style="text-align:center;">
-              <h2 style="font-size:28px;font-weight:800;margin-bottom:6px;">${headline}</h2>
-              <div style="font-size:13px;color:var(--text-muted);">${fullSub}</div>
-            </div>
-
-            <!-- 3 czyste kafelki statystyk sesji (bez grywalizacji i XP) -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:480px;">
-              <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 10px;text-align:center;">
-                <div style="font-size:20px;font-weight:800;">${state.earScore}/${totalRounds}</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${t('Wynik', 'Score')}</div>
-              </div>
-              <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 10px;text-align:center;">
-                <div style="font-size:20px;font-weight:800;">${state.earSessionDurationSec || 30}s</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${t('Czas', 'Time')}</div>
-              </div>
-              <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 10px;text-align:center;">
-                <div style="font-size:20px;font-weight:800;">${state.earBestStreak || 0}</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${t('Najlepsza seria', 'Best streak')}</div>
-              </div>
-            </div>
-
-            <!-- Według interwałów / Według akordów -->
-            <div style="width:100%;max-width:520px;margin-top:4px;">
-              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
-                <h3 style="font-size:18px;font-weight:800;margin:0;">${isChordsMode ? 'Według akordów' : 'Według interwałów'}</h3>
-                <span style="font-size:12px;color:var(--text-muted);">Średnia odpowiedź ${avgReactSec} s</span>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                ${histList.map(item => {
-                  const pct = item.total > 0 ? Math.round((item.correct / item.total) * 100) : 0;
-                  const barCol = pct >= 75 ? '#4ade80' : (pct > 0 ? 'var(--accent)' : '#3b322b');
-                  return `
-                    <div style="display:grid;grid-template-columns:165px 1fr 44px;align-items:center;gap:12px;font-size:13px;">
-                      <div>
-                        <strong>${item.name}</strong>
-                        ${item.code ? `<span style="color:var(--text-muted);font-size:11.5px;margin-left:4px;">${item.code}</span>` : ''}
-                      </div>
-                      <div style="height:6px;background:#1e1915;border-radius:4px;overflow:hidden;">
-                        <div style="width:${pct}%;height:100%;background:${barCol};border-radius:4px;"></div>
-                      </div>
-                      <div style="font-family:monospace;color:var(--text-muted);text-align:right;">${item.correct}/${item.total}</div>
-                    </div>`;
-                }).join('')}
-              </div>
-            </div>
-          </div>
-
-          <!-- Prawa kolumna: Co dalej -->
-          <div class="ear-summary-box">
-            <div style="font-size:18px;font-weight:800;margin-bottom:4px;">Co dalej</div>
-            <button class="action-btn" style="width:100%;padding:13px;font-size:14.5px;"
-                    onclick="startEarTrainingSession()">↻ Jeszcze raz</button>
-            ${weakCount > 0 ? `
-              <button class="chip-btn" style="width:100%;padding:12px;font-size:13px;font-weight:700;"
-                      onclick="startEarWeakItemsSession()">
-                Ćwicz ${weakCount} ${isChordsMode ? 'słabych akordów' : 'słabych interwałów'}
-              </button>
-              <div style="font-size:11.5px;color:var(--text-muted);text-align:center;">
-                Ćwiczenie to ${state.earTargetRounds} rund z najsłabszymi ${isChordsMode ? 'akordami' : 'interwałami'}.
-              </div>
-            ` : ''}
-            <div style="text-align:center;margin-top:8px;">
-              <span style="font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;"
-                    onclick="exitEarActiveSession()">Zmień ustawienia</span>
-            </div>
-          </div>
-        </div>`;
-      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
-      return;
-    }
-
-    const baseNoteLabels = getRootLabels();
-
-    stage.innerHTML = `
-      <div class="ear-config-layout">
-        <!-- Lewa kolumna konfiguracji (Co ćwiczyć / Jak to brzmi / Sesja) -->
-        <div class="ear-config-main">
-          <div>
-            <h3 style="font-size:18px;font-weight:800;margin-bottom:14px;">Co ćwiczyć</h3>
-            <div class="section-label">TRYB</div>
-            <div class="ear-seg-row" style="margin-bottom:18px;">
-              <button class="ear-seg-btn ${state.earMode==='learn'?'active':''}" onclick="state.earMode='learn';renderStageAndInspector()">Nauka</button>
-              <button class="ear-seg-btn ${state.earMode==='identify'?'active':''}" onclick="state.earMode='identify';renderStageAndInspector()">Rozpoznaj</button>
-              <button class="ear-seg-btn ${state.earMode==='play'?'active':''}" onclick="state.earMode='play';renderStageAndInspector()">Zagraj</button>
-              <button class="ear-seg-btn ${state.earMode==='chords'?'active':''}" onclick="state.earMode='chords';state.earPlaybackStyle='harmonic';renderStageAndInspector()">Akordy</button>
-            </div>
-
-            ${!isChordsMode ? `
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span class="section-label" style="margin:0;">INTERWAŁY</span>
-                <div style="display:flex;gap:14px;font-size:12px;font-weight:700;color:var(--accent);">
-                  <span style="cursor:pointer;" onclick="setAllEarIntervals(true)">Zaznacz wszystko</span>
-                  <span style="cursor:pointer;" onclick="setAllEarIntervals(false)">Odznacz wszystko</span>
-                </div>
-              </div>
-              <div class="ear-intervals-grid">
-                ${allIntervals.map(iv => `
-                  <div class="ear-interval-tile ${state.earSelectedSemis.has(iv.semi)?'selected':''}"
-                       onclick="toggleEarIntervalTile(${iv.semi})">
-                    <span class="iv-name">${iv.name}</span>
-                    <span class="iv-code">${iv.code}</span>
-                  </div>
-                `).join('')}
-              </div>
-            ` : `
-              <div class="section-label">AKORDY</div>
-              <div style="font-size:12px;color:var(--text-muted);margin:6px 0;">Trójdźwięki</div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-                ${earChordCatalog.filter(c => c.group === 'triad').map(c => `
-                  <button class="ear-chord-pill ${state.earSelectedChords.has(c.id)?'selected':''}"
-                          onclick="toggleEarChordTile('${c.id}')">${c.label}</button>
-                `).join('')}
-              </div>
-              <div style="font-size:12px;color:var(--text-muted);margin:6px 0;">Akordy septymowe</div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
-                ${earChordCatalog.filter(c => c.group === 'seventh').map(c => `
-                  <button class="ear-chord-pill ${state.earSelectedChords.has(c.id)?'selected':''}"
-                          onclick="toggleEarChordTile('${c.id}')">${c.label}</button>
-                `).join('')}
-              </div>
-
-              <div class="section-label">PRZEWROTY</div>
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;">
-                ${['Zasadn.','1.','2.','3.'].map((lbl, invIdx) => `
-                  <button class="chip-btn ${state.earSelectedInversions.has(invIdx)?'active':''}" style="padding:10px;"
-                          onclick="toggleEarInversionTile(${invIdx})">${lbl}</button>
-                `).join('')}
-              </div>
-
-              <div class="section-label">INSTRUMENT</div>
-              <div class="btn-grid-2">
-                <button class="chip-btn ${state.earInstrument==='guitar'?'active':''}" style="padding:10px;"
-                        onclick="state.earInstrument='guitar';renderStageAndInspector()">Gitara</button>
-                <button class="chip-btn ${state.earInstrument==='piano'?'active':''}" style="padding:10px;"
-                        onclick="state.earInstrument='piano';renderStageAndInspector()">Fortepian</button>
-              </div>
-            `}
-          </div>
-
-          <!-- Jak to brzmi -->
-          <div>
-            <h3 style="font-size:18px;font-weight:800;margin-bottom:14px;">Jak to brzmi</h3>
-            <div style="display:grid;grid-template-columns:${showDirectionOption ? '1fr 1.2fr' : '1fr'};gap:16px;margin-bottom:14px;">
-              <div>
-                <div class="section-label">ODTWARZANIE</div>
-                <div class="ear-seg-row">
-                  <button class="ear-seg-btn ${state.earPlaybackStyle==='melodic'?'active':''}"
-                          onclick="state.earPlaybackStyle='melodic';renderStageAndInspector()">Melodyczne</button>
-                  <button class="ear-seg-btn ${state.earPlaybackStyle==='harmonic'?'active':''}"
-                          onclick="state.earPlaybackStyle='harmonic';renderStageAndInspector()">Harmoniczne</button>
-                </div>
-              </div>
-              ${showDirectionOption ? `
-              <div>
-                <div class="section-label">KIERUNEK</div>
-                <div class="ear-seg-row">
-                  <button class="ear-seg-btn ${state.earDirection==='asc'?'active':''}"
-                          onclick="state.earDirection='asc';renderStageAndInspector()">Rosnąco</button>
-                  <button class="ear-seg-btn ${state.earDirection==='desc'?'active':''}"
-                          onclick="state.earDirection='desc';renderStageAndInspector()">Malejąco</button>
-                  <button class="ear-seg-btn ${state.earDirection==='rand'?'active':''}"
-                          onclick="state.earDirection='rand';renderStageAndInspector()">Losowo</button>
-                </div>
-              </div>` : ''}
-            </div>
-
-            <div class="section-label">TRYB NUTY BAZOWEJ</div>
-            <div class="ear-seg-row">
-              <button class="ear-seg-btn ${state.earRootMode==='random'?'active':''}"
-                      onclick="state.earRootMode='random';renderStageAndInspector()">Losowy</button>
-              <button class="ear-seg-btn ${state.earRootMode==='fixed_note'?'active':''}"
-                      onclick="state.earRootMode='fixed_note';renderStageAndInspector()">Stała nuta</button>
-              <button class="ear-seg-btn ${state.earRootMode==='fixed_pitch'?'active':''}"
-                      onclick="state.earRootMode='fixed_pitch';renderStageAndInspector()">Nuta + oktawa</button>
-            </div>
-
-            ${state.earRootMode !== 'random' ? `
-              <div style="margin-top:12px;">
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Wybierz nutę bazową</div>
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
-                  ${baseNoteLabels.map((lbl, pc) => `
-                    <button class="chip-btn ${state.earFixedRootPc===pc?'active':''}"
-                            style="padding:10px;font-size:13px;font-weight:700;"
-                            onclick="selectEarBaseNote(${pc})">${lbl}</button>
-                  `).join('')}
-                </div>
-                ${state.earRootMode === 'fixed_pitch' ? `
-                  <div style="font-size:12px;color:var(--text-muted);margin:12px 0 8px;">Wybierz oktawę bazową (${baseNoteLabels[state.earFixedRootPc]} ${state.earFixedOctave})</div>
-                  <div class="ear-seg-row">
-                    ${[2, 3, 4, 5].map(oct => `
-                      <button class="ear-seg-btn ${state.earFixedOctave===oct?'active':''}"
-                              onclick="selectEarBaseOctave(${oct})">Oktawa ${oct} (${baseNoteLabels[state.earFixedRootPc]} ${oct})</button>
-                    `).join('')}
-                  </div>
-                ` : ''}
-              </div>
-            ` : ''}
-          </div>
-
-          <!-- Sesja -->
-          <div>
-            <h3 style="font-size:18px;font-weight:800;margin-bottom:14px;">Sesja</h3>
-            <div style="display:grid;grid-template-columns:${state.earSessionType === 'fixed' ? '1fr 1.5fr' : '1fr'};gap:16px;margin-bottom:16px;">
-              <div>
-                <div class="section-label">TYP SESJI</div>
-                <div class="ear-seg-row">
-                  <button class="ear-seg-btn ${state.earSessionType==='fixed'?'active':''}"
-                          onclick="state.earSessionType='fixed';renderStageAndInspector()">Ustalony</button>
-                  <button class="ear-seg-btn ${state.earSessionType==='endless'?'active':''}"
-                          onclick="state.earSessionType='endless';renderStageAndInspector()">Bez końca</button>
-                </div>
-              </div>
-              ${state.earSessionType === 'fixed' ? `
-              <div>
-                <div class="section-label">LICZBA RUND (WYBIERZ LUB WPISZ WŁASNĄ)</div>
-                <div style="display:flex;gap:8px;align-items:center;">
-                  <div class="ear-seg-row" style="flex:1;">
-                    ${[5, 10, 15, 20, 30, 50].map(r => `
-                      <button class="ear-seg-btn ${state.earTargetRounds===r?'active':''}"
-                              onclick="state.earTargetRounds=${r};renderStageAndInspector()">${r}</button>
-                    `).join('')}
-                  </div>
-                  <input type="number" min="1" max="200" value="${state.earTargetRounds}"
-                         style="width:68px;padding:8px;text-align:center;font-weight:700;"
-                         title="Wpisz dowolną liczbę rund do zagrania"
-                         onchange="state.earTargetRounds=Math.max(1,Math.min(200,parseInt(this.value,10)||10));renderStageAndInspector()">
-                </div>
-              </div>` : ''}
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center;">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span class="section-label" style="margin:0;">MIERZ CZAS REAKCJI</span>
-                <button class="ear-toggle-switch ${state.earMeasureReaction?'on':''}"
-                        onclick="state.earMeasureReaction=!state.earMeasureReaction;renderStageAndInspector()"></button>
-              </div>
-              ${!isChordsMode ? `
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span class="section-label" style="margin:0;">PODPOWIEDZI PIOSENEK</span>
-                <button class="ear-toggle-switch ${state.earShowSongHints?'on':''}"
-                        onclick="state.earShowSongHints=!state.earShowSongHints;renderStageAndInspector()"></button>
-              </div>` : ''}
-            </div>
-          </div>
-        </div>
-
-        <!-- Prawa karta podsumowania i startu (Graj / Zaskocz mnie) -->
-        <div class="ear-summary-box">
-          <div style="font-size:21px;font-weight:800;line-height:1.25;">${summaryTitle}</div>
-          <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:6px;">${summarySub}</div>
-          <button class="action-btn" style="width:100%;padding:13px;font-size:15px;"
-                  onclick="startEarTrainingSession()">Graj</button>
-          ${!isChordsMode ? `
-          <button class="chip-btn" style="width:100%;padding:12px;border-color:#573d26;background:rgba(243,146,55,0.08);"
-                  onclick="startEarSurpriseSession()">
-            <div style="font-weight:700;color:var(--text);">Zaskocz mnie</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Losowe ćwiczenie dla Ciebie</div>
-          </button>` : ''}
-        </div>
-      </div>`;
+    renderEarView(stage);
     return;
   }
 
@@ -9645,55 +9597,6 @@ async function renderStageAndInspector() {
         <div style="font-size:13px;color:var(--text-muted);line-height:1.5;">
           Ćwiczenie zostanie wygenerowane przez silnik <b>C++20 (WorkshopGenerator)</b>, dodane do bieżącej sesji oraz listy <b>Twoje ćwiczenia</b>, skąd możesz je od razu uruchomić na gryfie i w tabulaturze.
         </div>`;
-      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
     }
 
@@ -9785,55 +9688,6 @@ async function renderStageAndInspector() {
           <button class="action-btn" style="width:100%;" onclick="saveNewWorkshopSession()">Zapisz sesję</button>
           <button class="chip-btn" style="width:100%;" onclick="state.workshopSubView='sessions';renderStageAndInspector()">Anuluj</button>
         </div>`;
-      const baseBpm = state.exerciseBaseBpm || state.tempoBpm || 120;
-      insp.innerHTML = `
-        <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="section-label" style="margin:0;">PRĘDKOŚĆ ĆWICZENIA</span>
-            <strong id="exPlayerInspBpmLbl" style="font-size:17px;color:var(--accent);">${state.tempoBpm} BPM</strong>
-          </div>
-          <input type="range" min="30" max="260" value="${state.tempoBpm}" style="width:100%;"
-                 oninput="const el=document.getElementById('exPlayerInspBpmLbl');if(el)el.textContent=this.value+' BPM';"
-                 onchange="setExercisePlayerBpm(this.value)">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-10)">−10</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)-5)">−5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+5)">+5</button>
-            <button class="chip-btn" style="padding:5px 2px;font-size:11px;" onclick="setExercisePlayerBpm((state.tempoBpm||120)+10)">+10</button>
-          </div>
-          <div>
-            <div class="section-label" style="margin-bottom:4px;">SKRÓTY PRĘDKOŚCI (BAZA ${baseBpm} BPM)</div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              ${[0.5, 0.75, 1.0, 1.25].map(r => {
-                const tBpm = Math.max(30, Math.min(260, Math.round(baseBpm * r)));
-                const isActR = Math.abs((state.tempoBpm || 120) - tBpm) <= 1;
-                return `<button class="chip-btn ${isActR?'active':''}" style="padding:5px 2px;font-size:11px;"
-                                onclick="setExercisePlayerSpeedRatio(${r})">${Math.round(r * 100)}%</button>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div class="section-label">TRYB ĆWICZENIA</div>
-          <div class="btn-grid-2">
-            <button class="chip-btn ${state.exercisePlayerMode==='play'?'active':''}" onclick="switchExercisePlayerMode('play')">🎤 Graj (mikrofon)</button>
-            <button class="chip-btn ${state.exercisePlayerMode==='listen'?'active':''}" onclick="switchExercisePlayerMode('listen')">🔊 Odsłuch</button>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button class="chip-btn ${state.spMetronome?'active':''}" onclick="toggleExerciseMetronome()">🥁 Metronom: ${state.spMetronome ? 'Włączony' : 'Wyłączony'}</button>
-          <button class="chip-btn" onclick="startExercisePlayer('${state.exercisePlayerMode}')">↻ Zacznij od początku</button>
-          <button class="chip-btn" onclick="stopExercisePlayer(true)">← Wróć do Edytora TAB</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;color:var(--text-muted);line-height:1.45;">
-          <strong style="color:var(--text);">Legenda gryfu:</strong><br>
-          <span style="color:#22c55e;">● Zielony</span> — zaliczone nuty<br>
-          <span style="color:#f39237;">◉ Pomarańczowy</span> — oczekiwana teraz<br>
-          <span style="color:#38bdf8;">◌ Przerywany niebieski</span> — kolejne arpeggio
-        </div>`;
       return;
     }
 
@@ -9848,7 +9702,9 @@ async function renderStageAndInspector() {
               <button class="subtab-btn" onclick="state.workshopSubView='new_session';renderStageAndInspector()">Ćwiczenia (${state.customWorkshopExercises.length})</button>
             </div>
           </div>
-          <div style="display:flex;gap:8px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="chip-btn" style="padding:8px 12px;" onclick="importAnyLibraryPackOrFile()" title="Wczytaj pojedynczy plik (.json) lub paczkę (.gitara-pack.json) na stałe">📂 Wczytaj plik / paczkę</button>
+            <button class="chip-btn" style="padding:8px 12px;" onclick="exportAllUserLibraryPack()" title="Eksportuj wszystkie własne Sweepy, Progresje, TAB-y i projekty Studia TAB w jednym pliku">📦 Eksportuj paczkę</button>
             <button class="chip-btn" style="padding:8px 14px;" onclick="state.workshopSubView='add_exercise';renderStageAndInspector()">+ Dodaj ćwiczenie (Skala)</button>
             <button class="action-btn" onclick="state.newSessionName='';state.newSessionItems=[];state.workshopSubView='new_session';renderStageAndInspector()">+ Nowa sesja</button>
           </div>
@@ -10084,26 +9940,44 @@ async function renderStageAndInspector() {
                   ? t('🔊 Filtr wzmacniacza/mikrofonu (EQ + wzmocnienie cienkich strun): WŁ', '🔊 Amp/Mic EQ + thin-string boost: ON')
                   : t('🔇 Filtr wzmacniacza/mikrofonu (surowy sygnał): WYŁ', '🔇 Amp/Mic EQ (raw input): OFF')}
               </button>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
-                    <span style="color:var(--text-muted);">${t('Próg grubych (E6–D4)', 'Thick strings (E6–D4)')}</span>
-                    <strong id="dspThresholdOnLbl" style="color:var(--accent);">${Math.round((state.dspThresholdOn || 0.58) * 100)}%</strong>
+              ${(() => {
+                const sensOff = dspThresholdToSensOffset(state.dspThresholdOn);
+                const thinOff = dspHighToFineOffset(state.dspHighThresholdOn, sensOff);
+                const thinLbl = thinOff === 0 ? t('Domyślna', 'Default') : (thinOff > 0 ? `+${thinOff} (${t('czulsze', 'more sens.')})` : `${thinOff} (${t('mniej czułe', 'less sens.')})`);
+                return `
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:4px;gap:6px;">
+                        <span style="color:var(--text-muted);">${t('Wrażliwość wykrywania', 'Detection sensitivity')}</span>
+                        <div style="display:inline-flex;align-items:center;gap:4px;">
+                          <strong id="dspThresholdOnLbl" style="color:var(--accent);">${formatDspSensOffset(sensOff)}</strong>
+                          ${(sensOff !== 0 || thinOff !== 0) ? `<button class="chip-btn" style="padding:1px 6px;font-size:10px;" onclick="resetDspSensitivityDefault()" title="${t('Przywróć sprawdzoną wartość domyślną', 'Reset to verified default')}">${t('Domyślna', 'Default')}</button>` : ''}
+                        </div>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <button class="chip-btn" style="padding:2px 8px;font-size:12px;font-weight:800;" ${sensOff <= -5 ? 'disabled' : ''} onclick="setDspSensitivityOffset(${sensOff - 1})" title="${t('Mniejsza czułość (odcina szum)', 'Less sensitive (cuts noise)')}">−</button>
+                        <input id="dspSensitivityOffsetSlider" type="range" min="-5" max="5" step="1" value="${sensOff}" style="width:100%;"
+                               oninput="const off=parseInt(this.value,10)||0;const f=dspHighToFineOffset(state.dspHighThresholdOn,dspThresholdToSensOffset(state.dspThresholdOn));const m=dspSensitivityOffsetToThresholds(off,f);state.dspThresholdOn=m.thresholdOn;state.dspHighThresholdOn=m.highThresholdOn;const lbl=document.getElementById('dspThresholdOnLbl');if(lbl)lbl.textContent=formatDspSensOffset(m.offset);if(livePitchPleaseDetector)livePitchPleaseDetector.updateConfig({thresholdOn:state.dspThresholdOn,highThresholdOn:state.dspHighThresholdOn});"
+                               onchange="setDspSensitivityOffset(parseInt(this.value,10))">
+                        <button class="chip-btn" style="padding:2px 8px;font-size:12px;font-weight:800;" ${sensOff >= 5 ? 'disabled' : ''} onclick="setDspSensitivityOffset(${sensOff + 1})" title="${t('Większa czułość (łapie cichsze nuty)', 'More sensitive (catches softer notes)')}">+</button>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:4px;gap:6px;">
+                        <span style="color:var(--text-muted);">${t('Cienkie struny (G3–E1)', 'Thin strings (G3–E1)')}</span>
+                        <strong id="dspHighThresholdOnLbl" style="color:var(--accent);">${thinLbl}</strong>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <button class="chip-btn" style="padding:2px 8px;font-size:12px;font-weight:800;" ${thinOff <= -3 ? 'disabled' : ''} onclick="setDspThinSensitivityOffset(${thinOff - 1})" title="${t('Mniejsza czułość cienkich strun', 'Less sensitive on thin strings')}">−</button>
+                        <input id="dspThinSensitivityOffsetSlider" type="range" min="-3" max="3" step="1" value="${thinOff}" style="width:100%;"
+                               oninput="const f=parseInt(this.value,10)||0;const mainOff=dspThresholdToSensOffset(state.dspThresholdOn);const m=dspSensitivityOffsetToThresholds(mainOff,f);state.dspHighThresholdOn=m.highThresholdOn;const lbl=document.getElementById('dspHighThresholdOnLbl');if(lbl)lbl.textContent=(m.fineHighOffset===0?t('Domyślna','Default'):(m.fineHighOffset>0?'+'+m.fineHighOffset+' ('+t('czulsze','more sens.')+')':m.fineHighOffset+' ('+t('mniej czułe','less sens.')+')'));if(livePitchPleaseDetector)livePitchPleaseDetector.updateConfig({highThresholdOn:state.dspHighThresholdOn});"
+                               onchange="setDspThinSensitivityOffset(parseInt(this.value,10))">
+                        <button class="chip-btn" style="padding:2px 8px;font-size:12px;font-weight:800;" ${thinOff >= 3 ? 'disabled' : ''} onclick="setDspThinSensitivityOffset(${thinOff + 1})" title="${t('Większa czułość cienkich strun', 'More sensitive on thin strings')}">+</button>
+                      </div>
+                    </div>
                   </div>
-                  <input type="range" min="40" max="78" step="2" value="${Math.round((state.dspThresholdOn || 0.58) * 100)}" style="width:100%;"
-                         oninput="const v=Math.max(40,Math.min(78,parseInt(this.value,10)||58));state.dspThresholdOn=v/100;const lbl=document.getElementById('dspThresholdOnLbl');if(lbl)lbl.textContent=v+'%';if(livePitchPleaseDetector)livePitchPleaseDetector.updateConfig({thresholdOn:state.dspThresholdOn});"
-                         onchange="setDspThresholdOn(parseInt(this.value,10)/100)">
-                </div>
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
-                    <span style="color:var(--text-muted);">${t('Próg cienkich (G3–E1)', 'Thin strings (G3–E1)')}</span>
-                    <strong id="dspHighThresholdOnLbl" style="color:var(--accent);">${Math.round((state.dspHighThresholdOn || 0.42) * 100)}%</strong>
-                  </div>
-                  <input type="range" min="30" max="72" step="2" value="${Math.round((state.dspHighThresholdOn || 0.42) * 100)}" style="width:100%;"
-                         oninput="const v=Math.max(30,Math.min(72,parseInt(this.value,10)||42));state.dspHighThresholdOn=v/100;const lbl=document.getElementById('dspHighThresholdOnLbl');if(lbl)lbl.textContent=v+'%';if(livePitchPleaseDetector)livePitchPleaseDetector.updateConfig({highThresholdOn:state.dspHighThresholdOn});"
-                         onchange="setDspHighThresholdOn(parseInt(this.value,10)/100)">
-                </div>
-              </div>
+                `;
+              })()}
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                 <button class="chip-btn" style="padding:6px 12px;font-weight:700;" ${state.dspCalibrating ? 'disabled' : ''} onclick="startGuitarMicCalibration()">
                   🎸 ${state.dspCalibrating ? t('Kalibracja w toku...', 'Calibrating...') : t('Kalibruj z gitary (5s)', 'Calibrate from guitar (5s)')}
@@ -10238,8 +10112,8 @@ async function renderStageAndInspector() {
           <button class="chip-btn ${Math.abs(state.a4ReferenceHz-440)<0.1?'active':''}" onclick="state.a4ReferenceHz=440;saveSettings();renderStageAndInspector()">440 Hz</button>
           <button class="chip-btn ${Math.abs(state.a4ReferenceHz-442)<0.1?'active':''}" onclick="state.a4ReferenceHz=442;saveSettings();renderStageAndInspector()">442 Hz</button>
         </div>
-        <input type="number" value="${state.a4ReferenceHz}" min="430" max="450" step="0.5"
-               onchange="state.a4ReferenceHz=parseFloat(this.value)||440;saveSettings();renderStageAndInspector()">
+        <input type="number" value="${state.a4ReferenceHz}" min="415" max="466" step="0.5"
+               onchange="state.a4ReferenceHz=Math.max(415,Math.min(466,parseFloat(this.value)||440));saveSettings();renderStageAndInspector()">
       </div>`;
     populateAudioSelectElements();
     return;
@@ -10819,7 +10693,7 @@ async function renderStageAndInspector() {
     const reqViewMode = isTrans ? 'transition' : 'single';
     const customParam = state.customStringMidis.join(',');
     const effDir = isSweepTab ? (state.sweepDirection ?? 0) : (state.arpDirection ?? 1);
-    const maxSweepOffset = Math.max(0, 6 - (state.arpSweepStrings || 3));
+    const maxSweepOffset = Math.max(0, nVisStr - (state.arpSweepStrings || 3));
     const effStrSet = isSweepTab
       ? (state.bass4Mode ? Math.max(2, Math.min(maxSweepOffset, state.sweepStringSet || 2)) : Math.min(maxSweepOffset, state.sweepStringSet || 0))
       : (state.bass4Mode ? 2 : (state.arpStringSet || 0));
@@ -10907,17 +10781,30 @@ async function renderStageAndInspector() {
     const possibleForRootList = Array.isArray(data.possibleForRoot) ? data.possibleForRoot : [];
     const possibleIdSet = new Set(possibleForRootList.map(p => normalizeChordId(p.id)));
     const savedPresets = Array.isArray(state.savedSweepCompositions) ? state.savedSweepCompositions : [];
-    const savedPresetsBarHtml = (isSweepSingle && savedPresets.length > 0)
-      ? `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-top:4px;border-top:1px dashed var(--border);">
-           <span style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;">💾 Zapisane układy (${savedPresets.length}):</span>
-           ${savedPresets.map((pr, pIdx) => `
-             <div style="display:inline-flex;align-items:center;gap:2px;background:var(--bg-card);border:1px solid var(--border);border-radius:7px;padding:2px 4px;">
-               <button class="chip-btn" style="border:none;background:transparent;padding:2px 6px;font-size:11px;"
-                       onclick="loadSweepCompositionPreset(${pIdx})" title="Wczytaj zapisaną kompozycję">${pr.name}</button>
-               <button class="chip-btn" style="border:none;background:transparent;padding:2px 5px;font-size:10px;color:#f87171;"
-                       onclick="deleteSweepCompositionPreset(${pIdx})" title="Usuń zapisany układ">✕</button>
+    const savedPresetsBarHtml = isSweepTab
+      ? `<div style="display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:9px;">
+           ${state.sweepToastMsg ? `<div style="font-size:11.5px;font-weight:700;color:#86efac;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.4);border-radius:6px;padding:4px 9px;">${escapeHtmlText(state.sweepToastMsg)}</div>` : ''}
+           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+             <span style="font-size:10.5px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;">📚 Moje i wczytane układy Sweep (${savedPresets.length})</span>
+             <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-left:auto;">
+               <input id="sweepSaveNameInput" type="text" placeholder="Nazwa układu Sweep..." style="width:165px;padding:4px 8px;font-size:11.5px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:6px;">
+               <button class="chip-btn" style="padding:4px 9px;font-size:11px;border-color:var(--accent);color:var(--accent);" onclick="saveCurrentSweepCompositionPreset()" title="Zapisz bieżący Sweep trwale w lokalnym folderze user_library/sweeps/">💾 Zapisz lokalnie</button>
+               <button class="chip-btn" style="padding:4px 9px;font-size:11px;" onclick="exportCurrentSweepFile()" title="Eksportuj plik .gitara-sweep.json do wysłania innym">📤 Eksportuj plik</button>
+               <button class="chip-btn" style="padding:4px 9px;font-size:11px;" onclick="importSweepFilePermanently()" title="Wczytaj plik Sweep z dysku i zapisz na stałe">📂 Wczytaj plik</button>
              </div>
-           `).join('')}
+           </div>
+           ${savedPresets.length > 0 ? `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-top:4px;border-top:1px dashed var(--border);">
+             ${savedPresets.map((pr, pIdx) => `
+               <div style="display:inline-flex;align-items:center;gap:2px;background:var(--bg-card);border:1px solid var(--border);border-radius:7px;padding:2px 4px;">
+                 <button class="chip-btn" style="border:none;background:transparent;padding:2px 6px;font-size:11px;"
+                         onclick="loadSweepCompositionPreset(${pIdx})" title="Wczytaj zapisany układ (${(pr.items||[]).length} ogniw)">${pr.source === 'imported' ? '📥 ' : ''}${escapeHtmlText(pr.name)}</button>
+                 <button class="chip-btn" style="border:none;background:transparent;padding:2px 4px;font-size:10px;color:var(--text-muted);"
+                         onclick="exportSavedSweepPreset(${pIdx})" title="Eksportuj do pliku .gitara-sweep.json">📤</button>
+                 <button class="chip-btn" style="border:none;background:transparent;padding:2px 5px;font-size:10px;color:#f87171;"
+                         onclick="deleteSweepCompositionPreset(${pIdx})" title="Usuń trwale z lokalnej biblioteki">✕</button>
+               </div>
+             `).join('')}
+           </div>` : `<div style="font-size:11px;color:var(--text-muted);">Brak zapisanych układów. Ułóż kilka sweepów (+ Dodaj) lub kliknij „💾 Zapisz lokalnie” albo „📂 Wczytaj plik”.</div>`}
          </div>`
       : '';
     const chordOptHtml = (c) => {
@@ -10989,8 +10876,12 @@ async function renderStageAndInspector() {
                     onclick="sendArpeggioToExerciseTab()" title="Przenieś sekwencję do Edytora Ćwiczeń (ćwiczenie z mikrofonem i eksport GP5/MIDI)">
               ✏️ Ćwicz w TAB / GP5
             </button>
+            <button class="chip-btn" style="padding:6px 11px;font-size:12px;"
+                    onclick="copyArpeggioToStudioTab(this)" title="Skopiuj to Arpeggio / Sweep do schowka Studia TAB (wklej Ctrl+V w wybranym takcie)">
+              📋 Kopiuj do Studia
+            </button>
             <button class="chip-btn" style="padding:6px 11px;font-size:12px;border-color:var(--accent);color:var(--accent);"
-                    onclick="sendArpeggioToStudioTab()" title="Wyślij arpeggio / sweep do wielościeżkowego Studio TAB">
+                    onclick="sendArpeggioToStudioTab()" title="Wyślij arpeggio / sweep jako nowy projekt w Studio TAB">
               🎼 Do Studia TAB
             </button>
           </div>
@@ -11054,7 +10945,6 @@ async function renderStageAndInspector() {
             ` : ''}
 
             ${buildArpDiatonicSectionHtml(data, true, true)}
-            ${compList.length === 0 ? savedPresetsBarHtml : ''}
           </div>
         ` : `
           <div id="arpTabSvgWrap" style="background:#14100d;border:1px solid #2b231d;border-radius:10px;padding:8px 12px;overflow-x:auto;">
@@ -11072,12 +10962,20 @@ async function renderStageAndInspector() {
                   ${isCompPlayActive ? '⏹ Stop' : '▶ Odsłuchaj kompozycję'}
                 </button>
                 <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;"
-                        onclick="saveCurrentSweepCompositionPreset()" title="Zapisz bieżący układ sweepów do pamięci podręcznej">
+                        onclick="saveCurrentSweepCompositionPreset()" title="Zapisz bieżący układ sweepów lokalnie na dysku">
                   💾 Zapisz układ
+                </button>
+                <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;"
+                        onclick="exportCurrentSweepFile()" title="Eksportuj ten układ Sweep do pliku">
+                  📤 Eksportuj
                 </button>
                 <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;border-color:var(--accent);color:var(--accent);"
                         onclick="sendSweepCompositionToExerciseTab()">
                   ✏️ Ćwicz kompozycję w TAB / GP5
+                </button>
+                <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;"
+                        onclick="copySweepCompositionToStudioTab(this)" title="Skopiuj całą kompozycję Sweep do schowka Studia TAB (Ctrl+V w Studio)">
+                  📋 Kopiuj do Studia
                 </button>
                 <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;border-color:var(--accent);color:var(--accent);"
                         onclick="sendSweepCompositionToStudioTab()">
@@ -11089,7 +10987,6 @@ async function renderStageAndInspector() {
                 </button>
               </div>
             </div>
-            ${savedPresetsBarHtml}
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px;">
               ${compList.map((seg, idx) => `
                 <div class="chord-box-card ${idx===state.sweepCompActiveIdx?'selected':''}" data-sweep-comp-seg="${idx}"
@@ -11124,6 +11021,8 @@ async function renderStageAndInspector() {
             </div>
           </div>
         ` : ''}
+
+        ${isSweepTab ? savedPresetsBarHtml : ''}
 
         ${isTrans ? `
           <div>
@@ -11444,11 +11343,6 @@ async function renderStageAndInspector() {
           </div>
         </div>
 
-        <button class="chip-btn" style="width:100%;font-size:11px;padding:6px 8px;"
-                onclick="state.sweepViewMode='single';switchPracticeSubtab('sweep')">
-          ⚡ Otwórz ten akord w Sweep Picking
-        </button>
-
         ${buildArpReferenceScaleInspectorHtml(rootLabels)}`;
     }
 
@@ -11518,9 +11412,10 @@ async function renderStageAndInspector() {
     const posNames = ['Cały gryf', '3NPS', '4NPS', 'CAGED'];
     const travNames = ['Standard (pozycja)', '↗ Diagonalnie (3 okt.)', '↔ 1 struna (poziomo)'];
     const cagedLabels = ['C', 'A', 'G', 'E', 'D'];
-    const stringLabels = (state.customStringMidis && state.customStringMidis.length === 6)
-      ? state.customStringMidis.map(m => baseNoteLabels[((m % 12) + 12) % 12])
-      : ['E', 'A', 'D', 'G', 'B', 'E'];
+    const nSpStr = getActiveStringCount();
+    const stringLabels = (state.customStringMidis && state.customStringMidis.length >= nSpStr)
+      ? state.customStringMidis.slice(0, nSpStr).map(m => baseNoteLabels[((m % 12) + 12) % 12])
+      : ['E', 'A', 'D', 'G', 'B', 'E'].slice(0, nSpStr);
     const fretZones = [
       { id: 'all',  lbl: 'Cały (0–24)', min: 0,  max: 24 },
       { id: 'low',  lbl: 'Niska (0–7)', min: 0,  max: 7 },
@@ -11553,9 +11448,10 @@ async function renderStageAndInspector() {
     const summaryHeadline = isScaleMode
       ? `${rootNoteLbl} ${scaleObj.name.toLowerCase()}`
       : `${state.scalePracticeMode === 'arpeggio' ? 'Arpeggio' : 'Wzór arpeggia'}: ${rootNoteLbl}${chordObj.id === 'major' ? 'maj' : (chordObj.id === 'minor' ? 'm' : chordObj.id)}`;
-    const activeStartStrLbl = state.spStartString < 0
-      ? (state.spTraversal === 2 ? `Domyślna (1 · ${stringLabels[5]})` : 'Dowolna')
-      : `Struna ${6 - state.spStartString} (${stringLabels[state.spStartString]})`;
+    const effSpStrIdx = (state.spStartString >= 0 && state.spStartString < nSpStr) ? state.spStartString : -1;
+    const activeStartStrLbl = effSpStrIdx < 0
+      ? (state.spTraversal === 2 ? `Domyślna (1 · ${stringLabels[nSpStr - 1]})` : 'Dowolna')
+      : `Struna ${nSpStr - effSpStrIdx} (${stringLabels[effSpStrIdx]})`;
     const activeSystemLbl = state.spTraversal === 1
       ? '↗ Diagonalnie po gryfie'
       : (state.spTraversal === 2
@@ -11569,12 +11465,7 @@ async function renderStageAndInspector() {
       <div class="sp-shell">
         <div class="sp-header">
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-            <h2 style="font-size:21px;font-weight:800;margin:0;color:var(--text);">${t('Ćwiczenie', 'Exercise')}</h2>
-            <div class="ear-seg-row" style="width:auto;">
-              <button class="ear-seg-btn" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('composer')">✏️ ${t('Edytor TAB', 'TAB Editor')}</button>
-              <button class="ear-seg-btn active" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('scale_practice')">🎯 ${t('Praktyka skal', 'Scale Practice')}</button>
-              <button class="ear-seg-btn" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('harmonics')">✨ ${t('Flażolety', 'Harmonics')}</button>
-            </div>
+            <h2 style="font-size:21px;font-weight:800;margin:0;color:var(--text);">🎯 ${t('Praktyka skal i pasaży', 'Scale & Arpeggio Practice')}</h2>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <button class="chip-btn" style="padding:7px 13px;font-size:12px;" onclick="randomizeScalePractice()">🎲 ${t('Losowa tonacja i skala', 'Random key & scale')}</button>
@@ -11862,8 +11753,12 @@ async function renderStageAndInspector() {
                     onclick="launchScalePractice('play','tab')">▶ ${t('Graj z TAB (dokładne progi)', 'Play with TAB (exact frets)')}</button>
             <button class="action-btn secondary" style="width:100%;padding:10px;font-size:13.5px;"
                     onclick="launchScalePractice('listen','ribbon')">🔊 ${t('Posłuchaj przebiegu', 'Listen to run')}</button>
-            <button class="chip-btn" style="width:100%;padding:9px 12px;font-size:12.5px;border-color:var(--accent);color:var(--accent);"
-                    onclick="launchScalePractice('edit','tab')" title="Otwórz wygenerowaną sekwencję w edytorze TAB / GP5">
+            <button class="chip-btn" style="width:100%;padding:9px 12px;font-size:12.5px;border-color:var(--accent);color:var(--accent);font-weight:700;"
+                    onclick="launchScalePractice('edit_append','tab')" title="Dopisuje wygenerowaną skalę / arpeggio do Edytora TAB bez kasowania nut">
+              + ${t('Dodaj do TAB', 'Append to TAB')} (${(state.recordedEvents||[]).length})
+            </button>
+            <button class="chip-btn" style="width:100%;padding:9px 12px;font-size:12.5px;"
+                    onclick="launchScalePractice('edit','tab')" title="Zastąp TAB i otwórz w edytorze TAB / GP5">
               ✏️ ${t('Otwórz jako TAB / GP5', 'Open as TAB / GP5')}
             </button>
 
@@ -11916,18 +11811,14 @@ async function renderStageAndInspector() {
         <div class="sp-header">
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
             <h2 style="font-size:21px;font-weight:800;margin:0;color:var(--text);">${t('Ćwiczenie', 'Exercise')}</h2>
-            <div class="ear-seg-row" style="width:auto;">
-              <button class="ear-seg-btn" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('composer')">✏️ ${t('Edytor TAB', 'TAB Editor')}</button>
-              <button class="ear-seg-btn" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('scale_practice')">🎯 ${t('Praktyka skal', 'Scale Practice')}</button>
-              <button class="ear-seg-btn active" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('harmonics')">✨ ${t('Flażolety', 'Harmonics')}</button>
-            </div>
+            ${buildExerciseSubViewBarHtml('harmonics')}
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:12px;color:var(--text-muted);">Wspólny TAB: <strong style="color:var(--accent);">${(state.recordedEvents||[]).length} nut</strong></span>
             <button class="chip-btn" style="padding:6px 12px;font-size:12px;" onclick="switchPracticeSubtab('harmonics')">🔍 ${t('Pełna mapa flażoletów', 'Full harmonics map')}</button>
           </div>
         </div>
 
-        <!-- Gryf flażoletowy z podświetlonymi dźwiękami wybranego ćwiczenia -->
         <div class="sp-card" style="gap:10px;">
           <div class="sp-card-head">
             <div>
@@ -11937,7 +11828,8 @@ async function renderStageAndInspector() {
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <button class="action-btn" style="padding:7px 13px;font-size:12.5px;" onclick="launchHarmonicExercise('${selHarm.id}','play')">🎸 ${t('Graj (z mikrofonem)', 'Play (microphone)')}</button>
               <button class="action-btn secondary" style="padding:7px 13px;font-size:12.5px;" onclick="launchHarmonicExercise('${selHarm.id}','listen')">🔊 ${t('Posłuchaj (Player)', 'Listen (Player)')}</button>
-              <button class="chip-btn" style="padding:7px 12px;font-size:12px;border-color:var(--accent);color:var(--accent);" onclick="launchHarmonicExercise('${selHarm.id}','edit')">✏️ ${t('Otwórz w TAB / GP5', 'Open in TAB / GP5')}</button>
+              <button class="chip-btn" style="padding:7px 12px;font-size:12px;border-color:var(--accent);color:var(--accent);font-weight:700;" onclick="launchHarmonicExercise('${selHarm.id}','edit_append')">+ ${t('Dodaj do TAB', 'Append to TAB')}</button>
+              <button class="chip-btn" style="padding:7px 12px;font-size:12px;" onclick="launchHarmonicExercise('${selHarm.id}','edit')">✏️ ${t('Otwórz w TAB / GP5', 'Open in TAB / GP5')}</button>
             </div>
           </div>
 
@@ -12037,6 +11929,7 @@ async function renderStageAndInspector() {
                   <button type="button" class="ear-seg-btn ${(state.exerciseShowStaff && !state.tabCreationEnabled)?'active':''}" style="padding:5px 9px;font-size:11.5px;white-space:nowrap;"
                           onclick="setExerciseScoreViewMode('staff')">🎼 ${t('Nuty', 'Staff')}</button>
                 </div>
+                ${buildExerciseTabZoomControlHtml(true)}
                 ${buildExerciseBarsPerRowControlHtml(true)}
               ` : ''}
               <div class="ear-seg-row" style="width:auto;">
@@ -12109,11 +12002,15 @@ async function renderStageAndInspector() {
 
             <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
               ${buildExerciseStaffBarHtml()}
-              <div id="exerciseScoreWrap" style="max-height:${state.exerciseShowStaff ? 442 : 276}px;overflow-y:auto;overflow-x:hidden;">
+              <div id="exerciseScoreWrap" style="max-height:${Math.round((state.exerciseShowStaff ? 442 : 276) * Math.max(0.75, Math.min(1.5, (state.exerciseTabZoom || 100) / 100)))}px;overflow-y:auto;overflow-x:${(state.exerciseTabZoom || 100) > 100 ? 'auto' : 'hidden'};">
                 ${scoreSvg}
               </div>
             </div>
 
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+              <span class="section-label" style="margin:0;">GRYF ĆWICZENIA</span>
+              ${buildOctaveHighlightControlsHtml(true)}
+            </div>
             <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;overflow-x:auto;">
               ${fbSvg}
             </div>
@@ -12189,7 +12086,8 @@ async function renderStageAndInspector() {
     let tabPreview = { detectedKey: (state.fretboardData && state.fretboardData.scaleFullName) ? state.fretboardData.scaleFullName : 'C Durowa' };
     if (hasNotes) {
       try {
-        tabPreview = await fetchJsonPost(`/api/tab_preview?bpm=${state.tempoBpm}`, state.recordedEvents);
+        const exPrevStr = getActiveStringCount();
+        tabPreview = await fetchJsonPost(`/api/tab_preview?bpm=${state.tempoBpm}&tuning=${encodeURIComponent(state.tuningId)}&customMidis=${state.customStringMidis.slice(0, exPrevStr).join(',')}`, state.recordedEvents);
       } catch (e) {}
     }
     const durOptions = [
@@ -12215,7 +12113,8 @@ async function renderStageAndInspector() {
     const scoreSvg = buildExerciseStaffAndTabSvg(-1, composerAvailW);
     const exFretSvg = buildExerciseFretboardSvg(hasNotes ? (state.recordedEvents.length - 1) : -1, true);
     const rootLabels = getRootLabels();
-    const twoRowsMaxH = state.exerciseShowStaff ? 442 : 276;
+    const exZoomMul = Math.max(0.75, Math.min(1.5, (Number(state.exerciseTabZoom) || 100) / 100));
+    const twoRowsMaxH = Math.round((state.exerciseShowStaff ? 442 : 276) * exZoomMul);
 
     stage.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:14px;">
@@ -12223,19 +12122,19 @@ async function renderStageAndInspector() {
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
             <h2 style="font-size:21px;font-weight:800;margin:0;">${t('Ćwiczenie', 'Exercise')}</h2>
-            <div class="ear-seg-row" style="width:auto;">
-              <button class="ear-seg-btn active" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('composer')">✏️ ${t('Edytor TAB', 'TAB Editor')}</button>
-              <button class="ear-seg-btn" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('scale_practice')">🎯 ${t('Praktyka skal', 'Scale Practice')}</button>
-              <button class="ear-seg-btn" style="padding:7px 14px;white-space:nowrap;" onclick="setExerciseSubView('harmonics')">✨ ${t('Flażolety', 'Harmonics')}</button>
-            </div>
+            ${buildExerciseSubViewBarHtml('composer')}
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="chip-btn" style="padding:6px 12px;" onclick="undoLastExerciseEvent()">⌫ Cofnij [Backspace]</button>
             <button class="chip-btn" style="padding:6px 12px;" onclick="state.recordedEvents=[];renderStageAndInspector()">🗑️ Wyczyść</button>
+            <button class="chip-btn" style="padding:6px 12px;" onclick="importTabFilePermanently()" title="Wczytaj plik ćwiczenia .gitara-tab.json na stałe">📂 Wczytaj plik</button>
+            <button class="chip-btn" style="padding:6px 12px;" onclick="exportCurrentTabFile()" title="Eksportuj ćwiczenie TAB do pliku .gitara-tab.json">📤 Eksportuj plik</button>
             <button class="action-btn" style="padding:6px 12px;" onclick="downloadTabExport('gp5')">💾 .GP5 (TuxGuitar)</button>
             <button class="action-btn secondary" style="padding:6px 12px;" onclick="downloadTabExport('mid')">💾 .MID</button>
           </div>
         </div>
+
+        ${buildLocalTabLibraryBarHtml()}
 
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:2px;">
           <h3 style="font-size:20px;font-weight:800;margin:0;">Twoje ćwiczenie</h3>
@@ -12254,6 +12153,7 @@ async function renderStageAndInspector() {
               <button class="chip-btn" style="padding:4px 9px;font-size:11px;" onclick="scrollExerciseTabTo('top')" title="Przewiń tabulaturę do początku (takt 1)">⬆ Początek</button>
               <button class="chip-btn" style="padding:4px 9px;font-size:11px;" onclick="scrollExerciseTabTo('bottom')" title="Przewiń do najnowszych taktów">⬇ Najnowsze</button>
             ` : ''}
+            ${buildExerciseTabZoomControlHtml(false)}
             ${buildExerciseBarsPerRowControlHtml(false)}
           </div>
         </div>
@@ -12261,7 +12161,7 @@ async function renderStageAndInspector() {
         <!-- Karta tabulatury graficznej (max 2 widoczne linie + auto-scroll do najnowszych) + rozwijany pasek nut -->
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;">
           ${buildExerciseStaffBarHtml()}
-          <div id="exerciseComposerScoreWrap" style="overflow-x:hidden;overflow-y:auto;max-height:${twoRowsMaxH}px;">
+          <div id="exerciseComposerScoreWrap" style="overflow-x:${(state.exerciseTabZoom || 100) > 100 ? 'auto' : 'hidden'};overflow-y:auto;max-height:${twoRowsMaxH}px;">
             ${!hasNotes ? `
               <div style="padding:10px 6px;">
                 <div style="font-weight:700;font-size:15px;margin-bottom:4px;">Brak dźwięków w tabulaturze</div>
@@ -12273,9 +12173,11 @@ async function renderStageAndInspector() {
           </div>
         </div>
 
-        <!-- Interaktywny gryf bezpośrednio pod pięciolinią (Zrzut 1) -->
         <div>
-          <div class="section-label" style="margin-bottom:6px;">DOTKNIJ PODSTRUNNICY, BY DODAĆ NUTY (PROGI ${state.exerciseMinFret || 0}–${state.exerciseMaxFret || 24})</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+            <div class="section-label" style="margin:0;">DOTKNIJ PODSTRUNNICY, BY DODAĆ NUTY (PROGI ${state.exerciseMinFret || 0}–${state.exerciseMaxFret || 24})</div>
+            ${buildOctaveHighlightControlsHtml(true)}
+          </div>
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;overflow-x:auto;">
             ${exFretSvg}
           </div>
@@ -12504,7 +12406,8 @@ function launchWorkshopSession(idx) {
     switchMainView('changes', nav);
     return;
   }
-  launchWorkshopExercise(state.customWorkshopExercises[0]);
+  const firstEx = (Array.isArray(ses.exercises) && ses.exercises.length > 0) ? ses.exercises[0] : state.customWorkshopExercises[0];
+  launchWorkshopExercise(firstEx);
 }
 
 function deleteWorkshopSession(idx) {
@@ -12586,11 +12489,18 @@ async function confirmAddWorkshopExercise() {
 
 function saveNewWorkshopSession() {
   const name = (state.newSessionName || '').trim() || `Sesja ${state.initData.sessions.length + 1}`;
-  state.initData.sessions.push({
+  const sesObj = {
     id: 'ses_' + Date.now(),
     name: name,
-    breakBars: 1
-  });
+    breakBars: 1,
+    exercises: (state.newSessionItems || []).map(x => Object.assign({}, x))
+  };
+  state.initData.sessions.push(sesObj);
+  if (!Array.isArray(state.customSavedSessions)) state.customSavedSessions = [];
+  state.customSavedSessions.push(sesObj);
+  state.newSessionName = '';
+  state.newSessionItems = [];
+  saveSettings();
   state.workshopSubView = 'sessions';
   renderStageAndInspector();
 }
@@ -12605,7 +12515,8 @@ async function launchWorkshopExercise(ex) {
   if (Array.isArray(ex.recordedEvents) && ex.recordedEvents.length > 0) {
     state.recordedEvents = ex.recordedEvents.map(ev => Object.assign({ dur: 1, tuplet: 0, rest: 0, tech: '-' }, ev));
   } else {
-    const url = `/api/workshop_events?rootPc=${state.rootPc}&scaleId=${encodeURIComponent(state.scaleId)}&posSystem=${state.posSystem}&startString=${ex.startString !== undefined ? ex.startString : -1}&direction=${ex.direction || 0}&octaves=${ex.octaves || 2}&pattern=${ex.pattern || 0}&tuning=${encodeURIComponent(state.tuningId)}&customMidis=${state.customStringMidis.join(',')}`;
+    const nWsStr = getActiveStringCount();
+    const url = `/api/workshop_events?rootPc=${state.rootPc}&scaleId=${encodeURIComponent(state.scaleId)}&posSystem=${state.posSystem}&startString=${ex.startString !== undefined ? ex.startString : -1}&direction=${ex.direction || 0}&octaves=${ex.octaves || 2}&pattern=${ex.pattern || 0}&tuning=${encodeURIComponent(state.tuningId)}&customMidis=${state.customStringMidis.slice(0, nWsStr).join(',')}`;
     const res = await fetchJson(url);
     state.recordedEvents = (res.events || []).map(ev => ({
       s: ev.s,
@@ -12621,6 +12532,8 @@ async function launchWorkshopExercise(ex) {
   }
   state.mainView = 'practice';
   state.subtab = 'exercise';
+  state.exerciseSubView = 'composer';
+  state.exercisePlayerActive = false;
   document.querySelectorAll('#practiceSubtabs .subtab-btn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('data-subtab') === 'exercise');
   });
@@ -12681,13 +12594,15 @@ function ensureDetectScalePolling() {
 function clearDetectScalePcs() {
   state.detectScalePcs = [];
   state.detectScaleData = null;
+  state.detectedMidi = null;
+  state.detectedMidis = [];
   refreshDetectScale();
 }
 
 async function refreshDetectScale() {
   if (state.mainView !== 'practice' || state.subtab !== 'search' || state.searchDir !== 'detect') return;
   const recMidis = getRecognitionMidis();
-  const pcs = new Set();
+  const pcs = new Set(Array.isArray(state.detectScalePcs) ? state.detectScalePcs : []);
   for (const m of recMidis) pcs.add(((Math.round(m) % 12) + 12) % 12);
   const pcArr = [...pcs].sort((a, b) => a - b);
   state.detectScalePcs = pcArr;
@@ -12785,7 +12700,13 @@ function toggleSweepLoopOnly() {
 }
 
 function stringLabelShort(s) {
-  return ['6(E)', '5(A)', '4(D)', '3(G)', '2(B)', '1(e)'][s] || String(6 - s);
+  const nStr = getActiveStringCount();
+  const labels = getRootLabels();
+  const om = (state.customStringMidis && state.customStringMidis[s] !== undefined) ? state.customStringMidis[s] : [40, 45, 50, 55, 59, 64][s];
+  if (s >= 0 && s < nStr && om !== undefined) {
+    return `${nStr - s}(${labels[((om % 12) + 12) % 12]})`;
+  }
+  return String(nStr - s);
 }
 
 function normalizeChordId(id) {
@@ -12844,24 +12765,33 @@ function bumpArpeggioAutoTempo() {
 }
 
 function saveCurrentSweepCompositionPreset(customName) {
-  const compList = Array.isArray(state.sweepComposition) ? state.sweepComposition : [];
-  if (!compList.length) return null;
-  if (!Array.isArray(state.savedSweepCompositions)) state.savedSweepCompositions = [];
-  const defaultTitle = `${compList.map(c => c.symbol).join(' → ')} (${compList.length})`;
-  const title = (typeof customName === 'string' && customName.trim()) ? customName.trim() : defaultTitle;
+  const inpEl = (typeof document !== 'undefined') ? document.getElementById('sweepSaveNameInput') : null;
+  const inputName = inpEl && inpEl.value ? inpEl.value.trim() : '';
+  const chosenName = (typeof customName === 'string' && customName.trim()) ? customName.trim() : inputName;
+  const built = buildSweepLibraryPayloadObject(chosenName);
+  if (!built || !Array.isArray(built.items) || !built.items.length) {
+    showSweepToast('Najpierw wybierz kształt Sweep lub dodaj ogniwa do kompozycji.');
+    return null;
+  }
   const preset = {
     id: 'swp_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-    name: title,
+    name: built.name,
     createdAt: Date.now(),
-    items: compList.map(seg => Object.assign({}, seg, {
-      nodes: Array.isArray(seg.nodes) ? seg.nodes.map(n => Object.assign({}, n)) : [],
-      steps: Array.isArray(seg.steps) ? seg.steps.map(st => Object.assign({}, st)) : []
-    }))
+    updatedAt: Date.now(),
+    items: built.items
   };
-  state.savedSweepCompositions.unshift(preset);
-  if (state.savedSweepCompositions.length > 16) state.savedSweepCompositions.length = 16;
-  saveSettings();
-  renderStageAndInspector();
+  if (window.userLibraryStore) {
+    window.userLibraryStore.saveItem('sweeps', preset).then(saved => {
+      syncAllUserLibrariesIntoState();
+      showSweepToast(`Zapisano układ „${saved.name}” trwale w user_library/sweeps/`);
+      renderStageAndInspector();
+    });
+  } else {
+    if (!Array.isArray(state.savedSweepCompositions)) state.savedSweepCompositions = [];
+    state.savedSweepCompositions.unshift(preset);
+    saveSettings();
+    renderStageAndInspector();
+  }
   return preset;
 }
 
@@ -12912,7 +12842,16 @@ function loadSweepCompositionPreset(idx) {
 
 function deleteSweepCompositionPreset(idx) {
   if (!Array.isArray(state.savedSweepCompositions) || idx < 0 || idx >= state.savedSweepCompositions.length) return;
+  const target = state.savedSweepCompositions[idx];
   state.savedSweepCompositions.splice(idx, 1);
+  if (window.userLibraryStore && target && target.id) {
+    window.userLibraryStore.deleteItem('sweeps', target.id).then(() => {
+      syncAllUserLibrariesIntoState();
+      showSweepToast(`Usunięto układ „${target.name || ''}”`);
+      renderStageAndInspector();
+    });
+    return;
+  }
   saveSettings();
   renderStageAndInspector();
 }
@@ -14171,22 +14110,47 @@ function sendSweepCompositionToExerciseTab() {
   exportStepsToExerciseTab(steps, title);
 }
 
-function sendStepsToStudioTab(rawSteps, title, bpm = 120) {
-  if (!window.StudioTab || typeof window.StudioTab.importSteps !== 'function') return;
-  const steps = (rawSteps || []).map(st => ({
+function mapRawStepsForStudioTab(rawSteps, { isSweep = false } = {}) {
+  const useSextuplets = isSweep && state.sweepMetricFit !== 'sixteenths';
+  return (rawSteps || []).map(st => ({
     notes: [{
       string: st.s,
       fret: st.f,
       hammerOn: st.tech === 'H' || st.tech === 'P' || st.tech === 'Hammer-on' || st.tech === 'Pull-off',
       slide: st.tech === 'S' || st.tech === 'Slide',
-      tapped: Boolean(st.tapped)
+      tap: Boolean(st.tapped || st.tap),
+      tapped: Boolean(st.tapped || st.tap)
     }],
     duration: st.duration ?? 2,
+    tupletNumerator: useSextuplets ? 6 : 0,
+    tupletDenominator: useSextuplets ? 4 : 0,
     chordSymbol: st.chordSymbol || ''
   }));
+}
+
+function sendStepsToStudioTab(rawSteps, title, bpm = 120, isSweep = false) {
+  if (!window.StudioTab || typeof window.StudioTab.importSteps !== 'function') return;
+  const steps = mapRawStepsForStudioTab(rawSteps, { isSweep });
   if (!steps.length) return;
   window.StudioTab.importSteps(steps, { title, bpm, tuningMidis: state.customStringMidis, replaceSong: true });
   switchMainView('studio');
+}
+
+function copyStepsToStudioClipboard(rawSteps, title, { isSweep = false, btnEl = null } = {}) {
+  if (!window.StudioTab || typeof window.StudioTab.copyStepsToClipboard !== 'function') return false;
+  const steps = mapRawStepsForStudioTab(rawSteps, { isSweep });
+  if (!steps.length) return false;
+  const res = window.StudioTab.copyStepsToClipboard(steps, { label: title });
+  if (res && res.ok && btnEl) {
+    const prevHtml = btnEl.getAttribute('data-prev-label') || btnEl.innerHTML;
+    btnEl.setAttribute('data-prev-label', prevHtml);
+    btnEl.textContent = `✓ Skopiowano (${res.beatCount} nut) — Ctrl+V w Studio`;
+    clearTimeout(btnEl._copyResetTimer);
+    btnEl._copyResetTimer = setTimeout(() => {
+      if (btnEl.isConnected) btnEl.innerHTML = prevHtml;
+    }, 2200);
+  }
+  return Boolean(res && res.ok);
 }
 
 function sendSelectedChordToStudioTab() {
@@ -14208,17 +14172,32 @@ function sendSelectedChordToStudioTab() {
 
 function sendArpeggioToStudioTab() {
   stopArpeggioPlayback(false);
+  const isSweep = state.subtab === 'sweep';
   const title = (isSweepTransitionActive() && state.arpData && state.arpData.transition)
     ? state.arpData.transition.name
-    : `${state.subtab === 'sweep' ? 'Sweep' : 'Arpeggio'} ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
-  sendStepsToStudioTab(getActiveArpeggioSteps(), title, state.arpBpm || 110);
+    : `${isSweep ? 'Sweep' : 'Arpeggio'} ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
+  sendStepsToStudioTab(getActiveArpeggioSteps(), title, state.arpBpm || 110, isSweep);
+}
+
+function copyArpeggioToStudioTab(btnEl = null) {
+  const isSweep = state.subtab === 'sweep';
+  const title = (isSweepTransitionActive() && state.arpData && state.arpData.transition)
+    ? state.arpData.transition.name
+    : `${isSweep ? 'Sweep' : 'Arpeggio'} ${state.arpData ? state.arpData.chordSymbol : state.chordId}`;
+  copyStepsToStudioClipboard(getActiveArpeggioSteps(), title, { isSweep, btnEl });
 }
 
 function sendSweepCompositionToStudioTab() {
   stopArpeggioPlayback(false);
   const list = Array.isArray(state.sweepComposition) ? state.sweepComposition : [];
   if (!list.length) return;
-  sendStepsToStudioTab(getSweepCompositionSteps(), `Kompozycja Sweep (${list.map(c => c.symbol).join(' → ')})`, state.arpBpm || 110);
+  sendStepsToStudioTab(getSweepCompositionSteps(), `Kompozycja Sweep (${list.map(c => c.symbol).join(' → ')})`, state.arpBpm || 110, true);
+}
+
+function copySweepCompositionToStudioTab(btnEl = null) {
+  const list = Array.isArray(state.sweepComposition) ? state.sweepComposition : [];
+  if (!list.length) return;
+  copyStepsToStudioClipboard(getSweepCompositionSteps(), `Kompozycja Sweep (${list.map(c => c.symbol).join(' → ')})`, { isSweep: true, btnEl });
 }
 
 function sendChangesProgressionToStudioTab() {
@@ -14226,23 +14205,37 @@ function sendChangesProgressionToStudioTab() {
   const parts = String(state.changesTimeSig || '4/4').split('/');
   const num = parseInt(parts[0], 10) || 4;
   const den = parseInt(parts[1], 10) || 4;
-  const openMidis = state.customStringMidis || [40, 45, 50, 55, 59, 64];
+  const nChStr = getActiveStringCount();
+  const openMidis = (state.customStringMidis || [40, 45, 50, 55, 59, 64]).slice(0, nChStr);
   const chords = [];
+  const qToDur = (q) => {
+    if (q >= 3.9) return -2;
+    if (q >= 1.9) return -1;
+    if (q >= 0.9) return 0;
+    return 1;
+  };
   for (const bar of (state.changesMeasures || [])) {
     const beats = bar.beats || [];
+    const entries = [];
     for (let bt = 0; bt < num; bt++) {
       const slot = beats[bt] || (bt === 0 ? getEffectiveChangesSlot(bar, 0) : null);
       if (!slot) continue;
       const ch = resolveChangesSlot(slot);
-      if (!ch) continue;
+      if (ch) entries.push({ bt, ch });
+    }
+    for (let i = 0; i < entries.length; i++) {
+      const curBt = entries[i].bt;
+      const nextBt = (i + 1 < entries.length) ? entries[i + 1].bt : num;
+      const spanQ = Math.max(0.5, (nextBt - curBt) * (4 / den));
+      const ch = entries[i].ch;
       const frets = openMidis.map((om, sIdx) => {
-        if (sIdx === 0 && ch.rootPc !== ((om) % 12)) {
-          for (let f = 0; f <= 11; f++) if ((om + f) % 12 === ch.rootPc) return f;
+        if (sIdx === 0) {
+          for (let f = 0; f <= 11; f++) if (((om + f) % 12 + 12) % 12 === ch.rootPc) return f;
         }
-        for (let f = 0; f <= 5; f++) if (ch.pcs.includes((om + f) % 12)) return f;
+        for (let f = 0; f <= 5; f++) if (ch.pcs.includes(((om + f) % 12 + 12) % 12)) return f;
         return -1;
       });
-      chords.push({ symbol: ch.symbol, frets, duration: 0 });
+      chords.push({ symbol: ch.symbol, frets, duration: qToDur(spanQ) });
     }
   }
   const activeProg = getChangesProgressionsList()[state.selectedProgressionIdx || 0];
@@ -14306,7 +14299,7 @@ function saveSettings() {
       arpDiatonicCategory: state.arpDiatonicCategory || 'all',
       arpFilterByScale: !!state.arpFilterByScale,
       arpAutoTempo: !!state.arpAutoTempo,
-      savedSweepCompositions: Array.isArray(state.savedSweepCompositions) ? state.savedSweepCompositions.slice(0, 16) : [],
+      savedSweepCompositions: Array.isArray(state.savedSweepCompositions) ? state.savedSweepCompositions.slice(0, 48) : [],
       arpDiatonicScaleId: state.arpDiatonicScaleId,
       arpDiatonicScaleRootPc: state.arpDiatonicScaleRootPc,
       arpShowScaleOnFretboard: !!state.arpShowScaleOnFretboard,
@@ -14344,6 +14337,8 @@ function saveSettings() {
       rightInspectorHidden: !!state.rightInspectorHidden,
       fretboardZoom: state.fretboardZoom,
       fretboardFitWidth: state.fretboardFitWidth,
+      scaleOctaveHighlight: !!state.scaleOctaveHighlight,
+      scaleOctaveAnchorPc: (state.scaleOctaveAnchorPc !== null && state.scaleOctaveAnchorPc !== undefined) ? state.scaleOctaveAnchorPc : null,
       lockUnmarkedNotes: state.lockUnmarkedNotes,
       guitarTonePreset: state.guitarTonePreset,
       keyboardPreset: state.keyboardPreset,
@@ -14384,6 +14379,7 @@ function saveSettings() {
       exerciseStaffPrefV2: !!state.exerciseStaffPrefV2,
       exerciseTabWrapRows: true,
       exerciseBarsPerRow: state.exerciseBarsPerRow || 0,
+      exerciseTabZoom: state.exerciseTabZoom || 100,
       defaultDuration: state.defaultDuration,
       showExerciseNoteNames: state.showExerciseNoteNames,
       exerciseMinFret: state.exerciseMinFret,
@@ -14464,6 +14460,7 @@ async function loadSettings() {
     state.exerciseShowStaff = false;
     state.tabCreationEnabled = true;
   }
+  state.exerciseTabZoom = (typeof state.exerciseTabZoom === 'number' && Number.isFinite(state.exerciseTabZoom)) ? Math.max(75, Math.min(150, Math.round(state.exerciseTabZoom))) : 100;
   if (typeof state.sweepSequential !== 'boolean') {
     state.sweepSequential = false;
   }
@@ -14487,6 +14484,8 @@ async function loadSettings() {
     state.uiLayout = (state.uiStyle === 'bento') ? 'topdeck' : 'sidebar';
   }
   state.bass4Mode = !!state.bass4Mode;
+  state.scaleOctaveHighlight = !!state.scaleOctaveHighlight;
+  state.scaleOctaveAnchorPc = (typeof state.scaleOctaveAnchorPc === 'number' && Number.isInteger(state.scaleOctaveAnchorPc) && state.scaleOctaveAnchorPc >= 0 && state.scaleOctaveAnchorPc < 12) ? state.scaleOctaveAnchorPc : null;
   if (!state.arpDefaultDownV1) {
     state.arpDefaultDownV1 = true;
     state.arpDirection = 1;
@@ -14584,6 +14583,26 @@ function buildExerciseStaffBarHtml() {
         <button type="button" class="ear-seg-btn ${mode==='staff'?'active':''}" style="padding:5px 11px;font-size:11.5px;white-space:nowrap;"
                 onclick="setExerciseScoreViewMode('staff')">🎼 Tylko Nuty</button>
       </div>
+    </div>`;
+}
+
+function setExerciseTabZoom(val) {
+  const z = Math.max(75, Math.min(150, Math.round(Number(val) || 100)));
+  state.exerciseTabZoom = z;
+  saveSettings();
+  renderStageAndInspector();
+}
+
+function buildExerciseTabZoomControlHtml(compact = false) {
+  const cur = (typeof state.exerciseTabZoom === 'number' && Number.isFinite(state.exerciseTabZoom))
+    ? Math.max(75, Math.min(150, Math.round(state.exerciseTabZoom)))
+    : 100;
+  return `
+    <div style="display:inline-flex;align-items:center;gap:3px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:3px 6px;" title="${t('Powiększenie tabulatury (75%–150%)', 'TAB zoom (75%–150%)')}">
+      ${compact ? '' : '<span style="font-size:11px;color:var(--text-muted);font-weight:700;padding:0 3px;">TAB:</span>'}
+      <button class="chip-btn" style="padding:3px 7px;font-size:11px;" ${cur <= 75 ? 'disabled' : ''} onclick="setExerciseTabZoom(${cur - 10})">−</button>
+      <button class="chip-btn" style="padding:3px 6px;font-size:11px;font-weight:800;color:var(--accent);" onclick="setExerciseTabZoom(100)" title="${t('Resetuj zoom TAB do 100%', 'Reset TAB zoom to 100%')}">${cur}%</button>
+      <button class="chip-btn" style="padding:3px 7px;font-size:11px;" ${cur >= 150 ? 'disabled' : ''} onclick="setExerciseTabZoom(${cur + 10})">+</button>
     </div>`;
 }
 
@@ -14814,21 +14833,35 @@ function ensureChangesProgressionLoaded(forceReload = false) {
   state.changesKeyRootPc = (p.keyRootPc !== undefined) ? p.keyRootPc : 9;
   state.changesIsMinor = !!p.isMinor;
   state.changesBpm = p.bpm || 108;
-  state.changesFeel = (p.style === 'Blues') ? 'Blues' : (p.style === 'Jazz' ? 'Swing Jazz' : 'Prosto');
-  state.changesCompInst = (p.style === 'Blues') ? 'hammond' : 'clean';
-  state.changesGroove = (p.groove === 1) ? 'shuffle' : 'slow12_8';
+  if (p.timeSig && typeof p.timeSig === 'string') {
+    state.changesTimeSig = p.timeSig;
+  }
+  state.changesFeel = p.feel || ((p.style === 'Blues') ? 'Blues' : (p.style === 'Jazz' ? 'Swing Jazz' : 'Prosto'));
+  state.changesCompInst = p.compInst || ((p.style === 'Blues') ? 'hammond' : 'clean');
+  state.changesGroove = (typeof p.groove === 'string') ? p.groove : ((p.groove === 1) ? 'shuffle' : 'slow12_8');
   state.changesCycleKeys = !!p.cycleKeys;
   state.changesEditingSlot = null;
   const bpb = getChangesBeatsPerBar();
-  state.changesMeasures = (p.bars || []).map(b => {
-    const beats = new Array(Math.max(4, bpb)).fill(null);
-    beats[0] = {
-      offsetSemi: (b.offsetSemi !== undefined) ? b.offsetSemi : 0,
-      chordId: b.chordId || '7',
-      roman: b.roman || 'I'
-    };
-    return { volta: 0, beats };
-  });
+  if (Array.isArray(p.measures) && p.measures.length > 0) {
+    state.changesMeasures = p.measures.map(m => {
+      const cloned = {
+        volta: Number(m.volta) || 0,
+        beats: Array.isArray(m.beats) ? m.beats.map(sl => (sl ? Object.assign({}, sl) : null)) : new Array(Math.max(4, bpb)).fill(null)
+      };
+      ensureChangesBarBeatsLength(cloned, bpb);
+      return cloned;
+    });
+  } else {
+    state.changesMeasures = (p.bars || []).map(b => {
+      const beats = new Array(Math.max(4, bpb)).fill(null);
+      beats[0] = {
+        offsetSemi: (b.offsetSemi !== undefined) ? b.offsetSemi : 0,
+        chordId: b.chordId || '7',
+        roman: b.roman || 'I'
+      };
+      return { volta: 0, beats };
+    });
+  }
 }
 
 function selectChangesProgression(idx) {
@@ -14980,9 +15013,9 @@ function resolveChangesSlot(slot) {
   };
 }
 
-function playMetronomeTickAudio(isDownbeat) {
+function playMetronomeTickAudio(isDownbeat, whenSec = undefined) {
   const ctx = ensureAudioCtx();
-  const now = ctx.currentTime;
+  const now = Number.isFinite(whenSec) ? Math.max(ctx.currentTime, whenSec) : ctx.currentTime;
   const osc = ctx.createOscillator();
   const g = ctx.createGain();
   const mVol = (state.metronomeVolume !== undefined) ? state.metronomeVolume : 0.75;
@@ -15006,9 +15039,9 @@ function buildDrumNoiseBuffer(ctx, seconds) {
   return buf;
 }
 
-function playDrumHit(kind, velocity = 1.0) {
+function playDrumHit(kind, velocity = 1.0, whenSec = undefined) {
   const ctx = ensureAudioCtx();
-  const now = ctx.currentTime;
+  const now = Number.isFinite(whenSec) ? Math.max(ctx.currentTime, whenSec) : ctx.currentTime;
   const out = getMasterAudioOut();
 
   if (kind === 'kick') {
@@ -15231,6 +15264,14 @@ function playChangesDrumStep(beatIdx) {
   }
 }
 
+let changesStrumTimers = [];
+function clearChangesStrumTimers() {
+  if (changesStrumTimers.length > 0) {
+    changesStrumTimers.forEach(id => clearTimeout(id));
+    changesStrumTimers = [];
+  }
+}
+
 function triggerChangesCompChord(resolvedChord, dur, volScale = 1.0, useVoiceMovement = false) {
   if (!resolvedChord || !resolvedChord.intervals || state.changesCompInst === 'off') return;
   const atkMul = getChangesAttackMul();
@@ -15244,7 +15285,7 @@ function triggerChangesCompChord(resolvedChord, dur, volScale = 1.0, useVoiceMov
   const strumDelayMs = Math.round(32 - 20 * atkMul);
   baseIvs.forEach((iv, i) => {
     const freq = midiToFreq(resolvedChord.rootMidi + iv);
-    setTimeout(() => {
+    const tid = setTimeout(() => {
       if (!state.changesBackingBand || state.changesCompInst === 'off') return;
       if (state.changesCompInst === 'clean' || state.changesCompInst === 'crunch') {
         const prevTone = state.guitarTonePreset;
@@ -15258,6 +15299,7 @@ function triggerChangesCompChord(resolvedChord, dur, volScale = 1.0, useVoiceMov
         state.keyboardPreset = prevKbd;
       }
     }, i * strumDelayMs);
+    changesStrumTimers.push(tid);
   });
 }
 
@@ -15307,6 +15349,7 @@ function restartChangesPlaybackTimer() {
 }
 
 function stopChangesPlayback() {
+  clearChangesStrumTimers();
   if (changesPlaybackTimer) {
     clearInterval(changesPlaybackTimer);
     changesPlaybackTimer = null;
@@ -15721,6 +15764,19 @@ function getActiveChangesPracticeTargetPcs() {
 function advanceChangesStudyBar() {
   state.changesPracticeHitPcs = [];
   state.changesPracticeSeqIdx = 0;
+  const curBar = state.changesMeasures[state.changesActiveBarIdx];
+  const bpb = getChangesBeatsPerBar();
+  if (curBar && Array.isArray(curBar.beats)) {
+    for (let bt = (state.changesActiveBeatIdx || 0) + 1; bt < bpb; bt++) {
+      if (curBar.beats[bt]) {
+        state.changesActiveBeatIdx = bt;
+        const nextRes = resolveChangesSlot(curBar.beats[bt]);
+        if (state.changesBackingBand && nextRes) previewChangesChordAudio(nextRes);
+        renderStageAndInspector();
+        return;
+      }
+    }
+  }
   state.changesPlaybackSeqIdx++;
   if (state.changesPlaybackSeqIdx >= state.changesPlaybackSeq.length) {
     if (state.changesCycleKeys) {
@@ -15919,8 +15975,10 @@ function buildChangesLiveFretboardSvg(resolvedChord) {
   }
   svg += `<line x1="${leftNutX}" y1="${topPad - 8}" x2="${leftNutX}" y2="${topPad + boardH + 8}" stroke="#8c8175" stroke-width="2.4"/>`;
 
-  for (let s = 0; s < 6; s++) {
-    const row = 5 - s;
+  const nChFbStr = getActiveStringCount();
+  const lastChFbStr = nChFbStr - 1;
+  for (let s = 0; s < nChFbStr; s++) {
+    const row = lastChFbStr - s;
     const y = topPad + row * stringH;
     const openNm = labels[((state.customStringMidis[s] % 12) + 12) % 12];
     svg += `<text x="20" y="${y + 4}" fill="#9ca3af" font-size="11" font-weight="700" text-anchor="middle">${openNm}</text>`;
@@ -16200,23 +16258,40 @@ function renderChangesView(stage, insp) {
   // EKRAN BIBLIOTEKI STANDARDÓW („< Biblioteka”)
   // =========================================================================
   if (state.changesScreen === 'library') {
+    const customProgsList = progs.map((p, idx) => ({ p, idx })).filter(x => !!x.p._custom);
+    const builtinProgsList = progs.map((p, idx) => ({ p, idx })).filter(x => !x.p._custom);
+    const renderProgLibCard = ({ p, idx }) => {
+      const mCount = Array.isArray(p.measures) ? p.measures.length : (p.bars || []).length;
+      return `
+        <div class="list-row ${state.selectedProgressionIdx===idx?'selected':''}" style="padding:14px;gap:8px;"
+             onclick="selectChangesProgression(${idx})">
+          <div style="min-width:0;">
+            <div style="font-size:15.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.source === 'imported' ? '📥 ' : (p._custom ? '💾 ' : '')}${escapeHtmlText(p.title)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Styl: ${escapeHtmlText(p.style || p.feel || 'Custom')} · ${p.bpm || 108} BPM · Taktów: ${mCount}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;" onclick="event.stopPropagation()">
+            <button class="chip-btn" style="padding:4px 8px;font-size:11px;" onclick="exportLibraryProgressionByIdx(${idx})" title="Eksportuj do pliku .gitara-prog.json">📤</button>
+            ${p._custom ? `<button class="chip-btn" style="padding:4px 8px;font-size:11px;color:#f87171;border-color:#7f1d1d;" onclick="deleteSavedChangesProgression(${idx})" title="Usuń z lokalnej biblioteki">🗑️</button>` : ''}
+            <button class="chip-btn" style="padding:4px 10px;font-size:11.5px;color:var(--accent);font-weight:700;" onclick="selectChangesProgression(${idx})">Wybierz →</button>
+          </div>
+        </div>`;
+    };
     stage.innerHTML = `
       <div class="fretboard-card" style="padding:20px;gap:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <h2 style="font-size:22px;font-weight:800;">Biblioteka zmian i progresji</h2>
-          <button class="chip-btn" style="padding:6px 14px;" onclick="state.changesScreen='editor';renderAll()">✕ Powrót do edytora</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2 style="font-size:22px;font-weight:800;margin:0;">Biblioteka zmian i progresji</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="chip-btn" style="padding:6px 12px;" onclick="importChangesProgressionPermanently()">📂 Wczytaj plik progresji</button>
+            <button class="chip-btn" style="padding:6px 14px;" onclick="state.changesScreen='editor';renderAll()">✕ Powrót do edytora</button>
+          </div>
         </div>
+        <div class="section-label" style="margin:4px 0 0;">MOJE I WCZYTANE PROGRESJE (${customProgsList.length})</div>
+        ${customProgsList.length > 0
+          ? `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">${customProgsList.map(renderProgLibCard).join('')}</div>`
+          : `<div style="padding:12px;border:1px dashed var(--border);border-radius:8px;font-size:12.5px;color:var(--text-muted);">Brak własnych progresji. Zapisz aktualną progresję przyciskiem „💾 Zapisz lokalnie” lub kliknij „📂 Wczytaj plik progresji”.</div>`}
+        <div class="section-label" style="margin:6px 0 0;">PRZYKŁADY DOMYŚLNE (${builtinProgsList.length})</div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
-          ${progs.map((p, idx) => `
-            <div class="list-row ${state.selectedProgressionIdx===idx?'selected':''}" style="padding:14px;"
-                 onclick="selectChangesProgression(${idx})">
-              <div>
-                <div style="font-size:16px;font-weight:800;">${p.title}</div>
-                <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Styl: ${p.style} · ${p.bpm} BPM · Taktów: ${(p.bars||[]).length}</div>
-              </div>
-              <span style="color:var(--accent);font-weight:700;">Wybierz →</span>
-            </div>
-          `).join('')}
+          ${builtinProgsList.map(renderProgLibCard).join('')}
         </div>
       </div>`;
     return;
@@ -16294,23 +16369,35 @@ function renderChangesView(stage, insp) {
     <div class="changes-workspace">
       ${state.changesToastMsg ? `<div id="changesToastBanner" style="background:rgba(34,197,94,0.14);border:1px solid #22c55e;color:#86efac;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;">${state.changesToastMsg}</div>` : ''}
 
-      <!-- Górny pasek: < Biblioteka + selektor progresji + metka stylu + Eksport .GP5 -->
+      <!-- Górny pasek: < Biblioteka + selektor progresji + zapis/wymiana plików + Eksport .GP5 -->
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
-          <button class="chip-btn" style="padding:6px 12px;font-size:12px;" onclick="state.changesScreen='library';renderAll()">‹ Biblioteka</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button class="chip-btn" style="padding:6px 12px;font-size:12px;" onclick="state.changesScreen='library';renderAll()">‹ Biblioteka (${progs.length})</button>
           <select style="width:auto;min-width:210px;padding:6px 12px;font-size:13.5px;font-weight:700;"
                   onchange="selectChangesProgression(parseInt(this.value,10))">
-            ${progs.map((p, idx) => `<option value="${idx}" ${idx===state.selectedProgressionIdx?'selected':''}>${p.title}</option>`).join('')}
+            <optgroup label="Przykłady domyślne">
+              ${progs.map((p, idx) => !p._custom ? `<option value="${idx}" ${idx===state.selectedProgressionIdx?'selected':''}>${escapeHtmlText(p.title)}</option>` : '').join('')}
+            </optgroup>
+            ${progs.some(p => !!p._custom) ? `<optgroup label="Moje i wczytane (lokalne)">
+              ${progs.map((p, idx) => p._custom ? `<option value="${idx}" ${idx===state.selectedProgressionIdx?'selected':''}>${p.source === 'imported' ? '📥 ' : '💾 '}${escapeHtmlText(p.title)}</option>` : '').join('')}
+            </optgroup>` : ''}
           </select>
           <span style="font-size:11.5px;font-weight:700;color:var(--text-muted);background:rgba(255,255,255,0.04);border:1px solid #2b241e;border-radius:7px;padding:4px 9px;">
-            ${activeProg.style || state.changesFeel} · ${barCount} taktów
+            ${escapeHtmlText(activeProg.style || state.changesFeel)} · ${barCount} taktów
           </span>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="chip-btn" style="padding:6px 12px;font-size:12px;border-color:var(--accent);color:var(--accent);"
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input id="changesSaveNameInput" type="text" placeholder="Nazwa własnej progresji..." style="width:165px;padding:5px 8px;font-size:12px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:7px;">
+          <button class="chip-btn" style="padding:6px 10px;font-size:12px;border-color:var(--accent);color:var(--accent);"
+                  onclick="saveChangesProgressionLocally()" title="Zapisuje aktualną progresję trwale w user_library/progressions/">💾 Zapisz lokalnie</button>
+          <button class="chip-btn" style="padding:6px 10px;font-size:12px;"
+                  onclick="exportCurrentChangesProgression()" title="Eksportuje progresję do pliku .gitara-prog.json">📤 Eksportuj</button>
+          <button class="chip-btn" style="padding:6px 10px;font-size:12px;"
+                  onclick="importChangesProgressionPermanently()" title="Wczytuje plik progresji na stałe do lokalnej biblioteki">📂 Wczytaj</button>
+          <button class="chip-btn" style="padding:6px 10px;font-size:12px;border-color:var(--accent);color:var(--accent);"
                   onclick="sendChangesProgressionToStudioTab()">🎼 Do Studia TAB</button>
-          <button class="chip-btn" style="padding:6px 12px;font-size:12px;"
-                  onclick="window.location.href='/api/export/progression_gp5?id=${activeProg.id}&keyRootPc=${state.changesKeyRootPc}&bpm=${state.changesBpm}'">💾 Eksport .GP5</button>
+          <button class="chip-btn" style="padding:6px 10px;font-size:12px;"
+                  onclick="downloadChangesProgressionGp5()">⬇ .GP5</button>
         </div>
       </div>
 
@@ -16633,31 +16720,297 @@ function renderChangesView(stage, insp) {
     </div>`;
 }
 
+const EAR_STATS_STORAGE_KEY = 'apka_gitara_ear_stats_v1';
+
 const earIntervalsCatalog = [
-  { semi: 0,  name: 'Pryma',          code: 'P1', hint: 'Powtórzony ten sam dźwięk' },
-  { semi: 1,  name: 'Sekunda mała',   code: 'm2', hint: 'Szczęki (Jaws)' },
-  { semi: 2,  name: 'Sekunda wielka', code: 'M2', hint: 'Sto lat / Happy Birthday' },
-  { semi: 3,  name: 'Tercja mała',    code: 'm3', hint: 'Smoke on the Water' },
-  { semi: 4,  name: 'Tercja wielka',  code: 'M3', hint: 'Oh When the Saints' },
-  { semi: 5,  name: 'Kwarta czysta',  code: 'P4', hint: 'Marsz weselny' },
-  { semi: 6,  name: 'Tryton',         code: 'TT', hint: 'The Simpsons' },
-  { semi: 7,  name: 'Kwinta czysta',  code: 'P5', hint: 'Gwiezdne Wojny (Star Wars)' },
-  { semi: 8,  name: 'Seksta mała',    code: 'm6', hint: 'The Entertainer' },
-  { semi: 9,  name: 'Seksta wielka',  code: 'M6', hint: 'My Bonnie Lies Over the Ocean' },
-  { semi: 10, name: 'Septyma mała',   code: 'm7', hint: 'The Winner Takes It All' },
-  { semi: 11, name: 'Septyma wielka', code: 'M7', hint: 'Take On Me (refren)' },
-  { semi: 12, name: 'Oktawa',         code: 'P8', hint: 'Somewhere Over the Rainbow' }
+  { semi: 0,  name: 'Pryma',          code: 'P1', semisLabel: '0 półtonów',  hint: 'Powtórzony ten sam dźwięk' },
+  { semi: 1,  name: 'Sekunda mała',   code: 'm2', semisLabel: '1 półton',    hint: 'Szczęki (Jaws)' },
+  { semi: 2,  name: 'Sekunda wielka', code: 'M2', semisLabel: '2 półtony',   hint: 'Sto lat / Happy Birthday' },
+  { semi: 3,  name: 'Tercja mała',    code: 'm3', semisLabel: '3 półtony',   hint: 'Smoke on the Water' },
+  { semi: 4,  name: 'Tercja wielka',  code: 'M3', semisLabel: '4 półtony',   hint: 'Oh When the Saints' },
+  { semi: 5,  name: 'Kwarta czysta',  code: 'P4', semisLabel: '5 półtonów',  hint: 'Marsz weselny' },
+  { semi: 6,  name: 'Tryton',         code: 'TT', semisLabel: '6 półtonów',  hint: 'The Simpsons' },
+  { semi: 7,  name: 'Kwinta czysta',  code: 'P5', semisLabel: '7 półtonów',  hint: 'Gwiezdne Wojny (Star Wars)' },
+  { semi: 8,  name: 'Seksta mała',    code: 'm6', semisLabel: '8 półtonów',  hint: 'The Entertainer' },
+  { semi: 9,  name: 'Seksta wielka',  code: 'M6', semisLabel: '9 półtonów',  hint: 'My Bonnie Lies Over the Ocean' },
+  { semi: 10, name: 'Septyma mała',   code: 'm7', semisLabel: '10 półtonów', hint: 'The Winner Takes It All' },
+  { semi: 11, name: 'Septyma wielka', code: 'M7', semisLabel: '11 półtonów', hint: 'Take On Me (refren)' },
+  { semi: 12, name: 'Oktawa',         code: 'P8', semisLabel: '12 półtonów', hint: 'Somewhere Over the Rainbow' }
 ];
 
 const earChordsCatalog = [
-  { id: 'major', label: 'Durowy',      intervals: [0, 4, 7] },
-  { id: 'minor', label: 'Molowy',      intervals: [0, 3, 7] },
-  { id: 'dim',   label: 'Zmniejszony', intervals: [0, 3, 6] },
-  { id: 'maj7',  label: 'maj7',        intervals: [0, 4, 7, 11] },
-  { id: '7',     label: '7',           intervals: [0, 4, 7, 10] },
-  { id: 'm7',    label: 'm7',          intervals: [0, 3, 7, 10] },
-  { id: 'm7b5',  label: 'm7b5',        intervals: [0, 3, 6, 10] }
+  { id: 'major', label: 'Durowy',      group: 'triad',   formula: '1 - 3 - 5',       intervals: [0, 4, 7] },
+  { id: 'minor', label: 'Molowy',      group: 'triad',   formula: '1 - b3 - 5',      intervals: [0, 3, 7] },
+  { id: 'dim',   label: 'Zmniejszony', group: 'triad',   formula: '1 - b3 - b5',     intervals: [0, 3, 6] },
+  { id: 'aug',   label: 'Zwiększony',  group: 'triad',   formula: '1 - 3 - #5',      intervals: [0, 4, 8] },
+  { id: 'sus2',  label: 'sus2',        group: 'sus',     formula: '1 - 2 - 5',       intervals: [0, 2, 7] },
+  { id: 'sus4',  label: 'sus4',        group: 'sus',     formula: '1 - 4 - 5',       intervals: [0, 5, 7] },
+  { id: 'maj7',  label: 'maj7',        group: 'seventh', formula: '1 - 3 - 5 - 7',   intervals: [0, 4, 7, 11] },
+  { id: '7',     label: '7',           group: 'seventh', formula: '1 - 3 - 5 - b7',  intervals: [0, 4, 7, 10] },
+  { id: 'm7',    label: 'm7',          group: 'seventh', formula: '1 - b3 - 5 - b7', intervals: [0, 3, 7, 10] },
+  { id: 'm7b5',  label: 'm7b5',        group: 'seventh', formula: '1 - b3 - b5 - b7',intervals: [0, 3, 6, 10] },
+  { id: 'dim7',  label: 'dim7',        group: 'seventh', formula: '1 - b3 - b5 - bb7',intervals: [0, 3, 6, 9] }
 ];
+
+const earScalesCatalog = [
+  { id: 'major',      name: 'Durowa (Jońska)',         code: 'DUR', formula: '1 2 3 4 5 6 7',      trait: 'Jasna, naturalna tonika',     intervals: [0, 2, 4, 5, 7, 9, 11, 12] },
+  { id: 'minor',      name: 'Molowa nat. (Eolska)',    code: 'MOL', formula: '1 2 b3 4 5 b6 b7',   trait: 'Klasyczny mollowy nastrój',   intervals: [0, 2, 3, 5, 7, 8, 10, 12] },
+  { id: 'dorian',     name: 'Dorycka',                 code: 'DOR', formula: '1 2 b3 4 5 6 b7',    trait: 'Molowa z wielką sekstą (6)',  intervals: [0, 2, 3, 5, 7, 9, 10, 12] },
+  { id: 'phrygian',   name: 'Frygijska',               code: 'PHR', formula: '1 b2 b3 4 5 b6 b7',  trait: 'Hiszpańska / metalowa b2',    intervals: [0, 1, 3, 5, 7, 8, 10, 12] },
+  { id: 'lydian',     name: 'Lidyjska',                code: 'LYD', formula: '1 2 3 #4 5 6 7',     trait: 'Przestrzenna z #4',           intervals: [0, 2, 4, 6, 7, 9, 11, 12] },
+  { id: 'mixolydian', name: 'Miksolidyjska',           code: 'MIX', formula: '1 2 3 4 5 6 b7',     trait: 'Blues-rockowa z b7',          intervals: [0, 2, 4, 5, 7, 9, 10, 12] },
+  { id: 'pent_minor', name: 'Pentatonika molowa',      code: 'P-m', formula: '1 b3 4 5 b7',        trait: '5 dźwięków — solówki rock',   intervals: [0, 3, 5, 7, 10, 12] },
+  { id: 'pent_major', name: 'Pentatonika durowa',      code: 'P-M', formula: '1 2 3 5 6',          trait: '5 dźwięków — country/pop',    intervals: [0, 2, 4, 7, 9, 12] },
+  { id: 'blues',      name: 'Skala bluesowa',          code: 'BLU', formula: '1 b3 4 #4 5 b7',     trait: 'Blue note (#4/b5)',           intervals: [0, 3, 5, 6, 7, 10, 12] },
+  { id: 'harm_minor', name: 'Molowa harmoniczna',      code: 'H-m', formula: '1 2 b3 4 5 b6 7',    trait: 'Neoklasyczny skok b6 → 7',    intervals: [0, 2, 3, 5, 7, 8, 11, 12] }
+];
+
+const earDegreesCatalog = [
+  { semi: 0,  code: '1',  name: 'Pryma (tonika)',      role: 'Spoczynek / centrum' },
+  { semi: 1,  code: 'b2', name: 'Sekunda mała',        role: 'Napięcie frygijskie' },
+  { semi: 2,  code: '2',  name: 'Sekunda wielka',      role: 'Stopień melodyczny' },
+  { semi: 3,  code: 'b3', name: 'Tercja mała',         role: 'Charakter molowy' },
+  { semi: 4,  code: '3',  name: 'Tercja wielka',       role: 'Charakter durowy' },
+  { semi: 5,  code: '4',  name: 'Kwarta czysta',       role: 'Dąży do tercji' },
+  { semi: 6,  code: 'b5', name: 'Tryton / #4',         role: 'Blue note / lidyjski' },
+  { semi: 7,  code: '5',  name: 'Kwinta czysta',       role: 'Filar tonacji' },
+  { semi: 8,  code: 'b6', name: 'Seksta mała',         role: 'Napięcie molowe → 5' },
+  { semi: 9,  code: '6',  name: 'Seksta wielka',       role: 'Dorycka jasność' },
+  { semi: 10, code: 'b7', name: 'Septyma mała',        role: 'Blues / dominanta' },
+  { semi: 11, code: '7',  name: 'Septyma wielka',      role: 'Dźwięk prowadzący → 1' }
+];
+
+const earProgFunctionsMajor = [
+  { id: 'I',    label: 'I',    name: 'Tonika (Dur)',       offset: 0,  intervals: [0, 4, 7],     suffix: '' },
+  { id: 'ii',   label: 'ii',   name: 'Supertonika (m)',    offset: 2,  intervals: [0, 3, 7],     suffix: 'm' },
+  { id: 'iii',  label: 'iii',  name: 'Medianta (m)',       offset: 4,  intervals: [0, 3, 7],     suffix: 'm' },
+  { id: 'IV',   label: 'IV',   name: 'Subdominanta (Dur)', offset: 5,  intervals: [0, 4, 7],     suffix: '' },
+  { id: 'V',    label: 'V',    name: 'Dominanta (Dur)',    offset: 7,  intervals: [0, 4, 7],     suffix: '' },
+  { id: 'vi',   label: 'vi',   name: 'Tonika par. (m)',    offset: 9,  intervals: [0, 3, 7],     suffix: 'm' },
+  { id: 'bVII', label: 'bVII', name: 'Miksolidyjski',      offset: 10, intervals: [0, 4, 7],     suffix: '' }
+];
+
+const earProgFunctionsMinor = [
+  { id: 'i',   label: 'i',   name: 'Tonika (m)',          offset: 0,  intervals: [0, 3, 7], suffix: 'm' },
+  { id: 'iio', label: 'ii°', name: 'Półzmniejszony / dim',offset: 2,  intervals: [0, 3, 6], suffix: 'dim' },
+  { id: 'III', label: 'III', name: 'Mediantowa (Dur)',    offset: 3,  intervals: [0, 4, 7], suffix: '' },
+  { id: 'iv',  label: 'iv',  name: 'Subdominanta (m)',    offset: 5,  intervals: [0, 3, 7], suffix: 'm' },
+  { id: 'v',   label: 'v',   name: 'Dominanta nat. (m)',  offset: 7,  intervals: [0, 3, 7], suffix: 'm' },
+  { id: 'V',   label: 'V',   name: 'Dominanta harm.',     offset: 7,  intervals: [0, 4, 7], suffix: '' },
+  { id: 'VI',  label: 'VI',  name: 'Submedianta (Dur)',   offset: 8,  intervals: [0, 4, 7], suffix: '' },
+  { id: 'VII', label: 'VII', name: 'Subtonika (Dur)',     offset: 10, intervals: [0, 4, 7], suffix: '' }
+];
+
+const earProgressionsCatalog = [
+  { id: 'pop_1564',      name: 'I – V – vi – IV',    code: 'Pop / Rock',      tonality: 'major', steps: ['I', 'V', 'vi', 'IV'] },
+  { id: 'cad_1451',      name: 'I – IV – V – I',     code: 'Kadencja',        tonality: 'major', steps: ['I', 'IV', 'V', 'I'] },
+  { id: 'fifties_1645',  name: 'I – vi – IV – V',    code: 'Lata 50.',        tonality: 'major', steps: ['I', 'vi', 'IV', 'V'] },
+  { id: 'jazz_2516',     name: 'ii – V – I – vi',    code: 'Jazz Turnaround', tonality: 'major', steps: ['ii', 'V', 'I', 'vi'] },
+  { id: 'mixo_1741',     name: 'I – bVII – IV – I',  code: 'Classic Rock',    tonality: 'major', steps: ['I', 'bVII', 'IV', 'I'] },
+  { id: 'royal_4536',    name: 'IV – V – iii – vi',  code: 'Pop Japoński',    tonality: 'major', steps: ['IV', 'V', 'iii', 'vi'] },
+  { id: 'folk_1545',     name: 'I – V – IV – V',     code: 'Acoustic / Folk', tonality: 'major', steps: ['I', 'V', 'IV', 'V'] },
+  { id: 'blues_turn',    name: 'I – IV – I – V',     code: 'Blues-Rock',      tonality: 'major', steps: ['I', 'IV', 'I', 'V'] },
+  { id: 'min_1637',      name: 'i – VI – III – VII', code: 'Epicki moll',     tonality: 'minor', steps: ['i', 'VI', 'III', 'VII'] },
+  { id: 'min_1451',      name: 'i – iv – v – i',     code: 'Moll naturalny',  tonality: 'minor', steps: ['i', 'iv', 'v', 'i'] },
+  { id: 'min_andalusian',name: 'i – VII – VI – V',   code: 'Andaluzyjska',    tonality: 'minor', steps: ['i', 'VII', 'VI', 'V'] },
+  { id: 'min_harm_1451', name: 'i – iv – V – i',     code: 'Moll harm.',      tonality: 'minor', steps: ['i', 'iv', 'V', 'i'] }
+];
+
+const earRhythmPatternsCatalog = [
+  { id: 'quarters',   name: 'Ćwierćnuty (1/4)',      code: '1/4',  desc: 'Stabilny puls na 1, 2, 3, 4',              offsets: [0, 1, 2, 3],                             labels: ['1', '2', '3', '4'] },
+  { id: 'eighths',    name: 'Ósemki (1/8)',          code: '1/8',  desc: 'Równe podziały „1 i 2 i 3 i 4 i”',         offsets: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5],         labels: ['1', '&', '2', '&', '3', '&', '4', '&'] },
+  { id: 'triplets',   name: 'Triole ósemkowe',       code: '1/8T', desc: '3 równe nuty na każdą ćwierćnutę',         offsets: [0, 1/3, 2/3, 1, 4/3, 5/3, 2, 7/3, 8/3, 3, 10/3, 11/3], labels: ['1','la','li','2','la','li','3','la','li','4','la','li'] },
+  { id: 'sixteenths', name: 'Szesnastki (1/16)',     code: '1/16', desc: 'Szybkie bicie / kostkowanie 1 e i a',      offsets: [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75], labels: ['1','e','&','a','2','e','&','a','3','e','&','a','4','e','&','a'] },
+  { id: 'sync_8',     name: 'Synkopy ósemkowe',      code: 'SYN8', desc: 'Akcenty na „i”: 1, 1&, 2&, 3, 3&, 4&',     offsets: [0, 0.5, 1.5, 2, 2.5, 3.5],               labels: ['1', '&', '2&', '3', '&', '4&'] },
+  { id: 'sync_16',    name: 'Groove funkowy (1/16)', code: 'FUNK', desc: 'Zadziorny groove 16-tkowy na przedtakcie', offsets: [0, 0.75, 1.5, 2, 2.75, 3.5],             labels: ['1', '1a', '2&', '3', '3a', '4&'] }
+];
+
+const earDictationScaleIds = ['pent_minor', 'pent_major', 'major', 'minor', 'blues', 'dorian'];
+
+const earModeMeta = {
+  identify:     { id: 'identify',     label: 'Interwały · Quiz',       short: 'Interwały', icon: '🎧', desc: 'Usłysz dwa dźwięki i wskaż interwał.' },
+  learn:        { id: 'learn',        label: 'Odsłuch i nauka',        short: 'Nauka',     icon: '📘', desc: 'Odsłuchuj interwały, porównuj pary i sprawdzaj kształty na gryfie.' },
+  play:         { id: 'play',         label: 'Zagraj na gitarze',      short: 'Zagraj',    icon: '🎸', desc: 'Usłysz prymę i zagraj interwał na gitarze (mikrofon) lub klawiaturze.' },
+  chords:       { id: 'chords',       label: 'Akordy i przewroty',     short: 'Akordy',    icon: '🎹', desc: 'Rozpoznawaj trójdźwięki, susy, septymowe i ich przewroty.' },
+  scales:       { id: 'scales',       label: 'Skale i tryby',          short: 'Skale',     icon: '🎼', desc: 'Odróżniaj skale durowe, molowe, tryby kościelne i pentatoniki.' },
+  degrees:      { id: 'degrees',      label: 'Funkcje w tonacji',      short: 'Stopnie',   icon: '🏛', desc: 'Po kadencji I–IV–V–I rozpoznawaj stopień względem toniki.' },
+  dictation:    { id: 'dictation',    label: 'Dyktando motywów',       short: 'Dyktando',  icon: '🎵', desc: 'Usłysz 3–5 nut w skali i wskaż frazę na mini-gryfie lub gitarze.' },
+  progressions: { id: 'progressions', label: 'Progresje akordów',      short: 'Progresje', icon: '🔀', desc: 'Rozpoznawaj kolejność 4 funkcji harmonicznych ze słuchu.' },
+  rhythm:       { id: 'rhythm',       label: 'Rytm i podziały',        short: 'Rytm',      icon: '🥁', desc: 'Graj lub uderzaj podziały z metronomem i analizuj odchyłkę w ms.' }
+};
+
+function earFormatMidi(midi) {
+  if (midi === null || midi === undefined || !Number.isFinite(Number(midi))) return '—';
+  const m = Math.round(Number(midi));
+  const names = (typeof getRootLabels === 'function')
+    ? getRootLabels()
+    : ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const pc = ((m % 12) + 12) % 12;
+  const oct = Math.floor(m / 12) - 1;
+  return `${names[pc]}${oct}`;
+}
+
+function earFormatPc(pc) {
+  const names = (typeof getRootLabels === 'function')
+    ? getRootLabels()
+    : ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  return names[((pc % 12) + 12) % 12];
+}
+
+function getEarTuningSummary() {
+  const names = (typeof getRootLabels === 'function')
+    ? getRootLabels()
+    : ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const nVis = (typeof getActiveStringCount === 'function') ? getActiveStringCount() : 6;
+  const arr = Array.isArray(state.customStringMidis) ? state.customStringMidis : [40, 45, 50, 55, 59, 64];
+  const notes = arr.slice(0, nVis).map(m => names[((m % 12) + 12) % 12]).join(' ');
+  let tName = state.bass4Mode ? 'Bas 4-str.' : 'Standard';
+  if (state.initData && Array.isArray(state.initData.tunings)) {
+    const found = state.initData.tunings.find(tt => tt.id === state.tuningId);
+    if (found && found.name) {
+      tName = (state.bass4Mode ? 'Bas 4-str. · ' : '') + found.name.split('(')[0].trim();
+    } else if (state.tuningId === 'custom') {
+      tName = (state.bass4Mode ? 'Bas 4-str. · ' : '') + 'Własny strój';
+    }
+  }
+  return `${tName} (${notes})`;
+}
+
+function getEarTempoDelays() {
+  if (state.earTempo === 'slow') return { intervalMs: 780, chordArpMs: 420, scaleStepMs: 360, chordStepMs: 1150, motifStepMs: 560 };
+  if (state.earTempo === 'fast') return { intervalMs: 300, chordArpMs: 160, scaleStepMs: 170, chordStepMs: 560,  motifStepMs: 260 };
+  return { intervalMs: 500, chordArpMs: 280, scaleStepMs: 250, chordStepMs: 800, motifStepMs: 390 };
+}
+
+function getEarBucketName(mode) {
+  if (['chords', 'scales', 'degrees', 'dictation', 'progressions', 'rhythm'].includes(mode)) return mode;
+  return 'intervals';
+}
+
+function getEarEmptyStatsObj() {
+  return { intervals: {}, chords: {}, scales: {}, degrees: {}, dictation: {}, progressions: {}, rhythm: {} };
+}
+
+function getEarPersistentStats() {
+  if (state.earPersistentStats && typeof state.earPersistentStats === 'object') {
+    const base = getEarEmptyStatsObj();
+    for (const k of Object.keys(base)) {
+      if (!state.earPersistentStats[k] || typeof state.earPersistentStats[k] !== 'object') {
+        state.earPersistentStats[k] = {};
+      }
+    }
+    return state.earPersistentStats;
+  }
+  const empty = getEarEmptyStatsObj();
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage) {
+      const raw = localStorage.getItem(EAR_STATS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          const merged = getEarEmptyStatsObj();
+          for (const k of Object.keys(merged)) {
+            if (parsed[k] && typeof parsed[k] === 'object') merged[k] = parsed[k];
+          }
+          state.earPersistentStats = merged;
+          return state.earPersistentStats;
+        }
+      }
+    }
+  } catch (e) {}
+  state.earPersistentStats = empty;
+  return state.earPersistentStats;
+}
+
+function saveEarPersistentStat(mode, key, name, code, wasCorrect, elapsedMs) {
+  const bucketName = getEarBucketName(mode);
+  const stats = getEarPersistentStats();
+  const strKey = String(key);
+  const cur = stats[bucketName][strKey] || { key: strKey, name, code: code || '', correct: 0, total: 0, totalMs: 0 };
+  cur.name = name || cur.name;
+  cur.code = code || cur.code || '';
+  cur.total += 1;
+  if (wasCorrect) cur.correct += 1;
+  cur.totalMs += Math.max(150, Number(elapsedMs) || 0);
+  stats[bucketName][strKey] = cur;
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage) {
+      localStorage.setItem(EAR_STATS_STORAGE_KEY, JSON.stringify(stats));
+    }
+  } catch (e) {}
+}
+
+function clearEarPersistentStats() {
+  state.earPersistentStats = getEarEmptyStatsObj();
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage) {
+      localStorage.removeItem(EAR_STATS_STORAGE_KEY);
+    }
+  } catch (e) {}
+  renderStageAndInspector();
+}
+
+function getEarWeakListForMode(mode) {
+  const stats = getEarPersistentStats();
+  const bucketName = getEarBucketName(mode);
+  const entries = Object.values(stats[bucketName] || {});
+  return entries
+    .filter(e => e && e.total >= 1 && e.correct < e.total)
+    .sort((a, b) => (a.correct / a.total) - (b.correct / b.total) || b.total - a.total);
+}
+
+function startEarPersistentWeakSession(mode) {
+  const targetMode = mode || state.earMode;
+  const weak = getEarWeakListForMode(targetMode);
+  if (weak.length === 0) return;
+  if (targetMode === 'chords') {
+    state.earMode = 'chords';
+    const picked = weak.slice(0, 6).map(w => w.key);
+    if (picked.length < 2) {
+      const extra = earChordsCatalog.find(c => !picked.includes(c.id));
+      if (extra) picked.push(extra.id);
+    }
+    state.earSelectedChords = new Set(picked);
+  } else if (targetMode === 'scales') {
+    state.earMode = 'scales';
+    const picked = weak.slice(0, 5).map(w => w.key);
+    if (picked.length < 2) {
+      const extra = earScalesCatalog.find(s => !picked.includes(s.id));
+      if (extra) picked.push(extra.id);
+    }
+    state.earSelectedScales = new Set(picked);
+  } else if (targetMode === 'degrees') {
+    state.earMode = 'degrees';
+    const picked = weak.slice(0, 6).map(w => Number(w.key)).filter(Number.isFinite);
+    if (picked.length < 2) {
+      const extra = picked[0] === 7 ? 4 : 7;
+      if (!picked.includes(extra)) picked.push(extra);
+    }
+    state.earSelectedDegrees = new Set(picked);
+  } else if (targetMode === 'progressions') {
+    state.earMode = 'progressions';
+    const picked = weak.slice(0, 6).map(w => w.key);
+    if (picked.length < 2) {
+      const extra = earProgressionsCatalog.find(p => !picked.includes(p.id));
+      if (extra) picked.push(extra.id);
+    }
+    state.earSelectedProgressions = new Set(picked);
+  } else if (targetMode === 'dictation' || targetMode === 'rhythm') {
+    state.earMode = targetMode;
+  } else {
+    if (!['identify', 'play'].includes(state.earMode)) {
+      state.earMode = 'identify';
+    }
+    const picked = weak.slice(0, 6).map(w => Number(w.key)).filter(Number.isFinite);
+    if (picked.length < 2) {
+      const extra = picked[0] === 7 ? 5 : 7;
+      if (!picked.includes(extra)) picked.push(extra);
+    }
+    state.earSelectedSemis = new Set(picked);
+  }
+  state.earRandomRollInfo = '';
+  startEarTrainingSession();
+}
 
 function toggleEarIntervalTile(semi) {
   if (state.earSelectedSemis.has(semi)) {
@@ -16670,9 +17023,9 @@ function toggleEarIntervalTile(semi) {
 
 function setAllEarIntervals(on) {
   if (on) {
-    state.earSelectedSemis = new Set([0,1,2,3,4,5,6,7,8,9,10,11,12]);
+    state.earSelectedSemis = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   } else {
-    state.earSelectedSemis = new Set([0]);
+    state.earSelectedSemis = new Set([0, 7]);
   }
   renderStageAndInspector();
 }
@@ -16695,18 +17048,128 @@ function toggleEarInversionTile(invIdx) {
   renderStageAndInspector();
 }
 
+function toggleEarScaleTile(id) {
+  if (state.earSelectedScales.has(id)) {
+    if (state.earSelectedScales.size > 1) state.earSelectedScales.delete(id);
+  } else {
+    state.earSelectedScales.add(id);
+  }
+  renderStageAndInspector();
+}
+
+function toggleEarDegreeTile(semi) {
+  if (state.earSelectedDegrees.has(semi)) {
+    if (state.earSelectedDegrees.size > 1) state.earSelectedDegrees.delete(semi);
+  } else {
+    state.earSelectedDegrees.add(semi);
+  }
+  renderStageAndInspector();
+}
+
+function toggleEarProgressionTile(id) {
+  if (state.earSelectedProgressions.has(id)) {
+    if (state.earSelectedProgressions.size > 1) state.earSelectedProgressions.delete(id);
+  } else {
+    state.earSelectedProgressions.add(id);
+  }
+  renderStageAndInspector();
+}
+
+function applyEarPreset(presetId) {
+  if (state.earMode === 'chords') {
+    if (presetId === 'triads') {
+      state.earSelectedChords = new Set(['major', 'minor', 'dim', 'aug']);
+      state.earSelectedInversions = new Set([0]);
+    } else if (presetId === 'sus') {
+      state.earSelectedChords = new Set(['major', 'minor', 'sus2', 'sus4']);
+      state.earSelectedInversions = new Set([0]);
+    } else if (presetId === 'sevenths') {
+      state.earSelectedChords = new Set(['maj7', '7', 'm7', 'm7b5', 'dim7']);
+      state.earSelectedInversions = new Set([0, 1, 2, 3]);
+    } else if (presetId === 'all') {
+      state.earSelectedChords = new Set(earChordsCatalog.map(c => c.id));
+    }
+  } else if (state.earMode === 'scales') {
+    if (presetId === 'basic') {
+      state.earSelectedScales = new Set(['major', 'minor', 'pent_minor', 'pent_major']);
+    } else if (presetId === 'modes') {
+      state.earSelectedScales = new Set(['major', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'minor']);
+    } else if (presetId === 'rock_blues') {
+      state.earSelectedScales = new Set(['pent_minor', 'pent_major', 'blues', 'mixolydian', 'dorian']);
+    } else if (presetId === 'all') {
+      state.earSelectedScales = new Set(earScalesCatalog.map(s => s.id));
+    }
+  } else if (state.earMode === 'degrees') {
+    if (presetId === 'deg_major') {
+      state.earDegreeTonality = 'major';
+      state.earSelectedDegrees = new Set([0, 2, 4, 5, 7, 9, 11]);
+    } else if (presetId === 'deg_minor') {
+      state.earDegreeTonality = 'minor';
+      state.earSelectedDegrees = new Set([0, 2, 3, 5, 7, 8, 10]);
+    } else if (presetId === 'deg_pent') {
+      state.earDegreeTonality = 'minor';
+      state.earSelectedDegrees = new Set([0, 3, 5, 7, 10]);
+    } else if (presetId === 'deg_all') {
+      state.earSelectedDegrees = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    }
+  } else if (state.earMode === 'progressions') {
+    if (presetId === 'prog_major') {
+      state.earSelectedProgressions = new Set(earProgressionsCatalog.filter(p => p.tonality === 'major').map(p => p.id));
+    } else if (presetId === 'prog_minor') {
+      state.earSelectedProgressions = new Set(earProgressionsCatalog.filter(p => p.tonality === 'minor').map(p => p.id));
+    } else if (presetId === 'prog_pop_rock') {
+      state.earSelectedProgressions = new Set(['pop_1564', 'cad_1451', 'mixo_1741', 'min_1637']);
+    } else if (presetId === 'prog_jazz') {
+      state.earSelectedProgressions = new Set(['jazz_2516', 'fifties_1645', 'blues_turn', 'min_harm_1451']);
+    } else if (presetId === 'prog_all') {
+      state.earSelectedProgressions = new Set(earProgressionsCatalog.map(p => p.id));
+    }
+  } else {
+    if (presetId === 'basic') {
+      state.earSelectedSemis = new Set([0, 3, 4, 5, 7, 12]);
+    } else if (presetId === 'diatonic') {
+      state.earSelectedSemis = new Set([0, 2, 4, 5, 7, 9, 11, 12]);
+    } else if (presetId === 'rock_blues') {
+      state.earSelectedSemis = new Set([0, 3, 5, 6, 7, 10, 12]);
+    } else if (presetId === 'all') {
+      state.earSelectedSemis = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    }
+  }
+  renderStageAndInspector();
+}
+
+function randomizeEarMaterial() {
+  if (state.earMode === 'chords') {
+    const ids = earChordsCatalog.map(c => c.id).sort(() => Math.random() - 0.5);
+    state.earSelectedChords = new Set(ids.slice(0, 5));
+  } else if (state.earMode === 'scales') {
+    const ids = earScalesCatalog.map(s => s.id).sort(() => Math.random() - 0.5);
+    state.earSelectedScales = new Set(ids.slice(0, 4));
+  } else if (state.earMode === 'degrees') {
+    const pool = (state.earDegreeTonality === 'minor' ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11]).sort(() => Math.random() - 0.5);
+    state.earSelectedDegrees = new Set(pool.slice(0, 5));
+  } else if (state.earMode === 'progressions') {
+    const ids = earProgressionsCatalog.map(p => p.id).sort(() => Math.random() - 0.5);
+    state.earSelectedProgressions = new Set(ids.slice(0, 5));
+  } else {
+    const semis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].sort(() => Math.random() - 0.5);
+    state.earSelectedSemis = new Set(semis.slice(0, 6));
+  }
+  renderStageAndInspector();
+}
+
 function selectEarBaseNote(pc) {
   state.earFixedRootPc = ((pc % 12) + 12) % 12;
   const oct = state.earRootMode === 'fixed_pitch' ? (state.earFixedOctave || 3) : 3;
   const midi = (oct + 1) * 12 + state.earFixedRootPc;
-  pluckGuitarFrequency(midiToFreq(midi), 1.1);
+  playEarTone(midiToFreq(midi), 1.0);
   renderStageAndInspector();
 }
 
 function selectEarBaseOctave(oct) {
   state.earFixedOctave = oct;
   const midi = (oct + 1) * 12 + state.earFixedRootPc;
-  pluckGuitarFrequency(midiToFreq(midi), 1.1);
+  playEarTone(midiToFreq(midi), 1.0);
   renderStageAndInspector();
 }
 
@@ -16716,25 +17179,50 @@ function recordEarRoundStat(key, name, code, wasCorrect) {
   if (wasCorrect && state.earStreak > state.earBestStreak) {
     state.earBestStreak = state.earStreak;
   }
-  let entry = state.earHistory.find(h => h.key === key);
+  const strKey = String(key);
+  let entry = state.earHistory.find(h => String(h.key) === strKey);
   if (!entry) {
-    entry = { key, name, code: code || '', correct: 0, total: 0 };
+    entry = { key: strKey, name, code: code || '', correct: 0, total: 0, totalMs: 0 };
     state.earHistory.push(entry);
   }
-  entry.total++;
-  if (wasCorrect) entry.correct++;
+  entry.total += 1;
+  entry.totalMs += elapsedMs;
+  if (wasCorrect) entry.correct += 1;
+  saveEarPersistentStat(state.earMode, strKey, name, code, wasCorrect, elapsedMs);
 }
 
 function startEarWeakItemsSession() {
   const weak = (state.earHistory || []).filter(h => h.correct < h.total);
   if (state.earMode === 'chords') {
     if (weak.length >= 2) {
-      state.earSelectedChords = new Set(weak.map(w => w.key));
+      state.earSelectedChords = new Set(weak.map(w => String(w.key)));
     } else if (weak.length === 1) {
-      const extra = earChordsCatalog.find(c => c.id !== weak[0].key) || earChordsCatalog[0];
-      state.earSelectedChords = new Set([weak[0].key, extra.id]);
+      const extra = earChordsCatalog.find(c => c.id !== String(weak[0].key)) || earChordsCatalog[0];
+      state.earSelectedChords = new Set([String(weak[0].key), extra.id]);
     }
-  } else {
+  } else if (state.earMode === 'scales') {
+    if (weak.length >= 2) {
+      state.earSelectedScales = new Set(weak.map(w => String(w.key)));
+    } else if (weak.length === 1) {
+      const extra = earScalesCatalog.find(s => s.id !== String(weak[0].key)) || earScalesCatalog[0];
+      state.earSelectedScales = new Set([String(weak[0].key), extra.id]);
+    }
+  } else if (state.earMode === 'degrees') {
+    if (weak.length >= 2) {
+      state.earSelectedDegrees = new Set(weak.map(w => Number(w.key)));
+    } else if (weak.length === 1) {
+      const wDeg = Number(weak[0].key);
+      const extraDeg = wDeg === 7 ? 4 : 7;
+      state.earSelectedDegrees = new Set([wDeg, extraDeg]);
+    }
+  } else if (state.earMode === 'progressions') {
+    if (weak.length >= 2) {
+      state.earSelectedProgressions = new Set(weak.map(w => String(w.key)));
+    } else if (weak.length === 1) {
+      const extra = earProgressionsCatalog.find(p => p.id !== String(weak[0].key)) || earProgressionsCatalog[0];
+      state.earSelectedProgressions = new Set([String(weak[0].key), extra.id]);
+    }
+  } else if (!['dictation', 'rhythm'].includes(state.earMode)) {
     if (weak.length >= 2) {
       state.earSelectedSemis = new Set(weak.map(w => Number(w.key)));
     } else if (weak.length === 1) {
@@ -16743,10 +17231,13 @@ function startEarWeakItemsSession() {
       state.earSelectedSemis = new Set([wSemi, extraSemi]);
     }
   }
+  state.earRandomRollInfo = '';
   startEarTrainingSession();
 }
 
-function startEarTrainingSession() {
+function startEarTrainingSession(keepRollInfo = false) {
+  clearEarAudioTimers();
+  if (!keepRollInfo) state.earRandomRollInfo = '';
   state.earScreen = 'active';
   state.earRound = 1;
   state.earScore = 0;
@@ -16759,80 +17250,472 @@ function startEarTrainingSession() {
   state.earHistory = [];
   state.earCompareMode = false;
   state.earCompareSelection = [];
-  if (state.earMode !== 'learn') {
+  state.earLearnLastItem = null;
+  state.earProgUserSlots = [];
+  state.earRhythmRunning = false;
+  state.earRhythmState = null;
+  if (state.earMode === 'rhythm') {
+    initEarRhythmIdleState();
+  } else if (state.earMode !== 'learn') {
     generateNextEarQuestion();
   }
   renderStageAndInspector();
 }
 
+function startEarRandomSession() {
+  const candidateModes = ['identify', 'chords', 'scales', 'degrees', 'progressions'];
+  const rolledMode = candidateModes[Math.floor(Math.random() * candidateModes.length)];
+  state.earMode = rolledMode;
+  state.earSessionType = 'fixed';
+  state.earTargetRounds = rolledMode === 'progressions' || rolledMode === 'dictation' ? 6 : 10;
+
+  let rollDesc = '';
+  if (rolledMode === 'chords') {
+    const ids = earChordsCatalog.map(c => c.id).sort(() => Math.random() - 0.5).slice(0, 5);
+    state.earSelectedChords = new Set(ids);
+    state.earPlaybackStyle = Math.random() < 0.65 ? 'harmonic' : 'melodic';
+    state.earSelectedInversions = new Set([0]);
+    rollDesc = `Akordy (${ids.length}) · ${state.earPlaybackStyle === 'harmonic' ? 'Akordy jednocześnie' : 'Pasaż (arpeggio)'}`;
+  } else if (rolledMode === 'scales') {
+    const ids = earScalesCatalog.map(s => s.id).sort(() => Math.random() - 0.5).slice(0, 4);
+    state.earSelectedScales = new Set(ids);
+    const dirs = ['asc', 'desc', 'updown'];
+    state.earScaleDirection = dirs[Math.floor(Math.random() * dirs.length)];
+    const dirLbl = state.earScaleDirection === 'asc' ? 'W górę' : (state.earScaleDirection === 'desc' ? 'W dół' : 'Góra–Dół');
+    rollDesc = `Skale i tryby (${ids.length}) · ${dirLbl}`;
+  } else if (rolledMode === 'degrees') {
+    state.earDegreeTonality = Math.random() < 0.6 ? 'major' : 'minor';
+    const basePool = state.earDegreeTonality === 'minor' ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11];
+    state.earSelectedDegrees = new Set(basePool);
+    state.earDegreeAutoCadence = true;
+    rollDesc = `Funkcje w tonacji (${state.earDegreeTonality === 'minor' ? 'Moll' : 'Dur'}) · kadencja I–IV–V–I`;
+  } else if (rolledMode === 'progressions') {
+    const ids = earProgressionsCatalog.map(p => p.id).sort(() => Math.random() - 0.5).slice(0, 6);
+    state.earSelectedProgressions = new Set(ids);
+    rollDesc = `Progresje akordów (${ids.length} wzorów)`;
+  } else {
+    const semis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].sort(() => Math.random() - 0.5).slice(0, 6);
+    state.earSelectedSemis = new Set(semis);
+    state.earPlaybackStyle = Math.random() < 0.72 ? 'melodic' : 'harmonic';
+    const dirs = ['asc', 'desc', 'rand'];
+    state.earDirection = dirs[Math.floor(Math.random() * dirs.length)];
+    const pbLbl = state.earPlaybackStyle === 'harmonic' ? 'Harmoniczne' : 'Melodyczne';
+    rollDesc = `Interwały (${semis.length}) · ${pbLbl}`;
+  }
+  state.earRandomRollInfo = `Losowe ćwiczenie: ${rollDesc} · ${state.earTargetRounds} rund`;
+  startEarTrainingSession(true);
+}
+
 function startEarSurpriseSession() {
-  const all = [0,1,2,3,4,5,6,7,8,9,10,11,12];
-  all.sort(() => Math.random() - 0.5);
-  state.earSelectedSemis = new Set(all.slice(0, 6));
-  state.earMode = 'identify';
-  startEarTrainingSession();
+  startEarRandomSession();
+}
+
+let earAudioTimers = [];
+let earRhythmTickTimers = [];
+
+function stopEarRhythmLoop() {
+  if (earRhythmTickTimers.length > 0) {
+    earRhythmTickTimers.forEach(id => clearTimeout(id));
+    earRhythmTickTimers = [];
+  }
+  state.earRhythmRunning = false;
+}
+
+function clearEarAudioTimers() {
+  if (earAudioTimers.length > 0) {
+    earAudioTimers.forEach(id => clearTimeout(id));
+    earAudioTimers = [];
+  }
+  stopEarRhythmLoop();
+}
+
+function playEarTone(freqHz, dur, gainScale = 1.0) {
+  if (state.earInstrument === 'piano') {
+    const prevK = state.keyboardPreset;
+    state.keyboardPreset = 'piano';
+    try {
+      playKeyboardPresetNote(freqHz, dur, gainScale);
+    } finally {
+      state.keyboardPreset = prevK;
+    }
+  } else {
+    pluckGuitarFrequency(freqHz, dur, gainScale);
+  }
 }
 
 function exitEarActiveSession() {
+  clearEarAudioTimers();
   state.earScreen = 'config';
   renderStageAndInspector();
 }
 
+function finishEarSessionEarly() {
+  if (state.earMode === 'rhythm' && state.earRhythmState) {
+    recordEarRhythmSummaryStats();
+  }
+  clearEarAudioTimers();
+  state.earSessionDurationSec = Math.max(1, Math.round((performance.now() - (state.earSessionStartMs || performance.now())) / 1000));
+  state.earScreen = 'summary';
+  renderStageAndInspector();
+}
+
 function playEarIntervalAudio(rootMidi, secondMidi) {
+  clearEarAudioTimers();
+  const { intervalMs } = getEarTempoDelays();
   if (state.earPlaybackStyle === 'harmonic') {
-    pluckGuitarFrequency(midiToFreq(rootMidi), 1.5);
-    pluckGuitarFrequency(midiToFreq(secondMidi), 1.5);
+    playEarTone(midiToFreq(rootMidi), 1.55, 0.9);
+    playEarTone(midiToFreq(secondMidi), 1.55, 0.9);
   } else {
-    pluckGuitarFrequency(midiToFreq(rootMidi), 1.3);
-    setTimeout(() => pluckGuitarFrequency(midiToFreq(secondMidi), 1.4), 520);
+    playEarTone(midiToFreq(rootMidi), 1.25);
+    earAudioTimers.push(setTimeout(() => playEarTone(midiToFreq(secondMidi), 1.45), intervalMs));
   }
 }
 
-function playEarChordAudio(rootMidi, intervals, inversion) {
-  const notes = intervals.map(s => rootMidi + s);
-  for (let i = 0; i < inversion && i < notes.length; i++) {
+function buildEarChordMidis(rootMidi, intervals, inversion) {
+  const notes = (intervals || [0, 4, 7]).map(s => rootMidi + s);
+  for (let i = 0; i < (inversion || 0) && i < notes.length; i++) {
     notes[i] += 12;
   }
   notes.sort((a, b) => a - b);
+  return notes;
+}
+
+function playEarChordVoicingRaw(rootMidi, intervals, gainMul = 1.0) {
+  const notes = buildEarChordMidis(rootMidi, intervals, 0);
+  const gScale = gainMul / Math.sqrt(Math.max(1, notes.length));
+  notes.forEach((m, idx) => {
+    earAudioTimers.push(setTimeout(() => playEarTone(midiToFreq(m), 1.1, gScale), idx * 24));
+  });
+}
+
+function playEarChordAudio(rootMidi, intervals, inversion) {
+  clearEarAudioTimers();
+  const notes = buildEarChordMidis(rootMidi, intervals, inversion);
+  const { chordArpMs } = getEarTempoDelays();
   const gainScale = 1.0 / Math.sqrt(Math.max(1, notes.length));
-  if (state.earPlaybackStyle === 'melodic') {
-    notes.forEach((m, idx) => {
-      setTimeout(() => pluckGuitarFrequency(midiToFreq(m), 1.4, gainScale), idx * 320);
+  const stepDelay = (state.earPlaybackStyle === 'melodic') ? chordArpMs : 32;
+  const dur = (state.earPlaybackStyle === 'melodic') ? 1.4 : 1.65;
+  notes.forEach((m, idx) => {
+    earAudioTimers.push(setTimeout(() => playEarTone(midiToFreq(m), dur, gainScale), idx * stepDelay));
+  });
+}
+
+function playEarScaleAudio(rootMidi, intervals, dirOverride = null) {
+  clearEarAudioTimers();
+  const dir = dirOverride || state.earScaleDirection || 'asc';
+  const ascNotes = (intervals || [0, 2, 4, 5, 7, 9, 11, 12]).map(s => rootMidi + s);
+  let seq = ascNotes.slice();
+  if (dir === 'desc') {
+    seq = ascNotes.slice().reverse();
+  } else if (dir === 'updown') {
+    seq = ascNotes.concat(ascNotes.slice(0, -1).reverse());
+  }
+  const { scaleStepMs } = getEarTempoDelays();
+  seq.forEach((m, idx) => {
+    earAudioTimers.push(setTimeout(() => playEarTone(midiToFreq(m), 0.72, 0.95), idx * scaleStepMs));
+  });
+}
+
+function playEarCadenceAudio(rootMidi, tonality) {
+  clearEarAudioTimers();
+  const stepMs = Math.round(getEarTempoDelays().chordStepMs * 0.65);
+  const chords = tonality === 'minor'
+    ? [
+        [0, 3, 7],    // i
+        [5, 8, 12],   // iv
+        [7, 11, 14],  // V
+        [0, 3, 7]     // i
+      ]
+    : [
+        [0, 4, 7],    // I
+        [5, 9, 12],   // IV
+        [7, 11, 14],  // V
+        [0, 4, 7]     // I
+      ];
+  chords.forEach((ivs, idx) => {
+    earAudioTimers.push(setTimeout(() => playEarChordVoicingRaw(rootMidi, ivs, 0.88), idx * stepMs));
+  });
+  return chords.length * stepMs;
+}
+
+function playEarCadenceAndDegree(rootMidi, targetMidi, tonality, includeCadence = true) {
+  clearEarAudioTimers();
+  if (includeCadence) {
+    const stepMs = Math.round(getEarTempoDelays().chordStepMs * 0.62);
+    const chords = tonality === 'minor'
+      ? [[0, 3, 7], [5, 8, 12], [7, 11, 14], [0, 3, 7]]
+      : [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]];
+    chords.forEach((ivs, idx) => {
+      earAudioTimers.push(setTimeout(() => playEarChordVoicingRaw(rootMidi, ivs, 0.85), idx * stepMs));
     });
+    const noteDelay = chords.length * stepMs + 280;
+    earAudioTimers.push(setTimeout(() => playEarTone(midiToFreq(targetMidi), 1.5, 1.0), noteDelay));
   } else {
-    notes.forEach((m, idx) => {
-      setTimeout(() => pluckGuitarFrequency(midiToFreq(m), 1.6, gainScale), idx * 35);
-    });
+    playEarTone(midiToFreq(targetMidi), 1.5, 1.0);
   }
 }
 
-function generateNextEarQuestion() {
-  let rootMidi = 52 + Math.floor(Math.random() * 12); // E3 .. D#4
+function playEarMotifAudio(midis) {
+  clearEarAudioTimers();
+  const stepMs = getEarTempoDelays().motifStepMs;
+  (midis || []).forEach((m, idx) => {
+    earAudioTimers.push(setTimeout(() => {
+      const slotEl = document.getElementById(`earDictSlot_${idx}`);
+      if (slotEl) {
+        slotEl.classList.add('active-play');
+        setTimeout(() => slotEl.classList.remove('active-play'), Math.max(140, stepMs - 40));
+      }
+      playEarTone(midiToFreq(m), 0.78, 0.95);
+    }, idx * stepMs));
+  });
+}
+
+function getEarProgFunctionDef(tonality, fnId) {
+  const list = tonality === 'minor' ? earProgFunctionsMinor : earProgFunctionsMajor;
+  return list.find(f => f.id === fnId) || list[0];
+}
+
+function formatEarProgChordName(rootMidi, fnObj) {
+  if (!fnObj) return '';
+  const chordRootPc = ((rootMidi + (fnObj.offset || 0)) % 12 + 12) % 12;
+  return earFormatPc(chordRootPc) + (fnObj.suffix || '');
+}
+
+function playEarProgressionAudio(rootMidi, stepIds, tonality) {
+  clearEarAudioTimers();
+  const stepMs = getEarTempoDelays().chordStepMs;
+  (stepIds || []).forEach((fnId, idx) => {
+    earAudioTimers.push(setTimeout(() => {
+      for (let k = 0; k < 4; k++) {
+        const el = document.getElementById(`earProgSlot_${k}`);
+        if (el) el.classList.toggle('active-play', k === idx);
+      }
+      const fnDef = getEarProgFunctionDef(tonality, fnId);
+      const chordRoot = rootMidi + (fnDef.offset || 0);
+      playEarChordVoicingRaw(chordRoot, fnDef.intervals, 0.95);
+    }, idx * stepMs));
+  });
+  earAudioTimers.push(setTimeout(() => {
+    for (let k = 0; k < 4; k++) {
+      const el = document.getElementById(`earProgSlot_${k}`);
+      if (el) el.classList.remove('active-play');
+    }
+  }, (stepIds ? stepIds.length : 4) * stepMs + 220));
+}
+
+function playEarProgSlotChord(slotIdx) {
+  const q = state.earCurrentQuestion;
+  if (!q || state.earMode !== 'progressions') return;
+  const fnId = q.answered ? q.stepIds[slotIdx] : (state.earProgUserSlots[slotIdx] || null);
+  if (!fnId) return;
+  clearEarAudioTimers();
+  const fnDef = getEarProgFunctionDef(q.tonality, fnId);
+  playEarChordVoicingRaw(q.rootMidi + (fnDef.offset || 0), fnDef.intervals, 0.95);
+}
+
+function previewEarRhythmPattern(patternId, ev) {
+  if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+  clearEarAudioTimers();
+  const pat = earRhythmPatternsCatalog.find(p => p.id === patternId) || earRhythmPatternsCatalog[0];
+  const beatMs = 60000 / Math.max(40, Math.min(200, Number(state.earRhythmBpm) || 90));
+  for (let b = 0; b < 4; b++) {
+    earAudioTimers.push(setTimeout(() => {
+      if (typeof playMetronomeTickAudio === 'function') playMetronomeTickAudio(b === 0);
+    }, b * beatMs));
+  }
+  pat.offsets.forEach((off, idx) => {
+    earAudioTimers.push(setTimeout(() => {
+      if (typeof playDrumHit === 'function') playDrumHit('hihat', idx === 0 ? 0.85 : 0.65);
+    }, off * beatMs));
+  });
+}
+
+function previewEarConfigItem(kind, key, ev) {
+  if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+  let rootMidi = 52;
+  if (state.earRootMode === 'fixed_note' || state.earRootMode === 'fixed_pitch') {
+    rootMidi = ((state.earFixedOctave || 3) + 1) * 12 + state.earFixedRootPc;
+  }
+  if (kind === 'chord') {
+    const ch = earChordsCatalog.find(c => c.id === key);
+    if (ch) playEarChordAudio(rootMidi, ch.intervals, 0);
+  } else if (kind === 'scale') {
+    const sc = earScalesCatalog.find(s => s.id === key);
+    if (sc) playEarScaleAudio(rootMidi, sc.intervals);
+  } else if (kind === 'degree') {
+    const degSemi = Number(key);
+    playEarCadenceAndDegree(rootMidi, rootMidi + degSemi, state.earDegreeTonality || 'major', false);
+  } else if (kind === 'progression') {
+    const pr = earProgressionsCatalog.find(p => p.id === key);
+    if (pr) playEarProgressionAudio(rootMidi, pr.steps, pr.tonality);
+  } else if (kind === 'rhythm') {
+    previewEarRhythmPattern(key, ev);
+  } else {
+    const semi = Number(key);
+    const asc = (state.earPlaybackStyle === 'harmonic' || state.earDirection !== 'desc');
+    playEarIntervalAudio(rootMidi, asc ? rootMidi + semi : rootMidi - semi);
+  }
+}
+
+function pickEarPlayableRootMidi() {
+  let baseMid = state.bass4Mode ? 33 : 52; // A1 bas lub E3 gitara
   if (state.earRootMode === 'fixed_note') {
-    rootMidi = 48 + state.earFixedRootPc + (Math.random() < 0.5 ? 0 : 12);
+    const baseOctMidi = state.bass4Mode ? 24 : 48;
+    baseMid = baseOctMidi + state.earFixedRootPc + (Math.random() < 0.5 ? 0 : 12);
   } else if (state.earRootMode === 'fixed_pitch') {
     const oct = (state.earFixedOctave !== undefined) ? state.earFixedOctave : 3;
-    rootMidi = (oct + 1) * 12 + state.earFixedRootPc;
+    baseMid = (oct + 1) * 12 + state.earFixedRootPc;
+  } else {
+    baseMid = baseMid + Math.floor(Math.random() * 10);
   }
+  return baseMid;
+}
+
+function generateEarDictationMotif(rootMidi, scaleObj, len) {
+  const ivs = (scaleObj && Array.isArray(scaleObj.intervals)) ? scaleObj.intervals : [0, 3, 5, 7, 10, 12];
+  const scaleNotes = [];
+  for (let o = 0; o < 2; o++) {
+    for (const s of ivs) {
+      if (o === 1 && s === 0) continue;
+      const m = rootMidi + o * 12 + s;
+      if (m <= rootMidi + 12) scaleNotes.push(m);
+    }
+  }
+  const uniqueNotes = Array.from(new Set(scaleNotes)).sort((a, b) => a - b);
+  if (uniqueNotes.length < 2) return [rootMidi, rootMidi + 2, rootMidi + 4].slice(0, len);
+
+  const n = Math.max(3, Math.min(5, Number(len) || 4));
+  let curIdx = state.earDictationStartOnRoot ? 0 : Math.floor(Math.random() * Math.min(uniqueNotes.length, 4));
+  const motif = [uniqueNotes[curIdx]];
+  for (let k = 1; k < n; k++) {
+    const candidates = [];
+    for (let d = -2; d <= 2; d++) {
+      if (d === 0 && k < n - 1) continue;
+      const ni = curIdx + d;
+      if (ni >= 0 && ni < uniqueNotes.length) {
+        if (d === 0 && Math.random() < 0.7) continue;
+        candidates.push(ni);
+      }
+    }
+    if (candidates.length === 0) {
+      curIdx = Math.min(uniqueNotes.length - 1, curIdx + 1);
+    } else {
+      curIdx = candidates[Math.floor(Math.random() * candidates.length)];
+    }
+    motif.push(uniqueNotes[curIdx]);
+  }
+  return motif;
+}
+
+function generateNextEarQuestion() {
+  clearEarAudioTimers();
+  let rootMidi = pickEarPlayableRootMidi();
   state.earQuestionAskedMs = performance.now();
 
   if (state.earMode === 'chords') {
     const pool = earChordsCatalog.filter(c => state.earSelectedChords.has(c.id));
     const chosenChord = pool[Math.floor(Math.random() * pool.length)] || earChordsCatalog[0];
-    const invPool = Array.from(state.earSelectedInversions);
+    const maxInv = Math.max(0, chosenChord.intervals.length - 1);
+    const validInvs = Array.from(state.earSelectedInversions).filter(iv => iv >= 0 && iv <= maxInv);
+    const invPool = validInvs.length > 0 ? validInvs : [0];
     const chosenInv = invPool[Math.floor(Math.random() * invPool.length)] || 0;
-    state.earPickedChordId = pool[0] ? pool[0].id : 'major';
+    state.earPickedChordId = null;
     state.earPickedInversion = invPool[0] !== undefined ? invPool[0] : 0;
     state.earCurrentQuestion = {
+      questionMode: 'chords',
       rootMidi,
       chordId: chosenChord.id,
       correctName: chosenChord.label,
+      formula: chosenChord.formula,
       intervals: chosenChord.intervals,
       inversion: chosenInv,
       answered: false,
+      wasCorrect: false,
+      auditionLabel: ''
+    };
+    earAudioTimers.push(setTimeout(() => replayCurrentEarQuestion(), 120));
+    return;
+  }
+
+  if (state.earMode === 'scales') {
+    const pool = earScalesCatalog.filter(s => state.earSelectedScales.has(s.id));
+    const chosenScale = pool[Math.floor(Math.random() * pool.length)] || earScalesCatalog[0];
+    state.earCurrentQuestion = {
+      questionMode: 'scales',
+      rootMidi,
+      scaleId: chosenScale.id,
+      correctName: chosenScale.name,
+      correctCode: chosenScale.code,
+      formula: chosenScale.formula,
+      trait: chosenScale.trait,
+      intervals: chosenScale.intervals,
+      direction: state.earScaleDirection || 'asc',
+      answered: false,
+      wasCorrect: false,
+      guessedScaleId: null,
+      auditionLabel: ''
+    };
+    earAudioTimers.push(setTimeout(() => replayCurrentEarQuestion(), 120));
+    return;
+  }
+
+  if (state.earMode === 'degrees') {
+    const pool = earDegreesCatalog.filter(d => state.earSelectedDegrees.has(d.semi));
+    const chosenDeg = pool[Math.floor(Math.random() * pool.length)] || earDegreesCatalog[0];
+    const targetMidi = rootMidi + chosenDeg.semi;
+    state.earCurrentQuestion = {
+      questionMode: 'degrees',
+      rootMidi,
+      targetMidi,
+      semi: chosenDeg.semi,
+      tonality: state.earDegreeTonality || 'major',
+      correctName: chosenDeg.name,
+      correctCode: chosenDeg.code,
+      role: chosenDeg.role,
+      answered: false,
+      wasCorrect: false,
+      guessedSemi: null,
+      auditionLabel: ''
+    };
+    earAudioTimers.push(setTimeout(() => replayCurrentEarQuestion(), 120));
+    return;
+  }
+
+  if (state.earMode === 'dictation') {
+    const sc = earScalesCatalog.find(s => s.id === state.earDictationScaleId) || earScalesCatalog.find(s => s.id === 'pent_minor') || earScalesCatalog[0];
+    const motifMidis = generateEarDictationMotif(rootMidi, sc, state.earDictationLength || 4);
+    state.earCurrentQuestion = {
+      questionMode: 'dictation',
+      rootMidi,
+      scaleId: sc.id,
+      scaleName: sc.name,
+      scaleCode: sc.code,
+      intervals: sc.intervals,
+      motifMidis,
+      userMidis: [],
+      answered: false,
       wasCorrect: false
     };
-    setTimeout(() => replayCurrentEarQuestion(), 120);
+    earAudioTimers.push(setTimeout(() => playEarMotifAudio(motifMidis), 120));
+    return;
+  }
+
+  if (state.earMode === 'progressions') {
+    const pool = earProgressionsCatalog.filter(p => state.earSelectedProgressions.has(p.id));
+    const chosenProg = pool[Math.floor(Math.random() * pool.length)] || earProgressionsCatalog[0];
+    state.earProgUserSlots = [];
+    state.earCurrentQuestion = {
+      questionMode: 'progressions',
+      rootMidi,
+      progId: chosenProg.id,
+      correctName: chosenProg.name,
+      code: chosenProg.code,
+      tonality: chosenProg.tonality,
+      stepIds: chosenProg.steps.slice(),
+      answered: false,
+      wasCorrect: false
+    };
+    earAudioTimers.push(setTimeout(() => replayCurrentEarQuestion(), 120));
     return;
   }
 
@@ -16845,13 +17728,12 @@ function generateNextEarQuestion() {
   }
 
   const targetMidi = asc ? (rootMidi + chosenIv.semi) : (rootMidi - chosenIv.semi);
-  const sharpNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-  const targetNoteName = sharpNames[((targetMidi % 12) + 12) % 12] + (Math.floor(targetMidi / 12) - 1);
-
   state.earCurrentQuestion = {
+    questionMode: state.earMode,
     rootMidi,
     targetMidi,
-    targetNoteName,
+    targetNoteName: earFormatMidi(targetMidi),
+    rootNoteName: earFormatMidi(rootMidi),
     semi: chosenIv.semi,
     asc,
     correctName: chosenIv.name,
@@ -16859,13 +17741,18 @@ function generateNextEarQuestion() {
     hint: chosenIv.hint,
     answered: false,
     wasCorrect: false,
-    guessedSemi: null
+    guessedSemi: null,
+    auditionLabel: ''
   };
 
   if (state.earMode === 'play') {
-    setTimeout(() => pluckGuitarFrequency(midiToFreq(rootMidi), 1.5), 120);
+    if (state.earPlayHearTarget) {
+      earAudioTimers.push(setTimeout(() => replayCurrentEarQuestion(), 120));
+    } else {
+      earAudioTimers.push(setTimeout(() => playEarTone(midiToFreq(rootMidi), 1.45), 120));
+    }
   } else {
-    setTimeout(() => replayCurrentEarQuestion(), 120);
+    earAudioTimers.push(setTimeout(() => replayCurrentEarQuestion(), 120));
   }
 }
 
@@ -16874,6 +17761,16 @@ function replayCurrentEarQuestion() {
   if (!q) return;
   if (state.earMode === 'chords') {
     playEarChordAudio(q.rootMidi, q.intervals, q.inversion);
+  } else if (state.earMode === 'scales') {
+    playEarScaleAudio(q.rootMidi, q.intervals, q.direction);
+  } else if (state.earMode === 'degrees') {
+    playEarCadenceAndDegree(q.rootMidi, q.targetMidi, q.tonality, state.earDegreeAutoCadence !== false);
+  } else if (state.earMode === 'dictation') {
+    playEarMotifAudio(q.motifMidis);
+  } else if (state.earMode === 'progressions') {
+    playEarProgressionAudio(q.rootMidi, q.stepIds, q.tonality);
+  } else if (state.earMode === 'play' && !state.earPlayHearTarget && !q.answered) {
+    playEarTone(midiToFreq(q.rootMidi), 1.45);
   } else {
     playEarIntervalAudio(q.rootMidi, q.targetMidi);
   }
@@ -16888,6 +17785,16 @@ function onEarLearnTileClick(semi) {
     rootMidi = ((state.earFixedOctave || 3) + 1) * 12 + state.earFixedRootPc;
   }
   const secondMidi = asc ? (rootMidi + semi) : (rootMidi - semi);
+  const ivObj = earIntervalsCatalog.find(iv => iv.semi === semi) || earIntervalsCatalog[0];
+  state.earLearnLastItem = {
+    rootMidi,
+    targetMidi: secondMidi,
+    semi,
+    asc,
+    name: ivObj.name,
+    code: ivObj.code,
+    hint: ivObj.hint
+  };
 
   if (state.earCompareMode) {
     state.earCompareSelection.push(semi);
@@ -16898,16 +17805,18 @@ function onEarLearnTileClick(semi) {
     if (state.earCompareSelection.length === 2) {
       const s1 = state.earCompareSelection[0];
       const s2 = state.earCompareSelection[1];
+      const gapMs = getEarTempoDelays().intervalMs + 850;
       playEarIntervalAudio(rootMidi, asc ? (rootMidi + s1) : (rootMidi - s1));
-      setTimeout(() => {
+      earAudioTimers.push(setTimeout(() => {
         playEarIntervalAudio(rootMidi, asc ? (rootMidi + s2) : (rootMidi - s2));
-      }, 1250);
+      }, gapMs));
     } else {
       playEarIntervalAudio(rootMidi, secondMidi);
     }
     return;
   }
 
+  renderStageAndInspector();
   playEarIntervalAudio(rootMidi, secondMidi);
 }
 
@@ -16917,9 +17826,45 @@ function toggleEarCompareMode() {
   renderStageAndInspector();
 }
 
+function auditionEarAnswerChoice(kind, key) {
+  const q = state.earCurrentQuestion;
+  if (!q || !q.answered) return;
+  if (kind === 'interval') {
+    const semi = Number(key);
+    const iv = earIntervalsCatalog.find(x => x.semi === semi);
+    const secondMidi = q.asc ? (q.rootMidi + semi) : (q.rootMidi - semi);
+    q.auditionLabel = `Odsłuch porównawczy: ${iv ? iv.name : semi} (${earFormatMidi(q.rootMidi)} → ${earFormatMidi(secondMidi)})`;
+    playEarIntervalAudio(q.rootMidi, secondMidi);
+  } else if (kind === 'chord') {
+    const ch = earChordsCatalog.find(c => c.id === key);
+    if (ch) {
+      q.auditionLabel = `Odsłuch porównawczy: ${ch.label} od ${earFormatMidi(q.rootMidi)}`;
+      playEarChordAudio(q.rootMidi, ch.intervals, q.inversion || 0);
+    }
+  } else if (kind === 'scale') {
+    const sc = earScalesCatalog.find(s => s.id === key);
+    if (sc) {
+      q.auditionLabel = `Odsłuch porównawczy: ${sc.name} od ${earFormatMidi(q.rootMidi)}`;
+      playEarScaleAudio(q.rootMidi, sc.intervals, q.direction);
+    }
+  } else if (kind === 'degree') {
+    const semi = Number(key);
+    const dg = earDegreesCatalog.find(d => d.semi === semi);
+    const degMidi = q.rootMidi + semi;
+    q.auditionLabel = `Odsłuch porównawczy: stopień ${dg ? dg.code : semi} (${earFormatMidi(degMidi)} na tle toniki ${earFormatPc(q.rootMidi)})`;
+    playEarTone(midiToFreq(degMidi), 1.25, 1.0);
+  }
+  const audEl = document.getElementById('earAuditionStatus');
+  if (audEl && q.auditionLabel) audEl.textContent = q.auditionLabel;
+}
+
 function submitEarIdentifyAnswer(guessedSemi) {
   const q = state.earCurrentQuestion;
-  if (!q || q.answered) return;
+  if (!q) return;
+  if (q.answered) {
+    auditionEarAnswerChoice('interval', guessedSemi);
+    return;
+  }
   q.answered = true;
   q.guessedSemi = guessedSemi;
   q.wasCorrect = (guessedSemi === q.semi);
@@ -16931,6 +17876,158 @@ function submitEarIdentifyAnswer(guessedSemi) {
     state.earStreak = 0;
   }
   recordEarRoundStat(q.semi, q.correctName, q.correctCode, q.wasCorrect);
+  renderStageAndInspector();
+}
+
+function submitEarScaleAnswer(scaleId) {
+  const q = state.earCurrentQuestion;
+  if (!q) return;
+  if (q.answered) {
+    auditionEarAnswerChoice('scale', scaleId);
+    return;
+  }
+  q.answered = true;
+  q.guessedScaleId = scaleId;
+  q.wasCorrect = (scaleId === q.scaleId);
+  state.earAttempts++;
+  if (q.wasCorrect) {
+    state.earScore++;
+    state.earStreak++;
+  } else {
+    state.earStreak = 0;
+  }
+  recordEarRoundStat(q.scaleId, q.correctName, q.correctCode, q.wasCorrect);
+  renderStageAndInspector();
+}
+
+function submitEarDegreeAnswer(semi) {
+  const q = state.earCurrentQuestion;
+  if (!q) return;
+  if (q.answered) {
+    auditionEarAnswerChoice('degree', semi);
+    return;
+  }
+  q.answered = true;
+  q.guessedSemi = semi;
+  q.wasCorrect = (semi === q.semi);
+  state.earAttempts++;
+  if (q.wasCorrect) {
+    state.earScore++;
+    state.earStreak++;
+  } else {
+    state.earStreak = 0;
+  }
+  recordEarRoundStat(q.semi, q.correctName, q.correctCode, q.wasCorrect);
+  renderStageAndInspector();
+}
+
+function submitEarDictationNote(midi, source = 'click') {
+  const q = state.earCurrentQuestion;
+  if (!q || state.earMode !== 'dictation') return;
+  const m = Math.round(Number(midi));
+  if (!Number.isFinite(m)) return;
+
+  if (source === 'click') {
+    playEarTone(midiToFreq(m), 0.72, 0.95);
+  }
+  if (q.answered) return;
+
+  if (source === 'live') {
+    const nowMs = performance.now();
+    if (nowMs - (state.earDictationLastLiveMs || 0) < 180) return;
+    state.earDictationLastLiveMs = nowMs;
+  }
+
+  q.userMidis.push(m);
+  if (q.userMidis.length >= q.motifMidis.length) {
+    q.answered = true;
+    q.wasCorrect = q.motifMidis.every((expM, idx) => ((q.userMidis[idx] % 12) + 12) % 12 === ((expM % 12) + 12) % 12);
+    state.earAttempts++;
+    if (q.wasCorrect) {
+      state.earScore++;
+      state.earStreak++;
+    } else {
+      state.earStreak = 0;
+    }
+    recordEarRoundStat(q.scaleId, q.scaleName, q.scaleCode, q.wasCorrect);
+  }
+  renderStageAndInspector();
+}
+
+function undoEarDictationNote() {
+  const q = state.earCurrentQuestion;
+  if (!q || q.answered || state.earMode !== 'dictation') return;
+  if (q.userMidis.length > 0) {
+    q.userMidis.pop();
+    renderStageAndInspector();
+  }
+}
+
+function clearEarDictationInput() {
+  const q = state.earCurrentQuestion;
+  if (!q || q.answered || state.earMode !== 'dictation') return;
+  q.userMidis = [];
+  renderStageAndInspector();
+}
+
+function revealEarDictationAnswer() {
+  const q = state.earCurrentQuestion;
+  if (!q || q.answered || state.earMode !== 'dictation') return;
+  q.answered = true;
+  q.wasCorrect = false;
+  state.earAttempts++;
+  state.earStreak = 0;
+  recordEarRoundStat(q.scaleId, q.scaleName, q.scaleCode, false);
+  playEarMotifAudio(q.motifMidis);
+  renderStageAndInspector();
+}
+
+function pickEarProgFunction(fnId) {
+  const q = state.earCurrentQuestion;
+  if (!q || state.earMode !== 'progressions') return;
+  if (q.answered) {
+    const fnDef = getEarProgFunctionDef(q.tonality, fnId);
+    clearEarAudioTimers();
+    playEarChordVoicingRaw(q.rootMidi + (fnDef.offset || 0), fnDef.intervals, 0.95);
+    return;
+  }
+  if (!Array.isArray(state.earProgUserSlots)) state.earProgUserSlots = [];
+  if (state.earProgUserSlots.length < 4) {
+    state.earProgUserSlots.push(fnId);
+    renderStageAndInspector();
+  }
+}
+
+function undoEarProgSlot() {
+  const q = state.earCurrentQuestion;
+  if (!q || q.answered || state.earMode !== 'progressions') return;
+  if (Array.isArray(state.earProgUserSlots) && state.earProgUserSlots.length > 0) {
+    state.earProgUserSlots.pop();
+    renderStageAndInspector();
+  }
+}
+
+function clearEarProgSlots() {
+  const q = state.earCurrentQuestion;
+  if (!q || q.answered || state.earMode !== 'progressions') return;
+  state.earProgUserSlots = [];
+  renderStageAndInspector();
+}
+
+function submitEarProgressionAnswer() {
+  const q = state.earCurrentQuestion;
+  if (!q || q.answered || state.earMode !== 'progressions') return;
+  if (!Array.isArray(state.earProgUserSlots) || state.earProgUserSlots.length < 4) return;
+  q.answered = true;
+  q.wasCorrect = q.stepIds.every((id, idx) => state.earProgUserSlots[idx] === id);
+  state.earAttempts++;
+  if (q.wasCorrect) {
+    state.earScore++;
+    state.earStreak++;
+  } else {
+    state.earStreak = 0;
+  }
+  recordEarRoundStat(q.progId, q.correctName, q.code, q.wasCorrect);
   renderStageAndInspector();
 }
 
@@ -16948,9 +18045,52 @@ function checkEarPlayGuitarMidi(playedMidi) {
   }
 }
 
+function handleEarLiveInputMidi(playedMidi) {
+  if (state.mainView !== 'ear' || state.earScreen !== 'active') return;
+  if (state.earMode === 'play') {
+    checkEarPlayGuitarMidi(playedMidi);
+  } else if (state.earMode === 'dictation') {
+    submitEarDictationNote(playedMidi, 'live');
+  } else if (state.earMode === 'rhythm' && state.earRhythmRunning) {
+    registerEarRhythmTap('guitar');
+  }
+}
+
+function skipEarPlayRound() {
+  const q = state.earCurrentQuestion;
+  if (!q || q.answered) return;
+  q.answered = true;
+  q.wasCorrect = false;
+  state.earAttempts++;
+  state.earStreak = 0;
+  recordEarRoundStat(q.semi, q.correctName, q.correctCode, false);
+  playEarIntervalAudio(q.rootMidi, q.targetMidi);
+  renderStageAndInspector();
+}
+
+function onEarChordTileClick(chordId) {
+  const q = state.earCurrentQuestion;
+  if (!q) return;
+  if (q.answered) {
+    auditionEarAnswerChoice('chord', chordId);
+    return;
+  }
+  state.earPickedChordId = chordId;
+  const activeInvs = [0, 1, 2, 3].filter(inv => state.earSelectedInversions.has(inv));
+  if (activeInvs.length <= 1) {
+    state.earPickedInversion = activeInvs[0] !== undefined ? activeInvs[0] : 0;
+    submitEarChordAnswer();
+    return;
+  }
+  renderStageAndInspector();
+}
+
 function submitEarChordAnswer() {
   const q = state.earCurrentQuestion;
   if (!q || q.answered) return;
+  if (!state.earPickedChordId) {
+    state.earPickedChordId = earChordsCatalog.find(c => state.earSelectedChords.has(c.id))?.id || 'major';
+  }
   q.answered = true;
   const invMatch = (state.earSelectedInversions.size <= 1) || (state.earPickedInversion === q.inversion);
   q.wasCorrect = (state.earPickedChordId === q.chordId) && invMatch;
@@ -16961,7 +18101,7 @@ function submitEarChordAnswer() {
   } else {
     state.earStreak = 0;
   }
-  recordEarRoundStat(q.chordId, q.correctName, '', q.wasCorrect);
+  recordEarRoundStat(q.chordId, q.correctName, q.formula || '', q.wasCorrect);
   renderStageAndInspector();
 }
 
@@ -16975,6 +18115,1739 @@ function nextEarActiveRound() {
   state.earRound++;
   generateNextEarQuestion();
   renderStageAndInspector();
+}
+
+// ===== TRENING RYTMICZNY / PODZIAŁÓW =====
+function initEarRhythmIdleState() {
+  const pat = earRhythmPatternsCatalog.find(p => p.id === state.earRhythmPatternId) || earRhythmPatternsCatalog[1];
+  const bars = Math.max(2, Math.min(8, Number(state.earRhythmBars) || 4));
+  const bpm = Math.max(40, Math.min(200, Number(state.earRhythmBpm) || 90));
+  const slots = [];
+  for (let bar = 0; bar < bars; bar++) {
+    pat.offsets.forEach((off, idx) => {
+      slots.push({
+        idx: slots.length,
+        bar,
+        label: pat.labels[idx] || String(idx + 1),
+        beatOffset: bar * 4 + off,
+        expectedMs: 0,
+        matched: false,
+        deltaMs: null,
+        status: ''
+      });
+    });
+  }
+  state.earRhythmState = {
+    patternId: pat.id,
+    patternName: pat.name,
+    patternCode: pat.code,
+    bpm,
+    bars,
+    beatMs: 60000 / bpm,
+    countInBeat: 0,
+    finished: false,
+    lastVerdictText: 'Gotowy — kliknij Start lub naciśnij Spację',
+    lastVerdictCls: '',
+    lastTapMs: 0,
+    hits: [],
+    slots
+  };
+}
+
+function recordEarRhythmSummaryStats() {
+  const rs = state.earRhythmState;
+  if (!rs || rs.statsRecorded) return;
+  rs.statsRecorded = true;
+  const total = Math.max(1, rs.slots.length);
+  const okCount = rs.slots.filter(s => s.status === 'perfect' || s.status === 'close').length;
+  state.earScore = okCount;
+  state.earAttempts = total;
+  let curStreak = 0;
+  let best = 0;
+  rs.slots.forEach(s => {
+    if (s.status === 'perfect' || s.status === 'close') {
+      curStreak++;
+      if (curStreak > best) best = curStreak;
+    } else {
+      curStreak = 0;
+    }
+  });
+  state.earStreak = curStreak;
+  state.earBestStreak = best;
+  const absDeltas = rs.hits.map(h => Math.abs(h.deltaMs));
+  const avgMs = absDeltas.length > 0 ? Math.round(absDeltas.reduce((a, b) => a + b, 0) / absDeltas.length) : 120;
+  state.earReactionTimesMs = absDeltas.length > 0 ? absDeltas : [120];
+  state.earHistory = [{
+    key: rs.patternId,
+    name: `${rs.patternName} (${rs.bpm} BPM)`,
+    code: rs.patternCode,
+    correct: okCount,
+    total,
+    totalMs: avgMs * total
+  }];
+  saveEarPersistentStat('rhythm', rs.patternId, rs.patternName, rs.patternCode, (okCount / total) >= 0.7, avgMs);
+}
+
+function startEarRhythmRun() {
+  clearEarAudioTimers();
+  initEarRhythmIdleState();
+  const rs = state.earRhythmState;
+  const beatMs = rs.beatMs;
+  const now = performance.now();
+  const countInTotalMs = 4 * beatMs;
+  const practiceStartMs = now + countInTotalMs;
+  rs.practiceStartMs = practiceStartMs;
+  rs.slots.forEach(s => {
+    s.expectedMs = practiceStartMs + s.beatOffset * beatMs;
+  });
+  state.earRhythmRunning = true;
+
+  // Odliczanie 4 uderzeń + metronom na całej długości ćwiczenia
+  for (let b = 0; b < 4; b++) {
+    earRhythmTickTimers.push(setTimeout(() => {
+      if (!state.earRhythmRunning || state.earRhythmState !== rs) return;
+      rs.countInBeat = b + 1;
+      rs.lastVerdictText = `Odliczanie: ${b + 1} / 4`;
+      rs.lastVerdictCls = '';
+      if (typeof playMetronomeTickAudio === 'function') playMetronomeTickAudio(b === 0);
+      updateEarRhythmLiveDom();
+    }, Math.round(b * beatMs)));
+  }
+
+  const totalBeats = rs.bars * 4;
+  for (let b = 0; b < totalBeats; b++) {
+    earRhythmTickTimers.push(setTimeout(() => {
+      if (!state.earRhythmRunning || state.earRhythmState !== rs) return;
+      rs.countInBeat = 0;
+      if (b === 0) {
+        rs.lastVerdictText = 'GRAJ TERAZ!';
+        rs.lastVerdictCls = 'perfect';
+      }
+      if (typeof playMetronomeTickAudio === 'function') playMetronomeTickAudio((b % 4) === 0);
+      updateEarRhythmLiveDom();
+    }, Math.round(countInTotalMs + b * beatMs)));
+  }
+
+  if (state.earRhythmGuideSound) {
+    rs.slots.filter(s => s.bar === 0).forEach(s => {
+      earRhythmTickTimers.push(setTimeout(() => {
+        if (!state.earRhythmRunning || state.earRhythmState !== rs) return;
+        if (typeof playDrumHit === 'function') playDrumHit('hihat', 0.35);
+      }, Math.max(0, Math.round(s.expectedMs - now))));
+    });
+  }
+
+  const endDelay = Math.round(countInTotalMs + totalBeats * beatMs + 180);
+  earRhythmTickTimers.push(setTimeout(() => {
+    if (!state.earRhythmRunning || state.earRhythmState !== rs) return;
+    stopEarRhythmLoop();
+    rs.finished = true;
+    rs.slots.forEach(s => {
+      if (!s.matched) s.status = 'miss';
+    });
+    recordEarRhythmSummaryStats();
+    renderStageAndInspector();
+  }, endDelay));
+
+  renderStageAndInspector();
+}
+
+function registerEarRhythmTap(source = 'keyboard', customPerfMs = null) {
+  const rs = state.earRhythmState;
+  if (!rs || !state.earRhythmRunning) return false;
+  const tapMs = (customPerfMs !== null && Number.isFinite(Number(customPerfMs))) ? Number(customPerfMs) : performance.now();
+  const minGap = (source === 'guitar') ? 95 : 70;
+  if (customPerfMs === null && (tapMs - (rs.lastTapMs || 0)) < minGap) return false;
+  rs.lastTapMs = tapMs;
+
+  let bestSlot = null;
+  let bestAbs = 1e9;
+  const maxWin = Math.max(150, Math.min(260, rs.beatMs * 0.45));
+  for (const s of rs.slots) {
+    if (s.matched) continue;
+    const abs = Math.abs(tapMs - s.expectedMs);
+    if (abs < bestAbs && abs <= maxWin) {
+      bestAbs = abs;
+      bestSlot = s;
+    }
+  }
+  if (!bestSlot) {
+    rs.lastVerdictText = 'Poza siatką podziału';
+    rs.lastVerdictCls = 'early';
+    updateEarRhythmLiveDom();
+    return false;
+  }
+
+  const deltaMs = Math.round(tapMs - bestSlot.expectedMs);
+  let status = 'miss';
+  let cls = deltaMs < 0 ? 'early' : 'late';
+  let txt = `${deltaMs > 0 ? '+' : ''}${deltaMs} ms (${deltaMs < 0 ? 'za wcześnie' : 'za późno'})`;
+  if (Math.abs(deltaMs) <= 30) {
+    status = 'perfect';
+    cls = 'perfect';
+    txt = `✔ W punkt (${deltaMs > 0 ? '+' : ''}${deltaMs} ms)`;
+  } else if (Math.abs(deltaMs) <= 65) {
+    status = 'close';
+    cls = 'close';
+    txt = `≈ Blisko (${deltaMs > 0 ? '+' : ''}${deltaMs} ms)`;
+  }
+
+  bestSlot.matched = true;
+  bestSlot.deltaMs = deltaMs;
+  bestSlot.status = status;
+  rs.hits.push({ idx: bestSlot.idx, deltaMs, status, source });
+  rs.lastVerdictText = txt;
+  rs.lastVerdictCls = cls;
+  updateEarRhythmLiveDom();
+  return true;
+}
+
+function renderEarRhythmTimingSvg(hits) {
+  const w = 440;
+  const h = 74;
+  const midX = w / 2;
+  const clampMs = 120;
+  const scaleX = (ms) => midX + (Math.max(-clampMs, Math.min(clampMs, ms)) / clampMs) * (w * 0.43);
+  const perfectLeft = scaleX(-30);
+  const perfectW = scaleX(30) - perfectLeft;
+
+  const avgDelta = hits && hits.length > 0
+    ? Math.round(hits.reduce((a, x) => a + x.deltaMs, 0) / hits.length)
+    : 0;
+  const avgAbs = hits && hits.length > 0
+    ? Math.round(hits.reduce((a, x) => a + Math.abs(x.deltaMs), 0) / hits.length)
+    : 0;
+
+  let dotsSvg = '';
+  (hits || []).slice(-24).forEach((hit, idx, arr) => {
+    const cx = scaleX(hit.deltaMs);
+    const cy = 22 + (idx % 3) * 11;
+    const col = hit.status === 'perfect' ? 'var(--green)' : (hit.status === 'close' ? 'var(--yellow)' : 'var(--red)');
+    const op = (0.45 + 0.55 * ((idx + 1) / Math.max(1, arr.length))).toFixed(2);
+    dotsSvg += `<circle cx="${cx.toFixed(1)}" cy="${cy}" r="5.5" fill="${col}" opacity="${op}" stroke="var(--bg-main)" stroke-width="1"/>`;
+  });
+
+  return `
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;max-width:${w}px;height:auto;display:block;margin:0 auto;" role="img" aria-label="Wykres odchyłek rytmicznych">
+      <rect x="${perfectLeft.toFixed(1)}" y="10" width="${perfectW.toFixed(1)}" height="42" rx="6" fill="rgba(74, 222, 128, 0.12)" stroke="rgba(74, 222, 128, 0.35)" stroke-width="1"/>
+      <line x1="20" y1="32" x2="${w - 20}" y2="32" stroke="var(--border)" stroke-width="1.5"/>
+      <line x1="${midX}" y1="8" x2="${midX}" y2="54" stroke="var(--accent)" stroke-width="2" stroke-dasharray="3 3"/>
+      ${dotsSvg}
+      <text x="20" y="66" fill="var(--text-muted)" font-size="10" font-weight="700">-120 ms (wcześnie)</text>
+      <text x="${midX}" y="66" text-anchor="middle" fill="var(--accent)" font-size="10" font-weight="800">0 ms · śr. ${avgDelta > 0 ? '+' : ''}${avgDelta} ms (±${avgAbs} ms)</text>
+      <text x="${w - 20}" y="66" text-anchor="end" fill="var(--text-muted)" font-size="10" font-weight="700">+120 ms (późno)</text>
+    </svg>`;
+}
+
+function buildEarRhythmSlotsInnerHtml(rs) {
+  if (!rs) return '';
+  return rs.slots.map(s => {
+    const cls = s.status === 'perfect' ? 'hit-perfect' : (s.status === 'close' ? 'hit-close' : (s.status === 'miss' || s.status === 'early' || s.status === 'late' ? 'hit-miss' : ''));
+    return `<div class="et-rhythm-beat ${cls}"><span>${s.label}</span>${s.deltaMs !== null ? `<span style="font-size:9px;">${s.deltaMs > 0 ? '+' : ''}${s.deltaMs}</span>` : ''}</div>`;
+  }).join('');
+}
+
+function updateEarRhythmLiveDom() {
+  const rs = state.earRhythmState;
+  if (!rs) return;
+  const vEl = document.getElementById('earRhythmVerdict');
+  if (vEl) {
+    vEl.textContent = rs.lastVerdictText;
+    vEl.className = `et-timing-verdict ${rs.lastVerdictCls || ''}`;
+  }
+  const sWrap = document.getElementById('earRhythmSlotsWrap');
+  if (sWrap) sWrap.innerHTML = buildEarRhythmSlotsInnerHtml(rs);
+  const gWrap = document.getElementById('earRhythmOffsetSvgWrap');
+  if (gWrap) gWrap.innerHTML = renderEarRhythmTimingSvg(rs.hits);
+}
+
+function pickBestEarFretPositions(openMidis, desiredMidis, preferFret = 5) {
+  let bestWinStart = 0;
+  let bestScore = -1e9;
+  for (let ws = 0; ws <= 11; ws++) {
+    const we = ws + 6;
+    let exactHits = 0;
+    let pcHits = 0;
+    for (const dm of desiredMidis) {
+      let hasExact = false;
+      let hasPc = false;
+      for (const om of openMidis) {
+        const fret = dm - om;
+        if (fret >= ws && fret <= we) { hasExact = true; break; }
+        for (let f = ws; f <= we; f++) {
+          if (((om + f) % 12) === (((dm % 12) + 12) % 12)) { hasPc = true; break; }
+        }
+      }
+      if (hasExact) exactHits++;
+      else if (hasPc) pcHits++;
+    }
+    const distPen = Math.abs((ws + 2) - preferFret) * 0.2;
+    const score = exactHits * 10 + pcHits * 4 - distPen;
+    if (score > bestScore) {
+      bestScore = score;
+      bestWinStart = ws;
+    }
+  }
+  return bestWinStart;
+}
+
+function renderEarMiniFretboardSvg({ kind = 'interval', rootMidi = 52, targetMidis = [], scaleIntervals = null, showOnlyRoot = false, clickAction = null, highlightMidis = [] }) {
+  const nStr = (typeof getActiveStringCount === 'function') ? getActiveStringCount() : 6;
+  const openAll = Array.isArray(state.customStringMidis) ? state.customStringMidis : [40, 45, 50, 55, 59, 64];
+  const openMidis = openAll.slice(0, nStr);
+  const rootPc = ((rootMidi % 12) + 12) % 12;
+
+  const allWant = [rootMidi].concat(showOnlyRoot ? [] : (targetMidis || [])).concat(highlightMidis || []);
+  const winStart = pickBestEarFretPositions(openMidis, allWant, 4);
+  const numCols = 7;
+  const winEnd = winStart + numCols - 1;
+
+  const padL = 34;
+  const padR = 16;
+  const padT = 18;
+  const padB = 26;
+  const fretW = 54;
+  const strGap = 24;
+  const svgW = padL + numCols * fretW + padR;
+  const svgH = padT + Math.max(1, nStr - 1) * strGap + padB;
+
+  const hiPcSet = new Set((highlightMidis || []).map(m => ((m % 12) + 12) % 12));
+  const dots = [];
+  if (kind === 'scale' && Array.isArray(scaleIntervals) && !showOnlyRoot) {
+    const scalePcSet = new Set(scaleIntervals.map(iv => ((rootPc + iv) % 12 + 12) % 12));
+    for (let sIdx = 0; sIdx < nStr; sIdx++) {
+      for (let f = winStart; f <= winEnd; f++) {
+        const midi = openMidis[sIdx] + f;
+        const pc = ((midi % 12) + 12) % 12;
+        if (scalePcSet.has(pc)) {
+          dots.push({ sIdx, fret: f, midi, isRoot: pc === rootPc, isHi: hiPcSet.has(pc), label: earFormatPc(pc) });
+        }
+      }
+    }
+  } else {
+    const usedStrings = new Set();
+    const pickVoice = (wantMidi, isRoot) => {
+      let best = null;
+      let bestCost = 1e9;
+      for (let sIdx = 0; sIdx < nStr; sIdx++) {
+        for (let f = winStart; f <= winEnd; f++) {
+          const midi = openMidis[sIdx] + f;
+          if (((midi % 12) + 12) % 12 !== ((wantMidi % 12) + 12) % 12) continue;
+          const octDiff = Math.abs(midi - wantMidi);
+          const reusedPen = usedStrings.has(sIdx) ? 18 : 0;
+          const cost = octDiff * 2 + reusedPen + Math.abs(f - (winStart + 2)) * 0.4;
+          if (cost < bestCost) {
+            bestCost = cost;
+            best = { sIdx, fret: f, midi, isRoot, isHi: false, label: earFormatPc(midi) };
+          }
+        }
+      }
+      if (best) {
+        usedStrings.add(best.sIdx);
+        dots.push(best);
+      }
+    };
+    pickVoice(rootMidi, true);
+    if (!showOnlyRoot) {
+      for (const tm of (targetMidis || [])) {
+        if (((tm % 12) + 12) % 12 === rootPc && tm === rootMidi) continue;
+        pickVoice(tm, false);
+      }
+    }
+  }
+
+  let linesSvg = '';
+  for (let sIdx = 0; sIdx < nStr; sIdx++) {
+    const row = (nStr - 1) - sIdx;
+    const y = padT + row * strGap;
+    const thick = 1.0 + (nStr - 1 - sIdx) * 0.28;
+    const strLbl = earFormatPc(openMidis[sIdx]);
+    linesSvg += `<text x="12" y="${y + 4}" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-weight="700">${strLbl}</text>`;
+    linesSvg += `<line x1="${padL}" y1="${y}" x2="${padL + numCols * fretW}" y2="${y}" stroke="var(--border)" stroke-width="${thick.toFixed(2)}"/>`;
+  }
+
+  let fretsSvg = '';
+  for (let c = 0; c <= numCols; c++) {
+    const x = padL + c * fretW;
+    const isNut = (c === 0 && winStart === 0);
+    fretsSvg += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + (nStr - 1) * strGap}" stroke="${isNut ? 'var(--text)' : 'var(--border)'}" stroke-width="${isNut ? 4 : 1.2}"/>`;
+    if (c < numCols) {
+      const fNum = winStart + c;
+      const cx = padL + c * fretW + fretW * 0.5;
+      fretsSvg += `<text x="${cx}" y="${svgH - 7}" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-weight="700">${fNum === 0 ? '0' : fNum}</text>`;
+    }
+  }
+
+  let dotsSvg = '';
+  const isLight = (typeof isLightTheme === 'function') ? isLightTheme() : false;
+  for (const d of dots) {
+    const row = (nStr - 1) - d.sIdx;
+    const cy = padT + row * strGap;
+    const cx = padL + (d.fret - winStart) * fretW + fretW * 0.5;
+    const fill = d.isRoot ? 'var(--accent)' : (d.isHi ? 'var(--yellow)' : 'var(--green)');
+    const textFill = (d.isRoot && isLight) ? '#ffffff' : '#120d08';
+    const onClickJs = (clickAction === 'dictation')
+      ? `submitEarDictationNote(${d.midi}, 'click')`
+      : `playEarTone(midiToFreq(${d.midi}), 1.15)`;
+    dotsSvg += `
+      <g style="cursor:pointer;" onclick="${onClickJs}">
+        <circle cx="${cx}" cy="${cy}" r="11.5" fill="${fill}" stroke="var(--bg-main)" stroke-width="1.5"/>
+        <text x="${cx}" y="${cy + 3.8}" text-anchor="middle" fill="${textFill}" font-size="10" font-weight="800">${d.label}</text>
+      </g>`;
+  }
+
+  return `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;max-width:${svgW}px;height:auto;display:block;margin:0 auto;" role="img" aria-label="Pozycja na gryfie">${linesSvg}${fretsSvg}${dotsSvg}</svg>`;
+}
+
+function handleEarKeyDown(e) {
+  if (state.mainView !== 'ear' || state.earScreen !== 'active') return false;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
+  const key = (e.key || '').toLowerCase();
+
+  if (key === 'escape') {
+    e.preventDefault();
+    exitEarActiveSession();
+    return true;
+  }
+  if (key === ' ') {
+    e.preventDefault();
+    if (state.earMode === 'rhythm') {
+      if (state.earRhythmRunning) {
+        registerEarRhythmTap('keyboard');
+      } else {
+        startEarRhythmRun();
+      }
+    } else if (state.earMode === 'learn') {
+      if (state.earLearnLastItem) {
+        playEarIntervalAudio(state.earLearnLastItem.rootMidi, state.earLearnLastItem.targetMidi);
+      }
+    } else {
+      replayCurrentEarQuestion();
+    }
+    return true;
+  }
+  if (key === 'backspace') {
+    if (state.earMode === 'dictation') {
+      e.preventDefault();
+      undoEarDictationNote();
+      return true;
+    }
+    if (state.earMode === 'progressions') {
+      e.preventDefault();
+      undoEarProgSlot();
+      return true;
+    }
+    return false;
+  }
+  if (key === 'enter') {
+    if (state.earMode === 'learn') return false;
+    e.preventDefault();
+    if (state.earMode === 'rhythm') {
+      if (state.earRhythmState && state.earRhythmState.finished) {
+        finishEarSessionEarly();
+      } else {
+        startEarRhythmRun();
+      }
+      return true;
+    }
+    const q = state.earCurrentQuestion;
+    if (!q) return true;
+    if (q.answered) {
+      nextEarActiveRound();
+    } else if (state.earMode === 'chords') {
+      submitEarChordAnswer();
+    } else if (state.earMode === 'progressions' && Array.isArray(state.earProgUserSlots) && state.earProgUserSlots.length === 4) {
+      submitEarProgressionAnswer();
+    }
+    return true;
+  }
+
+  if (state.earMode === 'play' || state.earMode === 'dictation' || state.earMode === 'rhythm') return false;
+  const keySlots = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
+  const slotIdx = keySlots.indexOf(key);
+  if (slotIdx === -1) return false;
+
+  if (state.earMode === 'identify') {
+    const items = earIntervalsCatalog.filter(iv => state.earSelectedSemis.has(iv.semi));
+    if (items[slotIdx]) {
+      e.preventDefault();
+      submitEarIdentifyAnswer(items[slotIdx].semi);
+      return true;
+    }
+  } else if (state.earMode === 'learn') {
+    const items = earIntervalsCatalog.filter(iv => state.earSelectedSemis.has(iv.semi));
+    if (items[slotIdx]) {
+      e.preventDefault();
+      onEarLearnTileClick(items[slotIdx].semi);
+      return true;
+    }
+  } else if (state.earMode === 'chords') {
+    const items = earChordsCatalog.filter(c => state.earSelectedChords.has(c.id));
+    if (items[slotIdx]) {
+      e.preventDefault();
+      onEarChordTileClick(items[slotIdx].id);
+      return true;
+    }
+  } else if (state.earMode === 'scales') {
+    const items = earScalesCatalog.filter(s => state.earSelectedScales.has(s.id));
+    if (items[slotIdx]) {
+      e.preventDefault();
+      submitEarScaleAnswer(items[slotIdx].id);
+      return true;
+    }
+  } else if (state.earMode === 'degrees') {
+    const items = earDegreesCatalog.filter(d => state.earSelectedDegrees.has(d.semi));
+    if (items[slotIdx]) {
+      e.preventDefault();
+      submitEarDegreeAnswer(items[slotIdx].semi);
+      return true;
+    }
+  } else if (state.earMode === 'progressions') {
+    const q = state.earCurrentQuestion;
+    const tonality = q ? q.tonality : 'major';
+    const items = (tonality === 'minor') ? earProgFunctionsMinor : earProgFunctionsMajor;
+    if (items[slotIdx]) {
+      e.preventDefault();
+      pickEarProgFunction(items[slotIdx].id);
+      return true;
+    }
+  }
+  return false;
+}
+
+function renderEarConfigHtml() {
+  const isChords = state.earMode === 'chords';
+  const isScales = state.earMode === 'scales';
+  const isPlay = state.earMode === 'play';
+  const isDegrees = state.earMode === 'degrees';
+  const isDictation = state.earMode === 'dictation';
+  const isProgressions = state.earMode === 'progressions';
+  const isRhythm = state.earMode === 'rhythm';
+
+  const baseNoteLabels = (typeof getRootLabels === 'function')
+    ? getRootLabels()
+    : ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const tuningSummary = getEarTuningSummary();
+  const curModeMeta = earModeMeta[state.earMode] || earModeMeta.identify;
+  const weakPersistent = getEarWeakListForMode(state.earMode);
+
+  let selectedLabel = '';
+  if (isChords) selectedLabel = `${state.earSelectedChords.size} akordów`;
+  else if (isScales) selectedLabel = `${state.earSelectedScales.size} skal`;
+  else if (isDegrees) selectedLabel = `${state.earSelectedDegrees.size} stopni`;
+  else if (isDictation) selectedLabel = `${state.earDictationLength || 4} nuty w motywie`;
+  else if (isProgressions) selectedLabel = `${state.earSelectedProgressions.size} progresji`;
+  else if (isRhythm) {
+    const rPat = earRhythmPatternsCatalog.find(p => p.id === state.earRhythmPatternId) || earRhythmPatternsCatalog[1];
+    selectedLabel = `${rPat.code} · ${state.earRhythmBpm || 90} BPM`;
+  } else selectedLabel = `${state.earSelectedSemis.size} interwałów`;
+
+  const modeOrder = ['identify', 'learn', 'play', 'chords', 'scales', 'degrees', 'dictation', 'progressions', 'rhythm'];
+  const modeTabsHtml = modeOrder.map(mid => {
+    const m = earModeMeta[mid];
+    return `<button class="et-mode-tab ${state.earMode === mid ? 'active' : ''}"
+                    onclick="state.earMode='${mid}';${mid === 'chords' ? "state.earPlaybackStyle='harmonic';" : ''}renderStageAndInspector()">
+              <span>${m.icon}</span><span>${m.short}</span>
+            </button>`;
+  }).join('');
+
+  let materialHtml = '';
+  if (isChords) {
+    const renderChordGroup = (title, group) => {
+      const list = earChordsCatalog.filter(c => c.group === group);
+      return `
+        <div>
+          <div class="section-label" style="margin-bottom:6px;">${title}</div>
+          <div class="et-tile-grid">
+            ${list.map(c => `
+              <div class="et-tile ${state.earSelectedChords.has(c.id) ? 'selected' : ''}"
+                   onclick="toggleEarChordTile('${c.id}')">
+                <div class="et-tile-top">
+                  <span class="et-tile-code">${c.label}</span>
+                  <button type="button" class="et-tile-play" title="Posłuchaj brzmienia"
+                          onclick="previewEarConfigItem('chord','${c.id}',event)">🔊</button>
+                </div>
+                <div class="et-tile-name">${c.label}</div>
+                <div class="et-tile-meta">${c.formula}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+    };
+    materialHtml = `
+      <div class="et-card">
+        <div class="et-card-head">
+          <h3>Akordy i przewroty (${state.earSelectedChords.size} wybranych)</h3>
+          <div class="et-preset-bar">
+            <button class="et-preset-chip" onclick="applyEarPreset('triads')">Trójdźwięki</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('sus')">Sus</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('sevenths')">Septymowe</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('all')">Wszystkie</button>
+            <button class="et-preset-chip" onclick="randomizeEarMaterial()">🎲 Losuj</button>
+          </div>
+        </div>
+        ${renderChordGroup('TRÓJDŹWIĘKI', 'triad')}
+        ${renderChordGroup('ZAWIESZONE (SUS)', 'sus')}
+        ${renderChordGroup('CZTERODŹWIĘKI / SEPTYMOWE', 'seventh')}
+        <div>
+          <div class="section-label" style="margin-bottom:6px;">PRZEWROTY W PYTANIACH</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+            ${['Zasadnicza', '1. przewrót', '2. przewrót', '3. przewrót'].map((lbl, invIdx) => `
+              <button class="chip-btn ${state.earSelectedInversions.has(invIdx) ? 'active' : ''}"
+                      style="padding:9px 8px;font-size:12px;"
+                      onclick="toggleEarInversionTile(${invIdx})">${lbl}</button>
+            `).join('')}
+          </div>
+        </div>
+      </div>`;
+  } else if (isScales) {
+    materialHtml = `
+      <div class="et-card">
+        <div class="et-card-head">
+          <h3>Skale i tryby (${state.earSelectedScales.size} wybranych)</h3>
+          <div class="et-preset-bar">
+            <button class="et-preset-chip" onclick="applyEarPreset('basic')">Podstawowe</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('modes')">Tryby</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('rock_blues')">Rock / Blues</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('all')">Wszystkie</button>
+            <button class="et-preset-chip" onclick="randomizeEarMaterial()">🎲 Losuj</button>
+          </div>
+        </div>
+        <div class="et-tile-grid">
+          ${earScalesCatalog.map(sc => `
+            <div class="et-tile ${state.earSelectedScales.has(sc.id) ? 'selected' : ''}"
+                 onclick="toggleEarScaleTile('${sc.id}')">
+              <div class="et-tile-top">
+                <span class="et-tile-code">${sc.code}</span>
+                <button type="button" class="et-tile-play" title="Posłuchaj skali"
+                        onclick="previewEarConfigItem('scale','${sc.id}',event)">🔊</button>
+              </div>
+              <div class="et-tile-name">${sc.name}</div>
+              <div class="et-tile-meta">${sc.formula}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  } else if (isDegrees) {
+    materialHtml = `
+      <div class="et-card">
+        <div class="et-card-head">
+          <h3>Stopnie w tonacji (${state.earSelectedDegrees.size}/12)</h3>
+          <div class="et-preset-bar">
+            <button class="et-preset-chip" onclick="applyEarPreset('deg_major')">Diatoniczne Dur (7)</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('deg_minor')">Diatoniczne Moll (7)</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('deg_pent')">Pentatonika (5)</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('deg_all')">Wszystkie (12)</button>
+            <button class="et-preset-chip" onclick="randomizeEarMaterial()">🎲 Losuj</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span class="section-label" style="margin:0;">KADENCJA KONTEKSTU:</span>
+          <div class="ear-seg-row" style="max-width:260px;flex:1;">
+            <button class="ear-seg-btn ${state.earDegreeTonality === 'major' ? 'active' : ''}"
+                    onclick="state.earDegreeTonality='major';renderStageAndInspector()">Durowa (I–IV–V–I)</button>
+            <button class="ear-seg-btn ${state.earDegreeTonality === 'minor' ? 'active' : ''}"
+                    onclick="state.earDegreeTonality='minor';renderStageAndInspector()">Molowa (i–iv–V–i)</button>
+          </div>
+        </div>
+        <div class="et-tile-grid">
+          ${earDegreesCatalog.map(dg => `
+            <div class="et-tile ${state.earSelectedDegrees.has(dg.semi) ? 'selected' : ''}"
+                 onclick="toggleEarDegreeTile(${dg.semi})">
+              <div class="et-tile-top">
+                <span class="et-tile-code">${dg.code}</span>
+                <button type="button" class="et-tile-play" title="Posłuchaj stopnia"
+                        onclick="previewEarConfigItem('degree',${dg.semi},event)">🔊</button>
+              </div>
+              <div class="et-tile-name">${dg.name}</div>
+              <div class="et-tile-meta">${dg.role}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  } else if (isDictation) {
+    const dictScales = earScalesCatalog.filter(s => earDictationScaleIds.includes(s.id));
+    materialHtml = `
+      <div class="et-card">
+        <div class="et-card-head">
+          <h3>Skala i długość motywu</h3>
+          <span class="et-badge accent">${state.earDictationLength || 4} nuty na frazę</span>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:6px;">DŁUGOŚĆ MOTYWU</div>
+          <div class="ear-seg-row" style="max-width:340px;">
+            ${[3, 4, 5].map(len => `
+              <button class="ear-seg-btn ${(state.earDictationLength || 4) === len ? 'active' : ''}"
+                      onclick="state.earDictationLength=${len};renderStageAndInspector()">${len} nuty</button>
+            `).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:6px;">WYBIERZ SKALĘ DO DYKTANDA</div>
+          <div class="et-tile-grid">
+            ${dictScales.map(sc => `
+              <div class="et-tile ${state.earDictationScaleId === sc.id ? 'selected' : ''}"
+                   onclick="state.earDictationScaleId='${sc.id}';renderStageAndInspector()">
+                <div class="et-tile-top">
+                  <span class="et-tile-code">${sc.code}</span>
+                  <button type="button" class="et-tile-play" title="Posłuchaj skali"
+                          onclick="previewEarConfigItem('scale','${sc.id}',event)">🔊</button>
+                </div>
+                <div class="et-tile-name">${sc.name}</div>
+                <div class="et-tile-meta">${sc.formula}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>`;
+  } else if (isProgressions) {
+    materialHtml = `
+      <div class="et-card">
+        <div class="et-card-head">
+          <h3>Progresje harmoniczne (${state.earSelectedProgressions.size}/12)</h3>
+          <div class="et-preset-bar">
+            <button class="et-preset-chip" onclick="applyEarPreset('prog_major')">Durowe</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('prog_minor')">Molowe</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('prog_pop_rock')">Pop / Rock</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('prog_jazz')">Jazz / Blues</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('prog_all')">Wszystkie</button>
+            <button class="et-preset-chip" onclick="randomizeEarMaterial()">🎲 Losuj</button>
+          </div>
+        </div>
+        <div class="et-tile-grid">
+          ${earProgressionsCatalog.map(pr => `
+            <div class="et-tile ${state.earSelectedProgressions.has(pr.id) ? 'selected' : ''}"
+                 onclick="toggleEarProgressionTile('${pr.id}')">
+              <div class="et-tile-top">
+                <span class="et-tile-code">${pr.tonality === 'minor' ? 'MOLL' : 'DUR'}</span>
+                <button type="button" class="et-tile-play" title="Posłuchaj progresji"
+                        onclick="previewEarConfigItem('progression','${pr.id}',event)">🔊</button>
+              </div>
+              <div class="et-tile-name">${pr.name}</div>
+              <div class="et-tile-meta">${pr.code}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  } else if (isRhythm) {
+    materialHtml = `
+      <div class="et-card">
+        <div class="et-card-head">
+          <h3>Podziały rytmiczne i groove</h3>
+          <span class="et-badge accent">${state.earRhythmBpm || 90} BPM · ${state.earRhythmBars || 4} takty</span>
+        </div>
+        <div class="et-tile-grid">
+          ${earRhythmPatternsCatalog.map(pat => `
+            <div class="et-tile ${state.earRhythmPatternId === pat.id ? 'selected' : ''}"
+                 onclick="state.earRhythmPatternId='${pat.id}';renderStageAndInspector()">
+              <div class="et-tile-top">
+                <span class="et-tile-code">${pat.code}</span>
+                <button type="button" class="et-tile-play" title="Posłuchaj przykładu rytmu"
+                        onclick="previewEarRhythmPattern('${pat.id}',event)">🔊</button>
+              </div>
+              <div class="et-tile-name">${pat.name}</div>
+              <div class="et-tile-meta">${pat.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  } else {
+    materialHtml = `
+      <div class="et-card">
+        <div class="et-card-head">
+          <h3>Interwały do treningu (${state.earSelectedSemis.size}/13)</h3>
+          <div class="et-preset-bar">
+            <button class="et-preset-chip" onclick="applyEarPreset('basic')">Podstawowe (6)</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('diatonic')">Diatoniczne (8)</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('rock_blues')">Rock / Blues (7)</button>
+            <button class="et-preset-chip" onclick="applyEarPreset('all')">Pełna oktawa (13)</button>
+            <button class="et-preset-chip" onclick="randomizeEarMaterial()">🎲 Losuj</button>
+          </div>
+        </div>
+        <div class="et-tile-grid">
+          ${earIntervalsCatalog.map(iv => `
+            <div class="et-tile ${state.earSelectedSemis.has(iv.semi) ? 'selected' : ''}"
+                 onclick="toggleEarIntervalTile(${iv.semi})">
+              <div class="et-tile-top">
+                <span class="et-tile-code">${iv.code}</span>
+                <button type="button" class="et-tile-play" title="Posłuchaj interwału"
+                        onclick="previewEarConfigItem('interval',${iv.semi},event)">🔊</button>
+              </div>
+              <div class="et-tile-name">${iv.name}</div>
+              <div class="et-tile-meta">${iv.semisLabel}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  const showDirectionOption = (!isChords && !isScales && !isDegrees && !isDictation && !isProgressions && !isRhythm && state.earPlaybackStyle !== 'harmonic');
+
+  const soundCardHtml = isRhythm ? `
+    <div class="et-card">
+      <div class="et-card-head">
+        <h3>Metronom i tempo rytmiczne</h3>
+        <span class="et-badge">${state.earRhythmBpm || 90} BPM</span>
+      </div>
+      <div>
+        <div class="section-label">TEMPO (BPM)</div>
+        <div class="ear-seg-row" style="margin-bottom:8px;">
+          ${[60, 75, 90, 110, 130].map(b => `
+            <button class="ear-seg-btn ${state.earRhythmBpm === b ? 'active' : ''}"
+                    onclick="state.earRhythmBpm=${b};renderStageAndInspector()">${b}</button>
+          `).join('')}
+        </div>
+        <input type="range" min="45" max="170" value="${state.earRhythmBpm || 90}" style="width:100%;"
+               oninput="state.earRhythmBpm=Number(this.value);renderStageAndInspector()">
+      </div>
+      <div>
+        <div class="section-label">LICZBA TAKTÓW ĆWICZENIA</div>
+        <div class="ear-seg-row">
+          ${[2, 4, 8].map(bars => `
+            <button class="ear-seg-btn ${(state.earRhythmBars || 4) === bars ? 'active' : ''}"
+                    onclick="state.earRhythmBars=${bars};renderStageAndInspector()">${bars} takty</button>
+          `).join('')}
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:4px;border-top:1px solid var(--border);">
+        <span style="font-size:12.5px;font-weight:700;">🥁 Wzór hi-hatu w pierwszym takcie</span>
+        <button class="ear-toggle-switch ${state.earRhythmGuideSound ? 'on' : ''}"
+                onclick="state.earRhythmGuideSound=!state.earRhythmGuideSound;renderStageAndInspector()"></button>
+      </div>
+    </div>` : `
+    <div class="et-card">
+      <div class="et-card-head">
+        <h3>Brzmienie i odtwarzanie</h3>
+        <span class="et-badge">${state.earInstrument === 'piano' ? '🎹 Fortepian' : '🎸 Gitara'}</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div class="section-label">INSTRUMENT</div>
+          <div class="ear-seg-row">
+            <button class="ear-seg-btn ${state.earInstrument === 'guitar' ? 'active' : ''}"
+                    onclick="state.earInstrument='guitar';renderStageAndInspector()">🎸 Gitara</button>
+            <button class="ear-seg-btn ${state.earInstrument === 'piano' ? 'active' : ''}"
+                    onclick="state.earInstrument='piano';renderStageAndInspector()">🎹 Fortepian</button>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">TEMPO DŹWIĘKÓW</div>
+          <div class="ear-seg-row">
+            <button class="ear-seg-btn ${state.earTempo === 'slow' ? 'active' : ''}"
+                    onclick="state.earTempo='slow';renderStageAndInspector()">Wolno</button>
+            <button class="ear-seg-btn ${state.earTempo === 'normal' ? 'active' : ''}"
+                    onclick="state.earTempo='normal';renderStageAndInspector()">Norm.</button>
+            <button class="ear-seg-btn ${state.earTempo === 'fast' ? 'active' : ''}"
+                    onclick="state.earTempo='fast';renderStageAndInspector()">Szybko</button>
+          </div>
+        </div>
+      </div>
+
+      ${isScales ? `
+        <div>
+          <div class="section-label">KIERUNEK SKALI</div>
+          <div class="ear-seg-row">
+            <button class="ear-seg-btn ${state.earScaleDirection === 'asc' ? 'active' : ''}"
+                    onclick="state.earScaleDirection='asc';renderStageAndInspector()">W górę</button>
+            <button class="ear-seg-btn ${state.earScaleDirection === 'desc' ? 'active' : ''}"
+                    onclick="state.earScaleDirection='desc';renderStageAndInspector()">W dół</button>
+            <button class="ear-seg-btn ${state.earScaleDirection === 'updown' ? 'active' : ''}"
+                    onclick="state.earScaleDirection='updown';renderStageAndInspector()">Góra–Dół</button>
+          </div>
+        </div>
+      ` : (!isDegrees && !isDictation && !isProgressions ? `
+        <div style="display:grid;grid-template-columns:${showDirectionOption ? '1fr 1.25fr' : '1fr'};gap:12px;">
+          <div>
+            <div class="section-label">PODANIE DŹWIĘKÓW</div>
+            <div class="ear-seg-row">
+              <button class="ear-seg-btn ${state.earPlaybackStyle === 'melodic' ? 'active' : ''}"
+                      onclick="state.earPlaybackStyle='melodic';renderStageAndInspector()">${isChords ? 'Arpeggio' : 'Melodyczne'}</button>
+              <button class="ear-seg-btn ${state.earPlaybackStyle === 'harmonic' ? 'active' : ''}"
+                      onclick="state.earPlaybackStyle='harmonic';renderStageAndInspector()">Harmoniczne</button>
+            </div>
+          </div>
+          ${showDirectionOption ? `
+          <div>
+            <div class="section-label">KIERUNEK</div>
+            <div class="ear-seg-row">
+              <button class="ear-seg-btn ${state.earDirection === 'asc' ? 'active' : ''}"
+                      onclick="state.earDirection='asc';renderStageAndInspector()">W górę</button>
+              <button class="ear-seg-btn ${state.earDirection === 'desc' ? 'active' : ''}"
+                      onclick="state.earDirection='desc';renderStageAndInspector()">W dół</button>
+              <button class="ear-seg-btn ${state.earDirection === 'rand' ? 'active' : ''}"
+                      onclick="state.earDirection='rand';renderStageAndInspector()">Losowo</button>
+            </div>
+          </div>` : ''}
+        </div>
+      ` : '')}
+
+      <div>
+        <div class="section-label">NUTA BAZOWA (TONIKA / PRYMA)</div>
+        <div class="ear-seg-row">
+          <button class="ear-seg-btn ${state.earRootMode === 'random' ? 'active' : ''}"
+                  onclick="state.earRootMode='random';renderStageAndInspector()">Losowa</button>
+          <button class="ear-seg-btn ${state.earRootMode === 'fixed_note' ? 'active' : ''}"
+                  onclick="state.earRootMode='fixed_note';renderStageAndInspector()">Stała nuta</button>
+          <button class="ear-seg-btn ${state.earRootMode === 'fixed_pitch' ? 'active' : ''}"
+                  onclick="state.earRootMode='fixed_pitch';renderStageAndInspector()">Nuta + oktawa</button>
+        </div>
+        ${state.earRootMode !== 'random' ? `
+          <div class="et-note-grid" style="margin-top:10px;">
+            ${baseNoteLabels.map((lbl, pc) => `
+              <button class="chip-btn ${state.earFixedRootPc === pc ? 'active' : ''}"
+                      style="padding:7px 4px;font-size:12px;font-weight:700;"
+                      onclick="selectEarBaseNote(${pc})">${lbl}</button>
+            `).join('')}
+          </div>
+          ${state.earRootMode === 'fixed_pitch' ? `
+            <div class="ear-seg-row" style="margin-top:8px;">
+              ${[2, 3, 4, 5].map(oct => `
+                <button class="ear-seg-btn ${state.earFixedOctave === oct ? 'active' : ''}"
+                        onclick="selectEarBaseOctave(${oct})">${earFormatPc(state.earFixedRootPc)}${oct}</button>
+              `).join('')}
+            </div>` : ''}
+        ` : ''}
+      </div>
+    </div>`;
+
+  const sessionCardHtml = `
+    <div class="et-card">
+      <div class="et-card-head">
+        <h3>Sesja i pomoce na gryfie</h3>
+        <span class="et-badge">${isRhythm ? `${state.earRhythmBars || 4} takty` : (state.earSessionType === 'endless' ? '∞ Bez końca' : state.earTargetRounds + ' rund')}</span>
+      </div>
+
+      ${!isRhythm ? `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div class="section-label">TRYB SESJI</div>
+          <div class="ear-seg-row">
+            <button class="ear-seg-btn ${state.earSessionType === 'fixed' ? 'active' : ''}"
+                    onclick="state.earSessionType='fixed';renderStageAndInspector()">Liczba rund</button>
+            <button class="ear-seg-btn ${state.earSessionType === 'endless' ? 'active' : ''}"
+                    onclick="state.earSessionType='endless';renderStageAndInspector()">Ciągła</button>
+          </div>
+        </div>
+        ${state.earSessionType === 'fixed' ? `
+        <div>
+          <div class="section-label">RUNDY</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div class="ear-seg-row" style="flex:1;">
+              ${[5, 10, 15, 20].map(r => `
+                <button class="ear-seg-btn ${state.earTargetRounds === r ? 'active' : ''}"
+                        style="padding:9px 6px;"
+                        onclick="state.earTargetRounds=${r};renderStageAndInspector()">${r}</button>
+              `).join('')}
+            </div>
+            <input type="number" min="1" max="200" value="${state.earTargetRounds}"
+                   style="width:58px;padding:7px 4px;text-align:center;font-weight:700;"
+                   onchange="state.earTargetRounds=Math.max(1,Math.min(200,parseInt(this.value,10)||10));renderStageAndInspector()">
+          </div>
+        </div>` : `<div></div>`}
+      </div>` : ''}
+
+      <div style="display:flex;flex-direction:column;gap:9px;padding-top:4px;border-top:1px solid var(--border);">
+        ${!isRhythm && !isDictation ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12.5px;font-weight:700;">🎸 Po odpowiedzi pokaż pozycję na gryfie</span>
+          <button class="ear-toggle-switch ${state.earShowFretboard ? 'on' : ''}"
+                  onclick="state.earShowFretboard=!state.earShowFretboard;renderStageAndInspector()"></button>
+        </div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12.5px;font-weight:700;">⏱ Mierz czas reakcji</span>
+          <button class="ear-toggle-switch ${state.earMeasureReaction ? 'on' : ''}"
+                  onclick="state.earMeasureReaction=!state.earMeasureReaction;renderStageAndInspector()"></button>
+        </div>
+        ${isDegrees ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12.5px;font-weight:700;">🏛 Automatycznie graj kadencję przed pytaniem</span>
+          <button class="ear-toggle-switch ${state.earDegreeAutoCadence ? 'on' : ''}"
+                  onclick="state.earDegreeAutoCadence=!state.earDegreeAutoCadence;renderStageAndInspector()"></button>
+        </div>` : ''}
+        ${isDictation ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12.5px;font-weight:700;">🎯 Zawsze rozpoczynaj motyw od prymy</span>
+          <button class="ear-toggle-switch ${state.earDictationStartOnRoot ? 'on' : ''}"
+                  onclick="state.earDictationStartOnRoot=!state.earDictationStartOnRoot;renderStageAndInspector()"></button>
+        </div>` : ''}
+        ${(!isChords && !isScales && !isDegrees && !isDictation && !isProgressions && !isRhythm) ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12.5px;font-weight:700;">🎵 Skojarzenia z utworami</span>
+          <button class="ear-toggle-switch ${state.earShowSongHints ? 'on' : ''}"
+                  onclick="state.earShowSongHints=!state.earShowSongHints;renderStageAndInspector()"></button>
+        </div>` : ''}
+        ${isPlay ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12.5px;font-weight:700;">👂 Zagraj sam ze słuchu (odtwarzaj pełny interwał)</span>
+          <button class="ear-toggle-switch ${state.earPlayHearTarget ? 'on' : ''}"
+                  onclick="state.earPlayHearTarget=!state.earPlayHearTarget;renderStageAndInspector()"></button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12.5px;font-weight:700;">📍 Wskaż prymę na mini-gryfie przed odpowiedzią</span>
+          <button class="ear-toggle-switch ${state.earPlayFretHint ? 'on' : ''}"
+                  onclick="state.earPlayFretHint=!state.earPlayFretHint;renderStageAndInspector()"></button>
+        </div>` : ''}
+      </div>
+
+      ${weakPersistent.length > 0 ? `
+        <div class="et-weak-banner">
+          <div>
+            <div style="font-size:12.5px;font-weight:800;color:var(--text);">🎯 Zapisane słabe punkty (${weakPersistent.length})</div>
+            <div style="font-size:11px;color:var(--text-muted);">Najniżej: ${weakPersistent.slice(0, 3).map(w => `${w.name} (${Math.round((w.correct / w.total) * 100)}%)`).join(', ')}</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="chip-btn" style="padding:6px 10px;font-size:11.5px;border-color:var(--accent);color:var(--accent);"
+                    onclick="startEarPersistentWeakSession('${state.earMode}')">Ćwicz słabe</button>
+            <button class="chip-btn" style="padding:6px 8px;font-size:11px;" title="Wyczyść historię statystyk"
+                    onclick="clearEarPersistentStats()">Wyczyść</button>
+          </div>
+        </div>
+      ` : ''}
+    </div>`;
+
+  return `
+    <div class="et-shell">
+      <div class="et-topbar">
+        <div class="et-topbar-row">
+          <div class="et-title-group">
+            <div class="et-title-line">
+              <h2>👂 Kształcenie słuchu</h2>
+              <span class="et-badge accent">${curModeMeta.short} · ${selectedLabel}</span>
+              <span class="et-badge">🎸 ${tuningSummary}</span>
+            </div>
+            <div class="et-subtitle">${curModeMeta.desc} Kliknij „🔊” na dowolnym kafelku, aby od razu odsłuchać brzmienie.</div>
+          </div>
+          <div class="et-top-actions">
+            <button class="chip-btn" style="padding:10px 16px;font-size:13px;font-weight:700;"
+                    onclick="startEarRandomSession()">🎲 Losowe ćwiczenie</button>
+            <button class="action-btn" style="padding:10px 22px;font-size:13.5px;"
+                    onclick="startEarTrainingSession()">▶ Rozpocznij sesję</button>
+          </div>
+        </div>
+        <div class="et-mode-strip">${modeTabsHtml}</div>
+      </div>
+
+      <div class="et-config-grid">
+        ${materialHtml}
+        <div class="et-side-col">
+          ${soundCardHtml}
+          ${sessionCardHtml}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderEarActiveHtml() {
+  const selectedIvObjs = earIntervalsCatalog.filter(iv => state.earSelectedSemis.has(iv.semi));
+  const selectedChObjs = earChordsCatalog.filter(c => state.earSelectedChords.has(c.id));
+  const selectedScObjs = earScalesCatalog.filter(s => state.earSelectedScales.has(s.id));
+  const selectedDegObjs = earDegreesCatalog.filter(d => state.earSelectedDegrees.has(d.semi));
+
+  const roundLabel = state.earSessionType === 'endless'
+    ? `Runda ${state.earRound} / ∞`
+    : `Runda ${state.earRound} / ${state.earTargetRounds}`;
+  const progressPct = (state.earSessionType === 'fixed' && state.earTargetRounds > 0)
+    ? Math.min(100, Math.round((state.earRound / state.earTargetRounds) * 100))
+    : 100;
+  const accuracyLive = state.earAttempts > 0 ? Math.round((state.earScore / state.earAttempts) * 100) + '%' : '—';
+  const curModeMeta = earModeMeta[state.earMode] || earModeMeta.identify;
+  const isMicOn = (typeof micStream !== 'undefined' && !!micStream);
+  if (state.earMode !== 'learn' && state.earMode !== 'rhythm') {
+    if (!state.earCurrentQuestion || state.earCurrentQuestion.questionMode !== state.earMode) {
+      generateNextEarQuestion();
+    }
+  }
+
+  const hudHtml = `
+    <div class="et-hud">
+      <div class="et-hud-top">
+        <div class="et-hud-left">
+          <button class="chip-btn" style="padding:6px 12px;font-size:12.5px;" onclick="exitEarActiveSession()">← Konfiguracja</button>
+          <div>
+            <div style="font-weight:800;font-size:15px;">${curModeMeta.icon} ${curModeMeta.label}</div>
+            ${state.earRandomRollInfo ? `<div style="font-size:11.5px;color:var(--accent);font-weight:600;">${state.earRandomRollInfo}</div>` : ''}
+          </div>
+        </div>
+        <div class="et-hud-stats">
+          ${state.earMode !== 'rhythm' ? `
+            <button class="chip-btn" style="padding:5px 10px;font-size:11.5px;"
+                    onclick="state.earInstrument=(state.earInstrument==='guitar'?'piano':'guitar');renderStageAndInspector()">
+              ${state.earInstrument === 'piano' ? '🎹 Fortepian' : '🎸 Gitara'}
+            </button>
+          ` : ''}
+          ${state.earMode === 'rhythm' ? `
+            <span class="et-stat-pill"><strong>${state.earRhythmState ? state.earRhythmState.patternName : ''}</strong></span>
+            <span class="et-stat-pill"><strong>${state.earRhythmBpm || 90} BPM</strong></span>
+            ${state.earRhythmState && state.earRhythmState.hits.length > 0 ? `<button class="chip-btn" style="padding:6px 12px;font-size:12px;" onclick="finishEarSessionEarly()">Podsumuj sesję</button>` : ''}
+          ` : (state.earMode !== 'learn' ? `
+            <span class="et-stat-pill"><strong>${roundLabel}</strong></span>
+            <span class="et-stat-pill">Wynik: <strong>${state.earScore}/${state.earAttempts}</strong> (${accuracyLive})</span>
+            <span class="et-stat-pill">Seria: <strong>${state.earStreak}</strong></span>
+            ${state.earAttempts > 0 ? `<button class="chip-btn" style="padding:6px 12px;font-size:12px;" onclick="finishEarSessionEarly()">Zakończ i podsumuj</button>` : ''}
+          ` : `
+            <button class="action-btn" style="padding:7px 14px;font-size:12.5px;"
+                    onclick="state.earMode='identify';startEarTrainingSession()">Sprawdź się w quizie →</button>
+          `)}
+        </div>
+      </div>
+      ${state.earMode !== 'learn' && state.earMode !== 'rhythm' && state.earSessionType === 'fixed' ? `
+        <div class="et-progress-track"><div class="et-progress-fill" style="width:${progressPct}%;"></div></div>
+      ` : ''}
+    </div>`;
+
+  // TRYB 9: TRENING RYTMICZNY / PODZIAŁÓW
+  if (state.earMode === 'rhythm') {
+    const rs = state.earRhythmState || (initEarRhythmIdleState(), state.earRhythmState);
+    const okCount = rs.slots.filter(s => s.status === 'perfect' || s.status === 'close').length;
+    return `
+      <div class="et-shell">
+        ${hudHtml}
+        <div class="et-arena single-col">
+          <div class="et-prompt-card" style="min-height:260px;">
+            <div style="font-size:12.5px;color:var(--text-muted);">
+              Po 4-uderzeniowym odliczeniu graj na gitarze (mikrofon), uderzaj <strong>Spację</strong> lub klikaj pad poniżej w punkt podziału <strong>${rs.patternName}</strong>.
+            </div>
+            <div id="earRhythmVerdict" class="et-timing-verdict ${rs.lastVerdictCls || ''}">${rs.lastVerdictText}</div>
+            <button type="button" class="et-rhythm-pad"
+                    onclick="${state.earRhythmRunning ? "registerEarRhythmTap('mouse')" : 'startEarRhythmRun()'}">
+              ${state.earRhythmRunning ? '🥁 UDERZ / TAP TERAZ (Spacja)' : '▶ Rozpocznij przebieg rytmiczny (Spacja)'}
+            </button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+              <button class="chip-btn" style="padding:8px 16px;" onclick="startEarRhythmRun()">↻ Odlicz i start od nowa</button>
+              <button class="chip-btn" style="padding:8px 16px;" onclick="previewEarRhythmPattern('${rs.patternId}')">🔊 Posłuchaj wzoru</button>
+              ${!isMicOn && typeof toggleLiveAudio === 'function' ? `
+                <button class="chip-btn" style="padding:8px 16px;border-color:var(--accent);color:var(--accent);"
+                        onclick="toggleLiveAudio()">🎤 Włącz mikrofon (gra na gitarze)</button>` : ''}
+              ${rs.finished ? `<button class="action-btn" style="padding:8px 18px;" onclick="finishEarSessionEarly()">Podsumowanie (${okCount}/${rs.slots.length}) →</button>` : ''}
+            </div>
+            <div id="earRhythmOffsetSvgWrap" class="et-fret-wrap" style="width:100%;max-width:480px;">
+              ${renderEarRhythmTimingSvg(rs.hits)}
+            </div>
+          </div>
+        </div>
+        <div class="et-answer-deck">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="section-label" style="margin:0;">SIATKA PODZIAŁÓW (${rs.bars} TAKTY · ${rs.slots.length} UDERZEŃ)</span>
+            <span class="et-badge">Trafione: ${okCount}/${rs.slots.length}</span>
+          </div>
+          <div id="earRhythmSlotsWrap" class="et-rhythm-grid">${buildEarRhythmSlotsInnerHtml(rs)}</div>
+        </div>
+        <div class="et-shortcuts-bar">
+          <span><b>Spacja</b>: start / uderz (tap)</span>
+          <span><b>Enter</b>: ${rs.finished ? 'podsumowanie' : 'restart'}</span>
+          <span><b>Esc</b>: konfiguracja</span>
+        </div>
+      </div>`;
+  }
+
+  // TRYB NAUKI / ODSŁUCHU
+  if (state.earMode === 'learn') {
+    const last = state.earLearnLastItem;
+    const fretHtml = state.earShowFretboard ? `
+      <div class="et-fret-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;font-weight:800;">🎸 Pozycja na gryfie (${getEarTuningSummary()})</span>
+          ${last ? `<span class="et-badge accent">${last.code} · ${earFormatMidi(last.rootMidi)} → ${earFormatMidi(last.targetMidi)}</span>` : ''}
+        </div>
+        <div class="et-fret-wrap">
+          ${last
+            ? renderEarMiniFretboardSvg({ kind: 'interval', rootMidi: last.rootMidi, targetMidis: [last.targetMidi] })
+            : `<div style="padding:26px 12px;text-align:center;color:var(--text-muted);font-size:12.5px;">Kliknij wybrany interwał poniżej, aby usłyszeć dźwięki i zobaczyć układ na gryfie.</div>`}
+        </div>
+        ${last && state.earShowSongHints ? `<div style="font-size:12px;color:var(--accent);">🎵 Skojarzenie: ${last.hint}</div>` : ''}
+      </div>` : '';
+
+    return `
+      <div class="et-shell">
+        ${hudHtml}
+        <div class="et-arena ${state.earShowFretboard ? '' : 'single-col'}">
+          <div class="et-prompt-card">
+            <div style="font-size:15px;font-weight:800;">
+              ${state.earCompareMode ? 'Porównywanie A / B: kliknij dwa interwały po kolei' : 'Kliknij interwał lub klawisz 1–9, aby usłyszeć brzmienie'}
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);">
+              ${last ? `Ostatni: <strong>${last.name} (${last.code})</strong> · ${earFormatMidi(last.rootMidi)} → ${earFormatMidi(last.targetMidi)}` : 'Gotowy do odsłuchu'}
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+              <button class="chip-btn ${state.earCompareMode ? 'active' : ''}" style="padding:9px 16px;"
+                      onclick="toggleEarCompareMode()">⚖ ${state.earCompareMode ? 'Tryb porównania: WŁ.' : 'Porównaj dwa interwały'}</button>
+              ${last ? `<button class="chip-btn" style="padding:9px 16px;" onclick="playEarIntervalAudio(${last.rootMidi}, ${last.targetMidi})">▷ Powtórz ostatni (Spacja)</button>` : ''}
+            </div>
+          </div>
+          ${fretHtml}
+        </div>
+        <div class="et-answer-deck">
+          <div class="et-answer-grid">
+            ${selectedIvObjs.map((iv, idx) => {
+              const isComp = state.earCompareSelection.includes(iv.semi);
+              const isLast = last && last.semi === iv.semi && !state.earCompareMode;
+              const kbd = idx < 12 ? ['1','2','3','4','5','6','7','8','9','0','-','='][idx] : '';
+              return `
+                <button class="et-answer-btn ${(isComp || isLast) ? 'selected' : ''}" onclick="onEarLearnTileClick(${iv.semi})">
+                  ${kbd ? `<span class="et-kbd">${kbd}</span>` : ''}
+                  <span style="font-size:14px;font-weight:800;">${iv.name}</span>
+                  <span style="font-size:11.5px;color:var(--text-muted);">${iv.code} · ${iv.semisLabel}</span>
+                </button>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const q = state.earCurrentQuestion || {};
+  const nextBtnLabel = (state.earSessionType === 'fixed' && state.earRound >= state.earTargetRounds)
+    ? 'Zobacz podsumowanie →'
+    : 'Następna runda (Enter) →';
+
+  // TRYB ZAGRAJ NA GITARZE
+  if (state.earMode === 'play') {
+    const rootName = earFormatPc(q.rootMidi || 59);
+    const dirText = q.asc ? `w górę od ${earFormatMidi(q.rootMidi || 59)}` : `w dół od ${earFormatMidi(q.rootMidi || 59)}`;
+    const detectedText = (state.detectedMidi !== null && state.detectedMidi !== undefined)
+      ? earFormatMidi(state.detectedMidi)
+      : '—';
+    const showFret = q.answered ? state.earShowFretboard : (state.earShowFretboard && state.earPlayFretHint);
+
+    return `
+      <div class="et-shell">
+        ${hudHtml}
+        <div class="et-arena ${showFret ? '' : 'single-col'}">
+          <div class="et-prompt-card">
+            <div style="font-size:12.5px;color:var(--text-muted);">
+              ${state.earPlayHearTarget && !q.answered
+                ? 'Posłuchaj interwału i zagraj drugi dźwięk na gitarze lub klawiaturze MIDI'
+                : 'Zagraj docelowy interwał na gitarze (mikrofon) lub klawiaturze na dole'}
+            </div>
+            <div style="font-size:32px;font-weight:800;line-height:1.15;">
+              ${(state.earPlayHearTarget && !q.answered) ? 'Zagraj ze słuchu' : (q.correctName || 'Interwał')}
+            </div>
+            <div style="font-size:18px;font-weight:700;color:var(--accent);">${dirText}</div>
+
+            <div id="earPlayDetectedBox" ${q.answered ? 'data-answered="1"' : ''}
+                 class="et-play-detected ${q.answered ? 'answered' : ''}">
+              ${q.answered ? '✔ ' + q.targetNoteName : detectedText}
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+              <button class="chip-btn" style="padding:9px 18px;" onclick="replayCurrentEarQuestion()">
+                ▷ ${state.earPlayHearTarget || q.answered ? 'Odtwórz interwał (Spacja)' : `Odtwórz prymę ${rootName} (Spacja)`}
+              </button>
+              ${!isMicOn && typeof toggleLiveAudio === 'function' ? `
+                <button class="chip-btn" style="padding:9px 16px;border-color:var(--accent);color:var(--accent);"
+                        onclick="toggleLiveAudio()">🎤 Włącz mikrofon</button>` : ''}
+              ${!q.answered ? `
+                <button class="chip-btn" style="padding:9px 16px;" onclick="skipEarPlayRound()">⏭ Pomiń i pokaż</button>
+              ` : `
+                <button class="action-btn" style="padding:9px 20px;" onclick="nextEarActiveRound()">${nextBtnLabel}</button>
+              `}
+            </div>
+            ${q.answered && state.earShowSongHints ? `<div style="font-size:12px;color:var(--accent);">🎵 Skojarzenie: ${q.hint}</div>` : ''}
+          </div>
+
+          ${showFret ? `
+            <div class="et-fret-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;font-weight:800;">🎸 ${q.answered ? `Pozycja interwału (${q.correctCode})` : `Pryma bazowa: ${earFormatMidi(q.rootMidi)}`}</span>
+                <span class="et-badge accent">${q.answered ? `${earFormatMidi(q.rootMidi)} → ${q.targetNoteName}` : 'Pomoc: tylko pryma'}</span>
+              </div>
+              <div class="et-fret-wrap">
+                ${renderEarMiniFretboardSvg({
+                  kind: 'interval',
+                  rootMidi: q.rootMidi,
+                  targetMidis: [q.targetMidi],
+                  showOnlyRoot: !q.answered
+                })}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+        <div class="et-shortcuts-bar">
+          <span><b>Spacja</b>: odtwórz ponownie</span>
+          <span><b>Enter</b>: następna runda</span>
+          <span><b>Esc</b>: powrót do konfiguracji</span>
+        </div>
+      </div>`;
+  }
+
+  // TRYB 7: DYKTANDO MOTYWÓW MELODYCZNYCH
+  if (state.earMode === 'dictation') {
+    const motifMidis = Array.isArray(q.motifMidis) ? q.motifMidis : [];
+    const userMidis = Array.isArray(q.userMidis) ? q.userMidis : [];
+    const hiMidis = q.answered ? motifMidis : userMidis;
+    return `
+      <div class="et-shell">
+        ${hudHtml}
+        <div class="et-arena">
+          <div class="et-prompt-card">
+            <div style="font-size:17px;font-weight:800;">
+              ${q.answered
+                ? (q.wasCorrect ? '✅ Świetnie! Odtworzyłeś cały motyw' : '❌ Porównaj oryginał z Twoją wersją')
+                : `Wpisz ${motifMidis.length} nut motywu w skali ${q.scaleName || ''}`}
+            </div>
+            <div style="font-size:12.5px;color:var(--text-muted);">
+              Pryma: <strong>${earFormatMidi(q.rootMidi)}</strong> · Klikaj dźwięki na mini-gryfie po prawej lub zagraj na gitarze / klawiaturze.
+            </div>
+            <div class="et-seq-slots">
+              ${motifMidis.map((expMidi, idx) => {
+                const uMidi = userMidis[idx];
+                const hasVal = uMidi !== undefined;
+                const matchPc = hasVal && (((uMidi % 12) + 12) % 12 === ((expMidi % 12) + 12) % 12);
+                const cls = q.answered ? (matchPc ? 'correct' : 'wrong') : (hasVal ? 'filled' : '');
+                return `
+                  <div id="earDictSlot_${idx}" class="et-seq-slot ${cls}">
+                    <span class="et-seq-idx">Nuta ${idx + 1}</span>
+                    <span class="et-seq-val">${hasVal ? earFormatMidi(uMidi) : '·'}</span>
+                    ${q.answered ? `<span class="et-seq-sub">Cel: ${earFormatMidi(expMidi)}</span>` : ''}
+                  </div>`;
+              }).join('')}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+              <button class="chip-btn" style="padding:8px 14px;" onclick="playEarMotifAudio(state.earCurrentQuestion.motifMidis)">▷ Odtwórz motyw (Spacja)</button>
+              <button class="chip-btn" style="padding:8px 12px;" onclick="playEarTone(midiToFreq(${q.rootMidi}), 1.25)">▷ Pryma (${earFormatMidi(q.rootMidi)})</button>
+              ${!q.answered ? `
+                <button class="chip-btn" style="padding:8px 12px;" onclick="undoEarDictationNote()">↶ Cofnij (Backspace)</button>
+                <button class="chip-btn" style="padding:8px 12px;" onclick="clearEarDictationInput()">✕ Wyczyść</button>
+                ${!isMicOn && typeof toggleLiveAudio === 'function' ? `
+                  <button class="chip-btn" style="padding:8px 12px;border-color:var(--accent);color:var(--accent);" onclick="toggleLiveAudio()">🎤 Mikrofon</button>` : ''}
+                <button class="chip-btn" style="padding:8px 12px;" onclick="revealEarDictationAnswer()">⏭ Pokaż rozwiązanie</button>
+              ` : `
+                ${userMidis.length > 0 ? `<button class="chip-btn" style="padding:8px 14px;" onclick="playEarMotifAudio(state.earCurrentQuestion.userMidis)">▷ Moja wersja</button>` : ''}
+                <button class="action-btn" style="padding:8px 18px;" onclick="nextEarActiveRound()">${nextBtnLabel}</button>
+              `}
+            </div>
+          </div>
+
+          <div class="et-fret-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;font-weight:800;">🎸 Klikalny mini-gryf (${q.scaleCode || 'SKALA'})</span>
+              <span class="et-badge accent">${earFormatPc(q.rootMidi)} = pryma (pomarańczowa)</span>
+            </div>
+            <div class="et-fret-wrap">
+              ${renderEarMiniFretboardSvg({
+                kind: 'scale',
+                rootMidi: q.rootMidi,
+                scaleIntervals: q.intervals,
+                clickAction: 'dictation',
+                highlightMidis: hiMidis
+              })}
+            </div>
+            <div style="font-size:11.5px;color:var(--text-muted);">
+              ${q.answered ? 'Żółte kropki na gryfie pokazują oryginalny motyw. Kliknij dowolny dźwięk, aby go odsłuchać.' : 'Kliknięcie kropki na gryfie wprowadza nutę do aktualnego slotu dyktanda.'}
+            </div>
+          </div>
+        </div>
+        <div class="et-shortcuts-bar">
+          <span><b>Spacja</b>: odtwórz motyw</span>
+          <span><b>Backspace</b>: cofnij nutę</span>
+          <span><b>Enter</b>: następna runda</span>
+          <span><b>Esc</b>: konfiguracja</span>
+        </div>
+      </div>`;
+  }
+
+  // TRYB 8: PROGRESJE AKORDÓW
+  if (state.earMode === 'progressions') {
+    const fnList = (q.tonality === 'minor') ? earProgFunctionsMinor : earProgFunctionsMajor;
+    const userSlots = Array.isArray(state.earProgUserSlots) ? state.earProgUserSlots : [];
+    const stepIds = Array.isArray(q.stepIds) ? q.stepIds : [];
+    const fretProgMidis = (q.answered && stepIds.length > 0)
+      ? (getEarProgFunctionDef(q.tonality, stepIds[0]).intervals || [0, 4, 7]).map(iv => q.rootMidi + iv)
+      : [];
+
+    return `
+      <div class="et-shell">
+        ${hudHtml}
+        <div class="et-arena ${state.earShowFretboard ? '' : 'single-col'}">
+          <div class="et-prompt-card">
+            <div style="font-size:17px;font-weight:800;color:${q.answered ? (q.wasCorrect ? 'var(--green)' : 'var(--red)') : 'var(--text)'};">
+              ${q.answered
+                ? (q.wasCorrect ? '✅ Brawo! Zgadłeś całą progresję' : `❌ Prawidłowa progresja: ${q.correctName}`)
+                : `Ułóż kolejność 4 akordów (tonacja ${q.tonality === 'minor' ? 'molowa' : 'durowa'} ${earFormatPc(q.rootMidi)})`}
+            </div>
+            <div class="et-seq-slots">
+              ${[0, 1, 2, 3].map(slotIdx => {
+                const pickedId = userSlots[slotIdx];
+                const trueId = q.stepIds ? q.stepIds[slotIdx] : '';
+                const pickedFn = pickedId ? getEarProgFunctionDef(q.tonality, pickedId) : null;
+                const trueFn = trueId ? getEarProgFunctionDef(q.tonality, trueId) : null;
+                let cls = pickedId ? 'filled' : '';
+                if (q.answered) cls = (pickedId === trueId) ? 'correct' : 'wrong';
+                const displayMain = q.answered
+                  ? (trueFn ? trueFn.label : trueId)
+                  : (pickedFn ? pickedFn.label : '?');
+                const subLine = q.answered
+                  ? `${formatEarProgChordName(q.rootMidi, trueFn)}${pickedId && pickedId !== trueId ? ` (Twój: ${pickedFn ? pickedFn.label : pickedId})` : ''}`
+                  : (pickedFn ? formatEarProgChordName(q.rootMidi, pickedFn) : 'Takt ' + (slotIdx + 1));
+                return `
+                  <div id="earProgSlot_${slotIdx}" class="et-seq-slot ${cls}" title="Kliknij, aby odsłuchać ten takt"
+                       onclick="playEarProgSlotChord(${slotIdx})">
+                    <span class="et-seq-idx">Takt ${slotIdx + 1}</span>
+                    <span class="et-seq-val">${displayMain}</span>
+                    <span class="et-seq-sub">${subLine}</span>
+                  </div>`;
+              }).join('')}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+              <button class="chip-btn" style="padding:8px 16px;" onclick="replayCurrentEarQuestion()">▷ Odtwórz progresję (Spacja)</button>
+              ${!q.answered ? `
+                <button class="chip-btn" style="padding:8px 12px;" onclick="undoEarProgSlot()">↶ Cofnij (Backspace)</button>
+                <button class="chip-btn" style="padding:8px 12px;" onclick="clearEarProgSlots()">✕ Wyczyść</button>
+                <button class="action-btn" style="padding:8px 18px;${userSlots.length < 4 ? 'opacity:0.55;' : ''}"
+                        onclick="submitEarProgressionAnswer()">Sprawdź (Enter)</button>
+              ` : `
+                <button class="action-btn" style="padding:8px 18px;" onclick="nextEarActiveRound()">${nextBtnLabel}</button>
+              `}
+            </div>
+          </div>
+          ${state.earShowFretboard ? `
+            <div class="et-fret-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;font-weight:800;">🎸 Tonika progresji na gryfie</span>
+                <span class="et-badge accent">${earFormatPc(q.rootMidi)}${q.tonality === 'minor' ? 'm' : ''}</span>
+              </div>
+              <div class="et-fret-wrap">
+                ${q.answered
+                  ? renderEarMiniFretboardSvg({ kind: 'chord', rootMidi: q.rootMidi, targetMidis: fretProgMidis })
+                  : `<div style="padding:36px 12px;text-align:center;color:var(--text-muted);font-size:12.5px;">Wybierz 4 funkcje harmoniczne poniżej. Kliknięcie wypełnionego taktu pozwala odsłuchać pojedynczy akord.</div>`}
+              </div>
+            </div>` : ''}
+        </div>
+        <div class="et-answer-deck">
+          <div class="section-label" style="margin:0;">FUNKCJE HARMONICZNE (${q.tonality === 'minor' ? 'MOLL' : 'DUR'}) — KLIKNIJ PO KOLEI</div>
+          <div class="et-answer-grid">
+            ${fnList.map((fn, idx) => {
+              const kbd = idx < 12 ? ['1','2','3','4','5','6','7','8','9','0','-','='][idx] : '';
+              return `
+                <button class="et-answer-btn" onclick="pickEarProgFunction('${fn.id}')">
+                  ${kbd ? `<span class="et-kbd">${kbd}</span>` : ''}
+                  <span style="font-size:15px;font-weight:800;">${fn.label} <span style="font-size:12px;color:var(--accent);margin-left:4px;">${formatEarProgChordName(q.rootMidi, fn)}</span></span>
+                  <span style="font-size:11.5px;color:var(--text-muted);">${fn.name}</span>
+                </button>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="et-shortcuts-bar">
+          <span><b>Spacja</b>: odtwórz 4 takty</span>
+          <span><b>1–8</b>: dodaj funkcję</span>
+          <span><b>Backspace</b>: cofnij takt</span>
+          <span><b>Enter</b>: sprawdź / dalej</span>
+        </div>
+      </div>`;
+  }
+
+  // WSPÓLNY KONSOLOWY PANEL PYTANIA DLA: ROZPOZNAJ INTERWAŁ / AKORDY / SKALE / STOPNIE W TONACJI
+  const badgeText = q.answered
+    ? (state.earMode === 'chords' ? '✔' : (q.correctCode || '✔'))
+    : '♪';
+  const badgeCls = q.answered ? (q.wasCorrect ? 'correct' : 'wrong') : '';
+  let verdictHtml = '';
+  if (q.answered) {
+    const subDetail = state.earMode === 'chords'
+      ? `${q.formula} · od ${earFormatMidi(q.rootMidi)}`
+      : (state.earMode === 'scales'
+          ? `${q.formula} · ${q.trait}`
+          : (state.earMode === 'degrees'
+              ? `Stopień ${q.correctCode} (${earFormatMidi(q.targetMidi)}) w tonacji ${earFormatPc(q.rootMidi)} ${q.tonality === 'minor' ? 'moll' : 'dur'} · ${q.role}`
+              : `${earFormatMidi(q.rootMidi)} → ${earFormatMidi(q.targetMidi)}`));
+    verdictHtml = `
+      <div style="font-size:17px;font-weight:800;color:${q.wasCorrect ? 'var(--green)' : 'var(--red)'};">
+        ${q.wasCorrect ? '✅ Poprawnie: ' : '❌ Prawidłowa odpowiedź: '}${q.correctName}
+      </div>
+      <div style="font-size:12.5px;color:var(--text-muted);">${subDetail}</div>`;
+  } else {
+    const askMap = {
+      identify: 'Rozpoznaj usłyszany interwał',
+      chords: 'Rozpoznaj typ akordu' + (state.earSelectedInversions.size > 1 ? ' i przewrót' : ''),
+      scales: 'Rozpoznaj usłyszaną skalę lub tryb',
+      degrees: `Jaki to stopień w tonacji ${earFormatPc(q.rootMidi)} ${q.tonality === 'minor' ? 'moll' : 'dur'}?`
+    };
+    verdictHtml = `
+      <div style="font-size:17px;font-weight:800;">${askMap[state.earMode] || 'Odpowiedz ze słuchu'}</div>
+      <div style="font-size:12.5px;color:var(--text-muted);">
+        ${state.earMode === 'degrees'
+          ? `Kadencja ${q.tonality === 'minor' ? 'i–iv–V–i' : 'I–IV–V–I'} osadza tonikę ${earFormatPc(q.rootMidi)}.`
+          : `Pryma bazowa: ${state.earRootMode === 'random' ? 'losowa (ukryta do odpowiedzi)' : earFormatMidi(q.rootMidi)}`}
+      </div>`;
+  }
+
+  let fretCardHtml = '';
+  if (state.earShowFretboard) {
+    let svgHtml = '';
+    if (q.answered) {
+      if (state.earMode === 'chords') {
+        const chordMidis = buildEarChordMidis(q.rootMidi, q.intervals, q.inversion);
+        svgHtml = renderEarMiniFretboardSvg({ kind: 'chord', rootMidi: q.rootMidi, targetMidis: chordMidis });
+      } else if (state.earMode === 'scales') {
+        svgHtml = renderEarMiniFretboardSvg({ kind: 'scale', rootMidi: q.rootMidi, scaleIntervals: q.intervals });
+      } else {
+        svgHtml = renderEarMiniFretboardSvg({ kind: 'interval', rootMidi: q.rootMidi, targetMidis: [q.targetMidi] });
+      }
+    }
+    fretCardHtml = `
+      <div class="et-fret-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;font-weight:800;">🎸 Pozycja na gryfie</span>
+          <span class="et-badge">${q.answered ? `Pryma: ${earFormatMidi(q.rootMidi)}` : 'Ukryte do odpowiedzi'}</span>
+        </div>
+        <div class="et-fret-wrap">
+          ${q.answered
+            ? svgHtml
+            : `<div style="padding:36px 12px;text-align:center;color:var(--text-muted);font-size:12.5px;">Po wybraniu odpowiedzi zobaczysz tutaj dokładnie ten element na gryfie — z możliwością odsłuchania poszczególnych nut.</div>`}
+        </div>
+      </div>`;
+  }
+
+  let answersDeckHtml = '';
+  if (state.earMode === 'identify') {
+    answersDeckHtml = `
+      <div class="et-answer-grid">
+        ${selectedIvObjs.map((iv, idx) => {
+          let cls = '';
+          if (q.answered) {
+            if (iv.semi === q.semi) cls = 'correct';
+            else if (iv.semi === q.guessedSemi) cls = 'wrong';
+          }
+          const kbd = idx < 12 ? ['1','2','3','4','5','6','7','8','9','0','-','='][idx] : '';
+          return `
+            <button class="et-answer-btn ${cls}" onclick="submitEarIdentifyAnswer(${iv.semi})">
+              ${kbd ? `<span class="et-kbd">${kbd}</span>` : ''}
+              <span style="font-size:14px;font-weight:800;">${iv.name}</span>
+              <span style="font-size:11.5px;color:var(--text-muted);">${iv.code} · ${iv.semisLabel}</span>
+            </button>`;
+        }).join('')}
+      </div>`;
+  } else if (state.earMode === 'degrees') {
+    answersDeckHtml = `
+      <div class="et-answer-grid">
+        ${selectedDegObjs.map((dg, idx) => {
+          let cls = '';
+          if (q.answered) {
+            if (dg.semi === q.semi) cls = 'correct';
+            else if (dg.semi === q.guessedSemi) cls = 'wrong';
+          }
+          const kbd = idx < 12 ? ['1','2','3','4','5','6','7','8','9','0','-','='][idx] : '';
+          return `
+            <button class="et-answer-btn ${cls}" onclick="submitEarDegreeAnswer(${dg.semi})">
+              ${kbd ? `<span class="et-kbd">${kbd}</span>` : ''}
+              <span style="font-size:15px;font-weight:800;">${dg.code} · ${dg.name}</span>
+              <span style="font-size:11.5px;color:var(--text-muted);">${dg.role}</span>
+            </button>`;
+        }).join('')}
+      </div>`;
+  } else if (state.earMode === 'scales') {
+    answersDeckHtml = `
+      <div class="et-answer-grid">
+        ${selectedScObjs.map((sc, idx) => {
+          let cls = '';
+          if (q.answered) {
+            if (sc.id === q.scaleId) cls = 'correct';
+            else if (sc.id === q.guessedScaleId) cls = 'wrong';
+          }
+          const kbd = idx < 12 ? ['1','2','3','4','5','6','7','8','9','0','-','='][idx] : '';
+          return `
+            <button class="et-answer-btn ${cls}" onclick="submitEarScaleAnswer('${sc.id}')">
+              ${kbd ? `<span class="et-kbd">${kbd}</span>` : ''}
+              <span style="font-size:14px;font-weight:800;">${sc.name}</span>
+              <span style="font-size:11.5px;color:var(--text-muted);">${sc.code} · ${sc.formula}</span>
+            </button>`;
+        }).join('')}
+      </div>`;
+  } else if (state.earMode === 'chords') {
+    const invLabels = ['Zasadnicza', '1. przewrót', '2. przewrót', '3. przewrót'];
+    const activeInvs = [0, 1, 2, 3].filter(inv => state.earSelectedInversions.has(inv));
+    answersDeckHtml = `
+      <div class="et-answer-grid">
+        ${selectedChObjs.map((ch, idx) => {
+          let cls = (state.earPickedChordId === ch.id) ? 'selected' : '';
+          if (q.answered) {
+            if (ch.id === q.chordId) cls = 'correct';
+            else if (ch.id === state.earPickedChordId) cls = 'wrong';
+          }
+          const kbd = idx < 12 ? ['1','2','3','4','5','6','7','8','9','0','-','='][idx] : '';
+          return `
+            <button class="et-answer-btn ${cls}" onclick="onEarChordTileClick('${ch.id}')">
+              ${kbd ? `<span class="et-kbd">${kbd}</span>` : ''}
+              <span style="font-size:14.5px;font-weight:800;">${ch.label}</span>
+              <span style="font-size:11.5px;color:var(--text-muted);">${ch.formula}</span>
+            </button>`;
+        }).join('')}
+      </div>
+      ${activeInvs.length > 1 ? `
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:4px;">
+          <span class="section-label" style="margin:0;">PRZEWRÓT:</span>
+          <div class="ear-seg-row" style="flex:1;min-width:240px;">
+            ${activeInvs.map(inv => `
+              <button class="ear-seg-btn ${state.earPickedInversion === inv ? 'active' : ''}"
+                      onclick="state.earPickedInversion=${inv};renderStageAndInspector()">${invLabels[inv]}</button>
+            `).join('')}
+          </div>
+          ${!q.answered ? `
+            <button class="action-btn" style="padding:10px 22px;" onclick="submitEarChordAnswer()">Sprawdź odpowiedź (Enter)</button>
+          ` : ''}
+        </div>` : ''}`;
+  }
+
+  return `
+    <div class="et-shell">
+      ${hudHtml}
+      <div class="et-arena ${state.earShowFretboard ? '' : 'single-col'}">
+        <div class="et-prompt-card">
+          <div class="et-sound-orb ${badgeCls}" title="Kliknij, aby powtórzyć dźwięk"
+               onclick="replayCurrentEarQuestion()">${badgeText}</div>
+          ${verdictHtml}
+          ${q.answered && state.earShowSongHints && q.hint ? `<div style="font-size:12px;color:var(--accent);">🎵 Skojarzenie: ${q.hint}</div>` : ''}
+          ${q.answered ? `<div id="earAuditionStatus" style="font-size:11.5px;color:var(--text-muted);">${q.auditionLabel || 'Wskazówka: kliknij dowolną opcję poniżej, aby porównać jej brzmienie od tej samej toniki.'}</div>` : ''}
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+            <button class="chip-btn" style="padding:9px 18px;" onclick="replayCurrentEarQuestion()">
+              ${state.earMode === 'degrees' ? '▷ Kadencja + dźwięk (Spacja)' : '▷ Odtwórz ponownie (Spacja)'}
+            </button>
+            ${state.earMode === 'degrees' ? `
+              <button class="chip-btn" style="padding:9px 14px;" onclick="playEarCadenceAndDegree(${q.rootMidi}, ${q.targetMidi}, '${q.tonality}', false)">▷ Sam dźwięk</button>
+              <button class="chip-btn" style="padding:9px 14px;" onclick="playEarCadenceAudio(${q.rootMidi}, '${q.tonality}')">▷ Sama kadencja</button>
+            ` : (q.answered ? `<button class="chip-btn" style="padding:9px 14px;" onclick="playEarTone(midiToFreq(${q.rootMidi}), 1.25)">Odtwórz samą prymę (${earFormatMidi(q.rootMidi)})</button>` : '')}
+            ${q.answered ? `<button class="action-btn" style="padding:9px 20px;" onclick="nextEarActiveRound()">${nextBtnLabel}</button>` : ''}
+          </div>
+        </div>
+        ${fretCardHtml}
+      </div>
+
+      <div class="et-answer-deck">
+        ${answersDeckHtml}
+      </div>
+
+      <div class="et-shortcuts-bar">
+        <span><b>Spacja</b>: powtórz</span>
+        <span><b>1–9</b>: szybka odpowiedź / odsłuch A–B</span>
+        <span><b>Enter</b>: ${q.answered ? 'następna runda' : 'zatwierdź'}</span>
+        <span><b>Esc</b>: konfiguracja</span>
+      </div>
+    </div>`;
+}
+
+function renderEarSummaryHtml() {
+  const isChords = state.earMode === 'chords';
+  const isScales = state.earMode === 'scales';
+  const isDegrees = state.earMode === 'degrees';
+  const isDictation = state.earMode === 'dictation';
+  const isProgressions = state.earMode === 'progressions';
+  const isRhythm = state.earMode === 'rhythm';
+
+  const totalRounds = Math.max(1, state.earAttempts || state.earTargetRounds || 1);
+  const accuracyPct = Math.round((state.earScore / totalRounds) * 100);
+  const headline = accuracyPct >= 85
+    ? 'Bardzo pewne ucho — świetna sesja!'
+    : (accuracyPct >= 55 ? 'Dobry postęp, warto powtórzyć słabsze elementy' : 'Dobry trening — skup się na słabszych elementach');
+
+  const reactArr = Array.isArray(state.earReactionTimesMs) && state.earReactionTimesMs.length > 0
+    ? state.earReactionTimesMs
+    : [900];
+  const avgReactText = isRhythm
+    ? `${Math.round(reactArr.reduce((a, b) => a + b, 0) / reactArr.length)} ms`
+    : `${(reactArr.reduce((a, b) => a + b, 0) / reactArr.length / 1000).toFixed(1).replace('.', ',')} s`;
+
+  const histList = Array.isArray(state.earHistory)
+    ? state.earHistory.slice().sort((a, b) => (a.correct / Math.max(1, a.total)) - (b.correct / Math.max(1, b.total)))
+    : [];
+  const weakItems = histList.filter(h => h.correct < h.total);
+  const weakCount = weakItems.length;
+  const previewKind = isChords ? 'chord' : (isScales || isDictation ? 'scale' : (isDegrees ? 'degree' : (isProgressions ? 'progression' : (isRhythm ? 'rhythm' : 'interval'))));
+  const curModeMeta = earModeMeta[state.earMode] || earModeMeta.identify;
+  const breakdownMap = {
+    chords: 'akordów',
+    scales: 'skal',
+    degrees: 'stopni w tonacji',
+    dictation: 'skal dyktanda',
+    progressions: 'progresji',
+    rhythm: 'podziałów rytmicznych'
+  };
+  const breakdownName = breakdownMap[state.earMode] || 'interwałów';
+
+  return `
+    <div class="et-shell">
+      <div class="et-summary-hero">
+        <div>
+          <div style="font-size:12px;color:var(--accent);font-weight:800;margin-bottom:4px;">${curModeMeta.icon} ${curModeMeta.label.toUpperCase()} · PODSUMOWANIE SESJI</div>
+          <h2 style="font-size:24px;font-weight:800;margin:0 0 4px;">${headline}</h2>
+          <div style="font-size:13px;color:var(--text-muted);">${state.earRandomRollInfo || `Strój: ${getEarTuningSummary()}`}</div>
+        </div>
+        <div class="et-badge accent" style="font-size:18px;padding:10px 18px;">${accuracyPct}% skuteczności</div>
+      </div>
+
+      <div class="et-kpi-grid">
+        <div class="et-kpi-card">
+          <strong>${state.earScore} / ${totalRounds}</strong>
+          <span>${isRhythm ? 'Trafione uderzenia' : 'Poprawne odpowiedzi'}</span>
+        </div>
+        <div class="et-kpi-card">
+          <strong>${state.earBestStreak || 0}</strong>
+          <span>Najlepsza seria</span>
+        </div>
+        <div class="et-kpi-card">
+          <strong>${avgReactText}</strong>
+          <span>${isRhythm ? 'Średnia odchyłka' : 'Średni czas reakcji'}</span>
+        </div>
+        <div class="et-kpi-card">
+          <strong>${state.earSessionDurationSec || 1} s</strong>
+          <span>Czas trwania sesji</span>
+        </div>
+      </div>
+
+      <div class="et-card">
+        <div class="et-card-head">
+          <h3>Rozkład według ${breakdownName} (od najsłabszych)</h3>
+          <span class="et-badge">${histList.length} pozycji</span>
+        </div>
+        ${histList.length > 0 ? `
+          <div class="et-summary-list">
+            ${histList.map(item => {
+              const pct = item.total > 0 ? Math.round((item.correct / item.total) * 100) : 0;
+              const barCol = pct >= 75 ? 'var(--green)' : (pct >= 40 ? 'var(--accent)' : 'var(--red)');
+              const avgCol = isRhythm
+                ? (item.total > 0 ? Math.round((item.totalMs || 50) / item.total) + ' ms' : '—')
+                : (item.total > 0 ? ((item.totalMs || 900) / item.total / 1000).toFixed(1).replace('.', ',') + ' s' : '—');
+              return `
+                <div class="et-summary-row">
+                  <div>
+                    <strong>${item.name}</strong>
+                    ${item.code ? `<span style="color:var(--text-muted);font-size:11.5px;margin-left:5px;">${item.code}</span>` : ''}
+                  </div>
+                  <div class="et-meter-track">
+                    <div class="et-meter-fill" style="width:${pct}%;background:${barCol};"></div>
+                  </div>
+                  <div style="font-family:monospace;font-weight:700;">${item.correct}/${item.total} (${pct}%)</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);">${avgCol}</div>
+                  <button type="button" class="et-tile-play" title="Odsłuchaj w studiu"
+                          onclick="previewEarConfigItem('${previewKind}','${item.key}',event)">🔊</button>
+                </div>`;
+            }).join('')}
+          </div>
+        ` : `<div style="font-size:13px;color:var(--text-muted);">Brak ocenionych odpowiedzi w tej sesji.</div>`}
+      </div>
+
+      <div class="et-summary-actions">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="action-btn" style="padding:11px 20px;" onclick="startEarTrainingSession()">↻ Powtórz tę sesję</button>
+          ${weakCount > 0 && !isRhythm && !isDictation ? `
+            <button class="chip-btn" style="padding:11px 18px;border-color:var(--accent);color:var(--accent);font-weight:700;"
+                    onclick="startEarWeakItemsSession()">🎯 Ćwicz ${weakCount} słabsze pozycje</button>
+          ` : ''}
+          <button class="chip-btn" style="padding:11px 16px;" onclick="startEarRandomSession()">🎲 Nowe losowe ćwiczenie</button>
+        </div>
+        <button class="chip-btn" style="padding:11px 18px;" onclick="exitEarActiveSession()">⚙ Wróć do konfiguracji</button>
+      </div>
+    </div>`;
+}
+
+function renderEarView(stage) {
+  if (!stage) return;
+  if (state.earScreen === 'active') {
+    stage.innerHTML = renderEarActiveHtml();
+  } else if (state.earScreen === 'summary') {
+    stage.innerHTML = renderEarSummaryHtml();
+  } else {
+    stage.innerHTML = renderEarConfigHtml();
+  }
 }
 
 async function loadWorkshopPatternIntoTab(groupSize) {
@@ -16996,7 +19869,8 @@ async function loadWorkshopPatternIntoTab(groupSize) {
 
 async function downloadTabExport(fmt) {
   try {
-    const res = await fetch(`/api/export/${fmt}?bpm=${state.tempoBpm}`, {
+    const nExpStr = getActiveStringCount();
+    const res = await fetch(`/api/export/${fmt}?bpm=${state.tempoBpm}&tuning=${encodeURIComponent(state.tuningId)}&customMidis=${state.customStringMidis.slice(0, nExpStr).join(',')}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state.recordedEvents)
@@ -17199,12 +20073,13 @@ function getNextExerciseShapeSlice(evs, curSlice) {
 
 function buildExerciseShapeNextOverlaySvg(nextEntries, occupiedPosKeys, topY, strGap, labels, xForFret, isFretVisible, light) {
   if (!Array.isArray(nextEntries) || nextEntries.length === 0) return '';
+  const lastNxStr = getActiveStringCount() - 1;
   let out = '';
   const nextPts = [];
   nextEntries.forEach(({ ev }) => {
-    if (isFretVisible(ev.f)) {
+    if (isFretVisible(ev.f) && ev.s >= 0 && ev.s <= lastNxStr) {
       const cx = xForFret(ev.f);
-      const cy = topY + (5 - ev.s) * strGap;
+      const cy = topY + (lastNxStr - ev.s) * strGap;
       if (!nextPts.length || nextPts[nextPts.length - 1].cx !== cx || nextPts[nextPts.length - 1].cy !== cy) {
         nextPts.push({ cx, cy });
       }
@@ -17220,8 +20095,8 @@ function buildExerciseShapeNextOverlaySvg(nextEntries, occupiedPosKeys, topY, st
     const key = `${ev.s}_${ev.f}`;
     if (seenNext.has(key) || (occupiedPosKeys && occupiedPosKeys.has(key))) return;
     seenNext.add(key);
-    if (!isFretVisible(ev.f)) return;
-    const cy = topY + (5 - ev.s) * strGap;
+    if (!isFretVisible(ev.f) || ev.s < 0 || ev.s > lastNxStr) return;
+    const cy = topY + (lastNxStr - ev.s) * strGap;
     const cx = xForFret(ev.f);
     const openMidi = state.customStringMidis[ev.s] !== undefined ? state.customStringMidis[ev.s] : [40, 45, 50, 55, 59, 64][ev.s];
     const m = ev.midi || (openMidi + ev.f);
@@ -17269,7 +20144,11 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
   }
   const clefSymbol = useBass ? '𝄢' : '𝄞';
   const labels = getRootLabels();
+  const nTabStr = getActiveStringCount();
+  const lastTabStr = nTabStr - 1;
   const diaPc = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
+  const diaPcFlat = [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6];
+  const staffDiaPc = (state.accMode === 1) ? diaPcFlat : diaPc;
   const refDia = useBass ? 18 : 30;
   const measureBeats = state.timeSigNum * (4 / Math.max(1, state.timeSigDen));
 
@@ -17292,8 +20171,12 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
     }
   }
 
-  // 2. Zwarty układ wierszy dopasowany do gęstości szybkich nut (szesnastki / sekstole)
-  const targetRowW = Math.max(620, Math.round(availWidth || 1000));
+  // 2. Zwarty układ wierszy dopasowany do gęstości szybkich nut + zoom tabulatury (75..150%)
+  const tabZoomPct = (typeof state.exerciseTabZoom === 'number' && Number.isFinite(state.exerciseTabZoom))
+    ? Math.max(75, Math.min(150, Math.round(state.exerciseTabZoom)))
+    : 100;
+  const tabScale = tabZoomPct / 100;
+  const targetRowW = Math.max(520, Math.round((availWidth || 1000) / tabScale));
   const usableW = Math.max(420, targetRowW - x0 - rightMargin);
   const measurePrefW = (m) => {
     const perNotePrefW = (m.events.length >= 8) ? 21 : (m.events.length >= 5 ? 24 : 30);
@@ -17331,7 +20214,11 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
 
   const totalW = targetRowW;
   const totalH = rows.length * rowH + Math.max(0, rows.length - 1) * rowGapY;
-  let svg = `<svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">`;
+  const scaledW = Math.round(totalW * tabScale);
+  const scaledH = Math.round(totalH * tabScale);
+  const svgCssW = tabScale > 1 ? `${scaledW}px` : (tabScale < 1 ? `${tabZoomPct}%` : '100%');
+  const svgCssMaxW = tabScale > 1 ? 'none' : `${tabZoomPct}%`;
+  let svg = `<svg width="${scaledW}" height="${scaledH}" viewBox="0 0 ${totalW} ${totalH}" style="width:${svgCssW};max-width:${svgCssMaxW};height:auto;display:block;margin:${tabScale < 1 ? '0 auto' : '0'};" xmlns="http://www.w3.org/2000/svg">`;
 
   rows.forEach((rowInfo, rowIdx) => {
     const yOff = rowIdx * (rowH + rowGapY);
@@ -17339,7 +20226,7 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
     const staffTop = yOff + staffTopRel;
     const tabTop = yOff + tabTopRel;
     const topVisual = showStaff ? staffTop : tabTop;
-    const endY = showTab ? (tabTop + 5 * tabGap) : (staffTop + 4 * staffGap);
+    const endY = showTab ? (tabTop + lastTabStr * tabGap) : (staffTop + 4 * staffGap);
     const rowMeasures = rowInfo.measures;
     const isLastRow = (rowIdx === rows.length - 1);
 
@@ -17361,15 +20248,15 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
     }
 
     if (showTab) {
-      for (let s = 0; s < 6; s++) {
+      for (let s = 0; s < nTabStr; s++) {
         const y = tabTop + s * tabGap;
         svg += `<line x1="12" y1="${y}" x2="${W - rightMargin}" y2="${y}" stroke="${tabLineCol}" stroke-width="1.15"/>`;
       }
-      const tabMidH = 5 * tabGap;
+      const tabMidH = lastTabStr * tabGap;
       svg += `<text x="18" y="${tabTop + tabMidH * 0.30}" fill="${light ? '#57534e' : '#9ca3af'}" font-size="${showStaff ? 13 : 14}" font-weight="800">T</text>`;
       svg += `<text x="18" y="${tabTop + tabMidH * 0.56}" fill="${light ? '#57534e' : '#9ca3af'}" font-size="${showStaff ? 13 : 14}" font-weight="800">A</text>`;
       svg += `<text x="18" y="${tabTop + tabMidH * 0.82}" fill="${light ? '#57534e' : '#9ca3af'}" font-size="${showStaff ? 13 : 14}" font-weight="800">B</text>`;
-      svg += `<line x1="${W - rightMargin}" y1="${tabTop}" x2="${W - rightMargin}" y2="${tabTop + 5 * tabGap}" stroke="${staffLineCol}" stroke-width="${isLastRow ? '1.8' : '1.2'}"/>`;
+      svg += `<line x1="${W - rightMargin}" y1="${tabTop}" x2="${W - rightMargin}" y2="${tabTop + lastTabStr * tabGap}" stroke="${staffLineCol}" stroke-width="${isLastRow ? '1.8' : '1.2'}"/>`;
     }
 
     if (rowMeasures.length === 0) return;
@@ -17409,7 +20296,7 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
           svg += `<line x1="${barStartX}" y1="${staffTop}" x2="${barStartX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.25"/>`;
         }
         if (showTab) {
-          svg += `<line x1="${barStartX}" y1="${tabTop}" x2="${barStartX}" y2="${tabTop + 5 * tabGap}" stroke="#5c5248" stroke-width="1.25"/>`;
+          svg += `<line x1="${barStartX}" y1="${tabTop}" x2="${barStartX}" y2="${tabTop + lastTabStr * tabGap}" stroke="#5c5248" stroke-width="1.25"/>`;
         }
       }
 
@@ -17448,12 +20335,13 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
           svg += `<text x="${x}" y="${restY}" fill="${isActive ? '#f39237' : '#9ca3af'}" font-size="${Math.round(18 * noteScale)}" font-weight="700" text-anchor="middle">𝄽</text>`;
         } else {
           const midi = ev.midi || 60;
-          const oct = Math.floor(midi / 12) - 1;
           const pc = ((midi % 12) + 12) % 12;
+          const staffMidi = midi + 12;
+          const staffOct = Math.floor(staffMidi / 12) - 1;
           const nm = ev.note || labels[pc];
 
           if (showStaff) {
-            const dia = oct * 7 + diaPc[pc];
+            const dia = staffOct * 7 + staffDiaPc[pc];
             const rawNoteY = (staffTop + 40) - (dia - refDia) * 5;
             const noteY = Math.max(yOff + 12, Math.min(staffTop + 62, rawNoteY));
 
@@ -17504,12 +20392,12 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
             svg += `<circle cx="${x}" cy="${labelY - 3}" r="2.5" fill="#f39237"><title>Tonika (1)</title></circle>`;
           }
 
-          if (showTab && ev.s !== undefined && ev.f !== undefined && ev.s >= 0 && ev.f >= 0) {
+          if (showTab && ev.s !== undefined && ev.f !== undefined && ev.s >= 0 && ev.s < nTabStr && ev.f >= 0) {
             if (shortTech) {
               const tCol = (shortTech === 'H' || shortTech === 'P') ? '#4ade80' : (shortTech === 'S' ? '#facc15' : (shortTech === '↑' ? '#38bdf8' : '#fb923c'));
               svg += `<text x="${x}" y="${tabTop - 6}" fill="${tCol}" font-size="${Math.round(9.5 * noteScale * 10) / 10}" font-weight="900" text-anchor="middle">${shortTech}</text>`;
             }
-            const row = 5 - ev.s;
+            const row = lastTabStr - ev.s;
             const ty = tabTop + row * tabGap;
             // Łuk legato H/P między sąsiednimi nutami na tej samej strunie
             if ((shortTech === 'H' || shortTech === 'P') && k > 0 && m.events[k - 1] && m.events[k - 1].ev.s === ev.s) {
@@ -17533,7 +20421,7 @@ function buildExerciseStaffAndTabSvg(highlightIdx = -1, availWidth = 0) {
           svg += `<line x1="${barEndX}" y1="${staffTop}" x2="${barEndX}" y2="${staffTop + 40}" stroke="#6b6257" stroke-width="1.4"/>`;
         }
         if (showTab) {
-          svg += `<line x1="${barEndX}" y1="${tabTop}" x2="${barEndX}" y2="${tabTop + 5 * tabGap}" stroke="#5c5248" stroke-width="1.4"/>`;
+          svg += `<line x1="${barEndX}" y1="${tabTop}" x2="${barEndX}" y2="${tabTop + lastTabStr * tabGap}" stroke="#5c5248" stroke-width="1.4"/>`;
         }
       }
 
@@ -17627,6 +20515,34 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
 
   let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;user-select:none;" xmlns="http://www.w3.org/2000/svg">`;
   svg += `<rect x="${nutX}" y="${topY - 12}" width="${W - nutX - padR}" height="${lastStr * strGap + 24}" rx="4" fill="${bgFill}" stroke="${bgStroke}" stroke-width="1"/>`;
+  const exOctCtx = state.scaleOctaveHighlight ? getActiveOctaveScaleContext() : null;
+  const exOpenMidis = Array.from({ length: nExStr }, (_, s) =>
+    (state.customStringMidis && state.customStringMidis[s] !== undefined)
+      ? state.customStringMidis[s]
+      : [40, 45, 50, 55, 59, 64][s]
+  );
+  const exXForFret = (f) => (f === 0 ? (openX + 10) : (nutX + (f - viewStartFret + 0.5) * fretW));
+  const exOctOverlay = exOctCtx
+    ? buildFretboardOctaveOverlaySvg({
+        openMidis: exOpenMidis,
+        nStrings: nExStr,
+        viewStartFret,
+        viewEndFret,
+        showOpenCol,
+        leftNutX: nutX,
+        boardEndX: W - padR,
+        fretW,
+        strGap,
+        topY,
+        boardH: lastStr * strGap,
+        xForFret: exXForFret,
+        anchorPc: exOctCtx.anchorPc,
+        lightMode: light
+      })
+    : null;
+  if (exOctOverlay && exOctOverlay.bandsSvg) {
+    svg += exOctOverlay.bandsSvg;
+  }
 
   const midDotRow = lastStr * 0.5;
   for (let f = viewStartFret; f <= viewEndFret; f++) {
@@ -17681,12 +20597,14 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
     }
   }
 
-  const xForFret = (f) => (f === 0 ? (openX + 10) : (nutX + (f - viewStartFret + 0.5) * fretW));
+  const xForFret = exXForFret;
   const isFretVisible = (f) => (f === 0 ? showOpenCol : (f >= viewStartFret && f <= viewEndFret));
+  if (exOctOverlay && exOctOverlay.linksSvg) {
+    svg += exOctOverlay.linksSvg;
+  }
 
-  // Podgląd kolejnego arpeggio (przerywana linia + przerywane kontury) oraz ścieżka aktualnego kształtu
   const curOccupiedKeys = new Set(displayEntries.map(({ ev }) => `${ev.s}_${ev.f}`));
-  if (!isComposer && nextEntries.length > 0 && nExStr === 6) {
+  if (!isComposer && nextEntries.length > 0) {
     svg += buildExerciseShapeNextOverlaySvg(nextEntries, curOccupiedKeys, topY, strGap, labels, xForFret, isFretVisible, light);
   }
   if (!isComposer && displayEntries.length >= 2) {
@@ -17789,10 +20707,12 @@ function buildExerciseFretboardSvg(highlightIdx = -1, isComposer = true) {
 function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
   const evs = state.recordedEvents || [];
   const light = isLightTheme();
-  const W = 1060, H = 228;
+  const nRbStr = getActiveStringCount();
+  const lastRbStr = nRbStr - 1;
+  const W = 1060, H = (nRbStr === 4) ? 178 : 228;
   const openX = 24, nutX = 56, padR = 16;
   const maxBoardFret = state.maxDisplayedFret || 24;
-  const topY = 26, strGap = 31;
+  const topY = 26, strGap = (nRbStr === 4) ? 34 : 31;
   const labels = getRootLabels();
   const isPlayMode = (state.exercisePlayerMode === 'play');
   const completedSet = (state.exerciseCompletedSet instanceof Set) ? state.exerciseCompletedSet : null;
@@ -17824,23 +20744,23 @@ function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
   const numCol = light ? '#57534e' : '#857d75';
 
   let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;user-select:none;" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect x="${nutX}" y="${topY - 12}" width="${W - nutX - padR}" height="${5 * strGap + 24}" rx="5" fill="${bgFill}" stroke="${bgStroke}" stroke-width="1"/>`;
+  svg += `<rect x="${nutX}" y="${topY - 12}" width="${W - nutX - padR}" height="${lastRbStr * strGap + 24}" rx="5" fill="${bgFill}" stroke="${bgStroke}" stroke-width="1"/>`;
 
   for (let f = viewStartFret; f <= viewEndFret; f++) {
     const colIdx = f - viewStartFret;
     const fx = nutX + (colIdx + 1) * fretW;
-    svg += `<line x1="${fx}" y1="${topY - 12}" x2="${fx}" y2="${topY + 5 * strGap + 12}" stroke="${wireCol}" stroke-width="1.2"/>`;
+    svg += `<line x1="${fx}" y1="${topY - 12}" x2="${fx}" y2="${topY + lastRbStr * strGap + 12}" stroke="${wireCol}" stroke-width="1.2"/>`;
     const isMarker = fretInlays.has(f);
     if (numAll || (!dotsMode && isMarker)) {
-      svg += `<text x="${fx - fretW * 0.5}" y="${topY + 5 * strGap + 30}" fill="${numCol}" font-size="11" font-weight="700" text-anchor="middle">${f}</text>`;
+      svg += `<text x="${fx - fretW * 0.5}" y="${topY + lastRbStr * strGap + 30}" fill="${numCol}" font-size="11" font-weight="700" text-anchor="middle">${f}</text>`;
     } else if (dotsMode && isMarker) {
-      svg += `<circle cx="${fx - fretW * 0.5}" cy="${topY + 5 * strGap + 26}" r="3" fill="${numCol}"/>`;
+      svg += `<circle cx="${fx - fretW * 0.5}" cy="${topY + lastRbStr * strGap + 26}" r="3" fill="${numCol}"/>`;
     }
   }
-  svg += `<line x1="${nutX}" y1="${topY - 12}" x2="${nutX}" y2="${topY + 5 * strGap + 12}" stroke="${showOpenCol ? nutCol : wireCol}" stroke-width="${showOpenCol ? 3 : 1.4}"/>`;
+  svg += `<line x1="${nutX}" y1="${topY - 12}" x2="${nutX}" y2="${topY + lastRbStr * strGap + 12}" stroke="${showOpenCol ? nutCol : wireCol}" stroke-width="${showOpenCol ? 3 : 1.4}"/>`;
 
-  for (let row = 0; row < 6; row++) {
-    const s = 5 - row;
+  for (let row = 0; row < nRbStr; row++) {
+    const s = lastRbStr - row;
     const sy = topY + row * strGap;
     const openMidi = state.customStringMidis[s] !== undefined ? state.customStringMidis[s] : [40, 45, 50, 55, 59, 64][s];
     const openLbl = labels[((openMidi % 12) + 12) % 12];
@@ -17859,9 +20779,9 @@ function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
   if (shapeEntries.length >= 2) {
     const pts = [];
     shapeEntries.forEach(({ ev }) => {
-      if (isFretVisible(ev.f)) {
+      if (isFretVisible(ev.f) && ev.s >= 0 && ev.s <= lastRbStr) {
         const cx = xForFret(ev.f);
-        const cy = topY + (5 - ev.s) * strGap;
+        const cy = topY + (lastRbStr - ev.s) * strGap;
         if (!pts.length || pts[pts.length - 1].cx !== cx || pts[pts.length - 1].cy !== cy) {
           pts.push({ cx, cy });
         }
@@ -17884,8 +20804,8 @@ function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
   });
 
   posMap.forEach(({ ev, completed, upcoming, isCurPos }) => {
-    if (!isFretVisible(ev.f)) return;
-    const row = 5 - ev.s;
+    if (!isFretVisible(ev.f) || ev.s < 0 || ev.s > lastRbStr) return;
+    const row = lastRbStr - ev.s;
     const sy = topY + row * strGap;
     const cx = xForFret(ev.f);
     const openMidi = state.customStringMidis[ev.s] !== undefined ? state.customStringMidis[ev.s] : [40, 45, 50, 55, 59, 64][ev.s];
@@ -17913,9 +20833,9 @@ function buildScaleRibbonFretboardSvg(highlightIdx = 0) {
   });
 
   // Jeśli curEv nie miał (s, f), zachowaj bezpieczeństwo widoku
-  if (curEv && !curEv.rest && curEv.s >= 0 && curEv.f >= 0 && !posMap.has(`${curEv.s}_${curEv.f}`) && isFretVisible(curEv.f)) {
+  if (curEv && !curEv.rest && curEv.s >= 0 && curEv.s <= lastRbStr && curEv.f >= 0 && !posMap.has(`${curEv.s}_${curEv.f}`) && isFretVisible(curEv.f)) {
     const cx = xForFret(curEv.f);
-    const sy = topY + (5 - curEv.s) * strGap;
+    const sy = topY + (lastRbStr - curEv.s) * strGap;
     const nm = curEv.note || labels[((curEv.midi % 12) + 12) % 12];
     svg += `<circle cx="${cx}" cy="${sy}" r="11.5" fill="#f39237" stroke="#fef08a" stroke-width="1.5"/>`;
     svg += `<text x="${cx}" y="${sy + 3.8}" fill="#0b140e" font-size="10.5" font-weight="900" text-anchor="middle">${nm}</text>`;
@@ -18145,8 +21065,25 @@ async function launchHarmonicExercise(exId, mode) {
   stopHarmonicPreview();
   const ex = HARMONICS_EXERCISES.find(e => e.id === exId) || HARMONICS_EXERCISES[0];
   if (!ex) return;
+  const evs = buildHarmonicExerciseEvents(ex);
   state.selectedHarmonicExerciseId = ex.id;
-  state.recordedEvents = buildHarmonicExerciseEvents(ex);
+  if (mode === 'edit_append') {
+    const prev = Array.isArray(state.recordedEvents) ? state.recordedEvents : [];
+    const nextSeg = prev.reduce((mx, e) => Math.max(mx, Number(e?.seg) || 0), -1) + 1;
+    state.recordedEvents = prev.concat(evs.map(e => Object.assign({}, e, { seg: nextSeg })));
+    if (prev.length === 0) {
+      state.tempoBpm = ex.bpm || 84;
+      state.exerciseTitle = ex.title;
+    }
+    state.exercisePlayerView = 'tab';
+    state.mainView = 'practice';
+    state.subtab = 'exercise';
+    state.exerciseSubView = 'composer';
+    state.exercisePlayerActive = false;
+    await renderAll();
+    return;
+  }
+  state.recordedEvents = evs;
   state.tempoBpm = ex.bpm || 84;
   state.exerciseTitle = ex.title;
   state.exercisePlayerView = 'tab';
@@ -18167,11 +21104,13 @@ async function launchHarmonicExercise(exId, mode) {
 
 function buildHarmonicsExerciseFretboardSvg(selectedEx) {
   const light = isLightTheme();
-  const W = 1040, H = 216;
+  const nHmStr = getActiveStringCount();
+  const lastHmStr = nHmStr - 1;
+  const W = 1040, H = (nHmStr === 4) ? 168 : 216;
   const openX = 24, nutX = 56, padR = 16;
   const fretCount = 15;
   const fretW = (W - nutX - padR) / fretCount;
-  const topY = 26, strGap = 29;
+  const topY = 26, strGap = (nHmStr === 4) ? 32 : 29;
   const labels = getRootLabels();
 
   const usedHarmSet = new Set();
@@ -18194,26 +21133,23 @@ function buildHarmonicsExerciseFretboardSvg(selectedEx) {
   const numCol = light ? '#57534e' : '#8c8277';
 
   let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;user-select:none;" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect x="${nutX}" y="${topY - 12}" width="${W - nutX - padR}" height="${5 * strGap + 24}" rx="5" fill="${bgFill}" stroke="${bgStroke}" stroke-width="1"/>`;
+  svg += `<rect x="${nutX}" y="${topY - 12}" width="${W - nutX - padR}" height="${lastHmStr * strGap + 24}" rx="5" fill="${bgFill}" stroke="${bgStroke}" stroke-width="1"/>`;
 
-  // Podświetlenie głównych pasm flażoletów (5, 7, 12)
   [5, 7, 12].forEach(hf => {
     const xLine = nutX + hf * fretW;
-    svg += `<line x1="${xLine}" y1="${topY - 12}" x2="${xLine}" y2="${topY + 5 * strGap + 12}" stroke="rgba(16,185,129,0.28)" stroke-width="5"/>`;
+    svg += `<line x1="${xLine}" y1="${topY - 12}" x2="${xLine}" y2="${topY + lastHmStr * strGap + 12}" stroke="rgba(16,185,129,0.28)" stroke-width="5"/>`;
   });
 
-  // Druty progowe + numery progów wyśrodkowane pomiędzy drutami (|1|, |2|, ..., |12|)
-  svg += `<line x1="${nutX}" y1="${topY - 12}" x2="${nutX}" y2="${topY + 5 * strGap + 12}" stroke="${light ? '#6b5e50' : '#b8aea0'}" stroke-width="3"/>`;
+  svg += `<line x1="${nutX}" y1="${topY - 12}" x2="${nutX}" y2="${topY + lastHmStr * strGap + 12}" stroke="${light ? '#6b5e50' : '#b8aea0'}" stroke-width="3"/>`;
   for (let f = 1; f <= fretCount; f++) {
     const fx = nutX + f * fretW;
-    svg += `<line x1="${fx}" y1="${topY - 12}" x2="${fx}" y2="${topY + 5 * strGap + 12}" stroke="${wireCol}" stroke-width="1.2"/>`;
+    svg += `<line x1="${fx}" y1="${topY - 12}" x2="${fx}" y2="${topY + lastHmStr * strGap + 12}" stroke="${wireCol}" stroke-width="1.2"/>`;
     const isMainH = (f === 5 || f === 7 || f === 12);
-    svg += `<text x="${(fx - fretW * 0.5).toFixed(1)}" y="${topY + 5 * strGap + 28}" fill="${isMainH ? '#10b981' : numCol}" font-size="${isMainH ? 12 : 10.5}" font-weight="${isMainH ? 800 : 600}" text-anchor="middle">${f}</text>`;
+    svg += `<text x="${(fx - fretW * 0.5).toFixed(1)}" y="${topY + lastHmStr * strGap + 28}" fill="${isMainH ? '#10b981' : numCol}" font-size="${isMainH ? 12 : 10.5}" font-weight="${isMainH ? 800 : 600}" text-anchor="middle">${f}</text>`;
   }
 
-  // Struny
-  for (let row = 0; row < 6; row++) {
-    const s = 5 - row;
+  for (let row = 0; row < nHmStr; row++) {
+    const s = lastHmStr - row;
     const sy = topY + row * strGap;
     const openMidi = state.customStringMidis[s] !== undefined ? state.customStringMidis[s] : [40, 45, 50, 55, 59, 64][s];
     const openLbl = labels[((openMidi % 12) + 12) % 12];
@@ -18221,9 +21157,9 @@ function buildHarmonicsExerciseFretboardSvg(selectedEx) {
     svg += `<line x1="${nutX}" y1="${sy}" x2="${W - padR}" y2="${sy}" stroke="${strCol}" stroke-width="${(1.05 + row * 0.32).toFixed(2)}"/>`;
   }
 
-  // 1. Zwykłe nuty melodii (kółka ● pośrodku pól progów lub przy siodełku dla pustych strun)
   usedNormalMap.forEach((st) => {
-    const row = 5 - st.s;
+    if (st.s < 0 || st.s > lastHmStr) return;
+    const row = lastHmStr - st.s;
     const sy = topY + row * strGap;
     const cx = (st.f === 0) ? (openX + 12) : (nutX + (st.f - 0.5) * fretW);
     const openMidi = state.customStringMidis[st.s] !== undefined ? state.customStringMidis[st.s] : [40, 45, 50, 55, 59, 64][st.s];
@@ -18245,8 +21181,8 @@ function buildHarmonicsExerciseFretboardSvg(selectedEx) {
     { f: 9,  diffCol: '#f97316' },
     { f: 4,  diffCol: '#f97316' }
   ];
-  for (let row = 0; row < 6; row++) {
-    const s = 5 - row;
+  for (let row = 0; row < nHmStr; row++) {
+    const s = lastHmStr - row;
     const sy = topY + row * strGap;
     const openMidi = state.customStringMidis[s] !== undefined ? state.customStringMidis[s] : [40, 45, 50, 55, 59, 64][s];
     harmFrets.forEach(hf => {
@@ -18366,24 +21302,10 @@ function deleteExerciseEvent(idx) {
 
 function saveExerciseToWorkshop() {
   if (!state.recordedEvents || state.recordedEvents.length === 0) return;
-  const rootLabels = getRootLabels();
-  const newEx = {
-    id: 'ex_tab_' + Date.now(),
-    title: `Własne ćwiczenie TAB (${rootLabels[state.rootPc]} · ${state.recordedEvents.length} nut · ${state.tempoBpm} BPM)`,
-    category: 'Tab Composer',
-    level: 'Własne',
-    rootPc: state.rootPc,
-    scaleId: state.scaleId,
-    posSystem: state.posSystem,
-    startString: -1,
-    direction: 0,
-    octaves: 2,
-    pattern: 0,
-    recordedEvents: state.recordedEvents.map(e => Object.assign({}, e))
-  };
-  state.customWorkshopExercises.unshift(newEx);
-  const btns = document.querySelectorAll('button[onclick="saveExerciseToWorkshop()"]');
-  btns.forEach(b => { b.textContent = '✓ Zapisano w Warsztacie'; });
+  saveTabExerciseLocally().then(saved => {
+    const btns = document.querySelectorAll('button[onclick="saveExerciseToWorkshop()"]');
+    btns.forEach(b => { b.textContent = saved ? '✓ Zapisano lokalnie i w Warsztacie' : '✓ Zapisano w Warsztacie'; });
+  });
 }
 
 let exercisePlayerTimer = null;
@@ -18861,18 +21783,23 @@ async function launchScalePractice(mode, viewMode) {
   }
   if (events.length === 0) return;
 
-  state.recordedEvents = events;
+  if (mode === 'edit_append') {
+    const prev = Array.isArray(state.recordedEvents) ? state.recordedEvents : [];
+    const nextSeg = prev.reduce((mx, e) => Math.max(mx, Number(e?.seg) || 0), -1) + 1;
+    state.recordedEvents = prev.concat(events.map(e => Object.assign({}, e, { seg: nextSeg })));
+  } else {
+    state.recordedEvents = events;
+  }
   state.mainView = 'practice';
   state.subtab = 'exercise';
+  state.exerciseSubView = 'composer';
   document.querySelectorAll('#practiceSubtabs .subtab-btn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('data-subtab') === 'exercise');
   });
-  if (mode === 'edit') {
-    state.exerciseSubView = 'composer';
+  if (mode === 'edit' || mode === 'edit_append') {
     state.exercisePlayerActive = false;
     await renderAll();
   } else {
-    state.exerciseSubView = 'scale_practice';
     await startExercisePlayer(mode || 'play');
   }
 }
@@ -19017,8 +21944,8 @@ function handleMidiNoteSideEffects(midi) {
   state.detectedMidi = midi;
   state.selectedScaleNotePc = ((Math.round(midi) % 12) + 12) % 12;
   drawFretboard();
-  if (state.mainView === 'ear' && state.earScreen === 'active' && state.earMode === 'play') {
-    checkEarPlayGuitarMidi(midi);
+  if (state.mainView === 'ear' && state.earScreen === 'active') {
+    handleEarLiveInputMidi(midi);
   }
   if (state.mainView === 'changes' && state.changesScreen === 'practice_active') {
     checkChangesPracticePlayedMidi(midi);
@@ -19090,17 +22017,24 @@ function toggleMidiFocus() {
 }
 
 window.addEventListener('keydown', e => {
-  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
   if (state.mainView === 'studio') {
-    if (window.StudioTab && typeof window.StudioTab.handleKeyDown === 'function') window.StudioTab.handleKeyDown(e);
+    const tgt = e.target;
+    const inInput = tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'SELECT');
+    const isCtrlK = (e.ctrlKey || e.metaKey) && (e.key || '').toLowerCase() === 'k';
+    const isStudioPrompt = tgt && (tgt.id === 'studioCmdkInput' || tgt.id === 'studioInlineInput');
+    if (!inInput || isCtrlK || e.key === 'Escape' || isStudioPrompt) {
+      if (window.StudioTab && typeof window.StudioTab.handleKeyDown === 'function') window.StudioTab.handleKeyDown(e);
+    }
     return;
   }
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+  if (typeof handleEarKeyDown === 'function' && handleEarKeyDown(e)) return;
   if (!state.midiFocused || e.repeat) return;
   const key = e.key.toLowerCase();
   if (key === 'z') { e.preventDefault(); shiftMidiOctave(-1); return; }
   if (key === 'x') { e.preventDefault(); shiftMidiOctave(1); return; }
-  if (key === ' ' && state.subtab === 'exercise') { e.preventDefault(); addRestToExercise(); return; }
-  if (key === 'backspace' && state.subtab === 'exercise') { e.preventDefault(); undoLastExerciseEvent(); return; }
+  if (key === ' ' && state.subtab === 'exercise' && !state.exercisePlayerActive && state.exerciseSubView === 'composer') { e.preventDefault(); addRestToExercise(); return; }
+  if (key === 'backspace' && state.subtab === 'exercise' && !state.exercisePlayerActive && state.exerciseSubView === 'composer') { e.preventDefault(); undoLastExerciseEvent(); return; }
   if (qwertyOffsets[key] !== undefined) {
     e.preventDefault();
     e.stopPropagation();
@@ -19132,6 +22066,492 @@ window.addEventListener('keyup', e => {
   }
 });
 
+function escapeHtmlText(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function showSweepToast(msg) {
+  state.sweepToastMsg = msg || '';
+  clearTimeout(window.__sweepToastTimer);
+  if (msg) {
+    window.__sweepToastTimer = setTimeout(() => {
+      if (state.sweepToastMsg === msg) {
+        state.sweepToastMsg = '';
+        if (state.mainView === 'practice' && state.subtab === 'sweep') renderStageAndInspector();
+      }
+    }, 3400);
+  }
+}
+
+function showTabToast(msg) {
+  state.tabToastMsg = msg || '';
+  clearTimeout(window.__tabToastTimer);
+  if (msg) {
+    window.__tabToastTimer = setTimeout(() => {
+      if (state.tabToastMsg === msg) {
+        state.tabToastMsg = '';
+        if (state.mainView === 'practice' && state.subtab === 'exercise') renderStageAndInspector();
+      }
+    }, 3400);
+  }
+}
+
+function syncUserSweepsFromLibrary() {
+  if (!window.userLibraryStore) return;
+  const list = window.userLibraryStore.getItems('sweeps');
+  list.forEach(pr => {
+    if (pr && Array.isArray(pr.items)) pr.items.forEach(seg => rebuildSweepSegmentSteps(seg));
+  });
+  state.savedSweepCompositions = list;
+}
+
+function syncUserProgressionsIntoInitData() {
+  if (!window.userLibraryStore || !state.initData) return;
+  const base = Array.isArray(window.__builtinProgressionsSnapshot)
+    ? window.__builtinProgressionsSnapshot.map(p => Object.assign({}, p, { _builtin: true, _custom: false }))
+    : [];
+  const custom = window.userLibraryStore.getItems('progressions').map(p => Object.assign({}, p, { _custom: true }));
+  state.initData.progressions = [...base, ...custom];
+  if (state.selectedProgressionIdx >= state.initData.progressions.length) {
+    state.selectedProgressionIdx = 0;
+  }
+}
+
+function syncUserTabsIntoWorkshop() {
+  if (!window.userLibraryStore) return;
+  const base = Array.isArray(window.__builtinWorkshopExercises)
+    ? window.__builtinWorkshopExercises.map(x => Object.assign({}, x))
+    : [];
+  const customTabs = window.userLibraryStore.getItems('tabs').map(t => Object.assign({}, t, { _custom: true }));
+  state.customWorkshopExercises = [...customTabs, ...base];
+}
+
+function syncAllUserLibrariesIntoState() {
+  syncUserSweepsFromLibrary();
+  syncUserProgressionsIntoInitData();
+  syncUserTabsIntoWorkshop();
+}
+
+async function migrateLegacyLocalItemsToLibrary() {
+  if (!window.userLibraryStore) return;
+  const existingSweeps = new Set(window.userLibraryStore.getItems('sweeps').map(x => x.id));
+  for (const sw of (Array.isArray(state.savedSweepCompositions) ? state.savedSweepCompositions : [])) {
+    if (sw && Array.isArray(sw.items) && sw.items.length > 0 && (!sw.id || !existingSweeps.has(sw.id))) {
+      await window.userLibraryStore.saveItem('sweeps', sw);
+    }
+  }
+}
+
+window.__libImportCallback = null;
+function triggerLibraryFileImport(expectedCategory, onImported) {
+  const inp = document.getElementById('globalLibraryFileInput');
+  if (!inp || !window.userLibraryStore) return;
+  window.__libImportCallback = { expectedCategory, onImported };
+  inp.value = '';
+  inp.click();
+}
+
+async function onGlobalLibraryFileSelected(inputEl) {
+  const file = inputEl?.files?.[0];
+  const cb = window.__libImportCallback;
+  window.__libImportCallback = null;
+  if (inputEl) inputEl.value = '';
+  if (!file || !window.userLibraryStore) return;
+  try {
+    const text = await file.text();
+    const res = await window.userLibraryStore.importTextPermanently(text, cb?.expectedCategory || null);
+    syncAllUserLibrariesIntoState();
+    if (cb && typeof cb.onImported === 'function') {
+      cb.onImported(res);
+    } else {
+      await renderAll();
+    }
+  } catch (err) {
+    const msg = err?.message || 'Nie udało się wczytać pliku.';
+    if (cb?.expectedCategory === 'sweeps') {
+      showSweepToast(msg);
+      renderStageAndInspector();
+    } else if (cb?.expectedCategory === 'tabs') {
+      showTabToast(msg);
+      renderStageAndInspector();
+    } else if (cb?.expectedCategory === 'progressions') {
+      showChangesToast(msg);
+    } else {
+      alert(msg);
+    }
+  }
+}
+
+function buildSweepLibraryPayloadObject(customName = '') {
+  let items = [];
+  if (state.sweepViewMode === 'transition' && state.arpData?.transition?.segments?.length) {
+    items = state.arpData.transition.segments.map((seg, idx) => ({
+      id: `seg_${idx}_${Date.now()}`,
+      symbol: seg.symbol || 'Chord',
+      chordName: seg.roman || '',
+      rootPc: seg.rootPc ?? state.rootPc,
+      chordId: normalizeChordId(seg.chordId || state.chordId),
+      posIdx: 0,
+      posLabel: `pr. ${seg.minFret ?? 0}–${seg.maxFret ?? 0}`,
+      sweepStrings: seg.stringSpan || state.arpSweepStrings || 3,
+      stringSet: state.sweepStringSet || 0,
+      metricFit: normalizeSweepMetricFit(state.sweepMetricFit),
+      isSextuplet: isSweepSextupletCount((seg.steps || []).length, state.sweepMetricFit),
+      direction: state.sweepDirection ?? 0,
+      seqStyle: state.arpSeqStyle || 0,
+      rangeLabel: seg.hint || `${(seg.steps || []).length} nut`,
+      minFret: seg.minFret || 0,
+      maxFret: seg.maxFret || 0,
+      nodes: Array.isArray(seg.nodes) ? seg.nodes.map(n => Object.assign({}, n)) : [],
+      steps: Array.isArray(seg.steps) ? seg.steps.map(st => Object.assign({}, st)) : []
+    }));
+  } else if (Array.isArray(state.sweepComposition) && state.sweepComposition.length > 0) {
+    items = state.sweepComposition.map(seg => Object.assign({}, seg, {
+      nodes: Array.isArray(seg.nodes) ? seg.nodes.map(n => Object.assign({}, n)) : [],
+      steps: Array.isArray(seg.steps) ? seg.steps.map(st => Object.assign({}, st)) : []
+    }));
+  } else {
+    const snap = buildCurrentSweepCompSnapshot();
+    if (snap) items = [snap];
+  }
+  if (!items.length) return null;
+  const fallbackName = (state.sweepViewMode === 'transition' && state.arpData?.transition?.name)
+    ? state.arpData.transition.name
+    : `${items.map(c => c.symbol).join(' → ')} (${items.length})`;
+  const title = (typeof customName === 'string' && customName.trim()) ? customName.trim() : fallbackName;
+  return { name: title, items };
+}
+
+function exportCurrentSweepFile() {
+  if (!window.UserLibrary) return;
+  const inpEl = document.getElementById('sweepSaveNameInput');
+  const built = buildSweepLibraryPayloadObject(inpEl?.value || '');
+  if (!built) {
+    showSweepToast('Brak nut Sweep do wyeksportowania.');
+    renderStageAndInspector();
+    return;
+  }
+  const payload = window.UserLibrary.exportItemPayload('sweeps', built);
+  window.UserLibrary.downloadJsonPayload(payload, window.UserLibrary.makeSafeFilename(built.name, 'gitara-sweep.json'));
+  showSweepToast(`Wyeksportowano „${built.name}” (.gitara-sweep.json)`);
+  renderStageAndInspector();
+}
+
+function exportSavedSweepPreset(idx) {
+  if (!window.UserLibrary) return;
+  const list = Array.isArray(state.savedSweepCompositions) ? state.savedSweepCompositions : [];
+  const pr = list[idx];
+  if (!pr) return;
+  const payload = window.UserLibrary.exportItemPayload('sweeps', pr);
+  window.UserLibrary.downloadJsonPayload(payload, window.UserLibrary.makeSafeFilename(pr.name, 'gitara-sweep.json'));
+  showSweepToast(`Wyeksportowano „${pr.name}”`);
+  renderStageAndInspector();
+}
+
+function importSweepFilePermanently() {
+  triggerLibraryFileImport('sweeps', async (res) => {
+    const swEntry = res.entries.find(e => e.category === 'sweeps');
+    if (swEntry && swEntry.item) {
+      stopArpeggioPlayback(false);
+      state.sweepViewMode = 'single';
+      state.sweepComposition = (swEntry.item.items || []).map(seg => rebuildSweepSegmentSteps(Object.assign({}, seg)));
+      state.sweepCompActiveIdx = 0;
+      state.sweepCompactTabs = true;
+      showSweepToast(`Wczytano i zapisano na stałe „${swEntry.item.name}” (${res.count} elem.)`);
+    } else {
+      showSweepToast(`Zapisano ${res.count} elem. w lokalnej bibliotece`);
+    }
+    saveSettings();
+    await renderStageAndInspector();
+  });
+}
+
+function buildCurrentProgressionSnapshot(customTitle = '') {
+  ensureChangesProgressionLoaded();
+  const progs = state.initData?.progressions || [];
+  const activeProg = progs[state.selectedProgressionIdx] || progs[0] || {};
+  const labels = getRootLabels();
+  const autoTitle = `${(activeProg.title || 'Progresja').replace(/\s*\([^)]*\)$/, '')} (${labels[state.changesKeyRootPc]} ${state.changesIsMinor ? 'moll' : 'dur'})`;
+  const title = (typeof customTitle === 'string' && customTitle.trim()) ? customTitle.trim() : autoTitle;
+  const measures = (state.changesMeasures || []).map(m => ({
+    volta: Number(m.volta) || 0,
+    beats: (m.beats || []).map(sl => (sl ? Object.assign({}, sl) : null))
+  }));
+  const bars = measures.map(m => {
+    const first = (m.beats || []).find(Boolean) || getChangesDefaultTonicSlot();
+    return {
+      offsetSemi: first.offsetSemi || 0,
+      chordId: first.chordId || 'major',
+      roman: first.roman || 'I'
+    };
+  });
+  return {
+    title,
+    name: title,
+    style: state.changesFeel || activeProg.style || 'Custom',
+    keyRootPc: state.changesKeyRootPc,
+    isMinor: !!state.changesIsMinor,
+    bpm: state.changesBpm || 108,
+    timeSig: state.changesTimeSig || '4/4',
+    feel: state.changesFeel || 'Prosto',
+    compInst: state.changesCompInst || 'clean',
+    groove: state.changesGroove || 'straight',
+    cycleKeys: !!state.changesCycleKeys,
+    measures,
+    bars
+  };
+}
+
+async function saveChangesProgressionLocally() {
+  if (!window.userLibraryStore) return;
+  const inp = document.getElementById('changesSaveNameInput');
+  const progs = state.initData?.progressions || [];
+  const cur = progs[state.selectedProgressionIdx];
+  const snap = buildCurrentProgressionSnapshot(inp?.value || '');
+  if (cur && cur._custom && (!inp?.value || !inp.value.trim()) && cur.id) {
+    snap.id = cur.id;
+  }
+  const saved = await window.userLibraryStore.saveItem('progressions', snap);
+  syncAllUserLibrariesIntoState();
+  const newIdx = (state.initData.progressions || []).findIndex(p => p.id === saved.id);
+  if (newIdx >= 0) state.selectedProgressionIdx = newIdx;
+  if (inp) inp.value = '';
+  saveSettings();
+  await renderAll();
+  showChangesToast(`✓ Zapisano „${saved.title}” trwale w user_library/progressions/`);
+}
+
+function exportCurrentChangesProgression() {
+  if (!window.UserLibrary) return;
+  const inp = document.getElementById('changesSaveNameInput');
+  const snap = buildCurrentProgressionSnapshot(inp?.value || '');
+  const payload = window.UserLibrary.exportItemPayload('progressions', snap);
+  window.UserLibrary.downloadJsonPayload(payload, window.UserLibrary.makeSafeFilename(snap.title, 'gitara-prog.json'));
+  showChangesToast(`✓ Wyeksportowano „${snap.title}” (.gitara-prog.json)`);
+}
+
+function exportLibraryProgressionByIdx(idx) {
+  if (!window.UserLibrary) return;
+  const p = state.initData?.progressions?.[idx];
+  if (!p) return;
+  const payload = window.UserLibrary.exportItemPayload('progressions', p);
+  window.UserLibrary.downloadJsonPayload(payload, window.UserLibrary.makeSafeFilename(p.title || p.name, 'gitara-prog.json'));
+}
+
+async function deleteSavedChangesProgression(idx) {
+  const p = state.initData?.progressions?.[idx];
+  if (!p || !p._custom || !window.userLibraryStore) return;
+  await window.userLibraryStore.deleteItem('progressions', p.id);
+  syncAllUserLibrariesIntoState();
+  selectChangesProgression(0);
+  showChangesToast(`✓ Usunięto progresję „${p.title}”`);
+}
+
+function importChangesProgressionPermanently() {
+  triggerLibraryFileImport('progressions', async (res) => {
+    const entry = res.entries.find(e => e.category === 'progressions');
+    if (entry && entry.item) {
+      const idx = (state.initData.progressions || []).findIndex(p => p.id === entry.item.id);
+      if (idx >= 0) {
+        selectChangesProgression(idx);
+      } else {
+        await renderAll();
+      }
+      showChangesToast(`✓ Wczytano i zapisano na stałe „${entry.item.title || entry.item.name}”`);
+    } else {
+      await renderAll();
+      showChangesToast(`✓ Zaimportowano ${res.count} elem. do lokalnej biblioteki`);
+    }
+  });
+}
+
+async function downloadChangesProgressionGp5() {
+  const snap = buildCurrentProgressionSnapshot('');
+  try {
+    const res = await fetch('/api/export/progression_gp5', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(snap)
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const fname = window.UserLibrary
+      ? window.UserLibrary.makeSafeFilename(snap.title, 'gp5')
+      : 'progresja_tuxguitar.gp5';
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  } catch (_) {}
+}
+
+function buildCurrentTabSnapshot(customTitle = '') {
+  const rootLabels = getRootLabels();
+  const autoTitle = (state.exerciseTitle && state.exerciseTitle.trim() && state.exerciseTitle !== 'Twoje ćwiczenie')
+    ? state.exerciseTitle.trim()
+    : `Ćwiczenie TAB (${rootLabels[state.rootPc]} · ${state.recordedEvents.length} nut · ${state.tempoBpm} BPM)`;
+  const title = (typeof customTitle === 'string' && customTitle.trim()) ? customTitle.trim() : autoTitle;
+  return {
+    title,
+    name: title,
+    category: 'Tab Composer',
+    level: 'Własne',
+    rootPc: state.rootPc,
+    scaleId: state.scaleId,
+    posSystem: state.posSystem,
+    bpm: state.tempoBpm,
+    timeSigNum: state.timeSigNum,
+    timeSigDen: state.timeSigDen,
+    tuningId: state.tuningId,
+    customStringMidis: Array.isArray(state.customStringMidis) ? state.customStringMidis.slice() : [40, 45, 50, 55, 59, 64],
+    startString: -1,
+    direction: 0,
+    octaves: 2,
+    pattern: 0,
+    recordedEvents: (state.recordedEvents || []).map(e => Object.assign({}, e))
+  };
+}
+
+async function saveTabExerciseLocally() {
+  if (!state.recordedEvents || state.recordedEvents.length === 0) {
+    showTabToast('Brak nut do zapisania.');
+    renderStageAndInspector();
+    return null;
+  }
+  const inp = document.getElementById('tabSaveNameInput');
+  const snap = buildCurrentTabSnapshot(inp?.value || '');
+  state.exerciseTitle = snap.title;
+  if (window.userLibraryStore) {
+    const saved = await window.userLibraryStore.saveItem('tabs', snap);
+    syncAllUserLibrariesIntoState();
+    showTabToast(`Zapisano „${saved.title}” trwale w user_library/tabs/`);
+    renderStageAndInspector();
+    return saved;
+  }
+  state.customWorkshopExercises.unshift(snap);
+  renderStageAndInspector();
+  return snap;
+}
+
+function exportCurrentTabFile() {
+  if (!window.UserLibrary) return;
+  if (!state.recordedEvents || state.recordedEvents.length === 0) {
+    showTabToast('Najpierw wpisz nuty do Edytora TAB.');
+    renderStageAndInspector();
+    return;
+  }
+  const inp = document.getElementById('tabSaveNameInput');
+  const snap = buildCurrentTabSnapshot(inp?.value || '');
+  const payload = window.UserLibrary.exportItemPayload('tabs', snap);
+  window.UserLibrary.downloadJsonPayload(payload, window.UserLibrary.makeSafeFilename(snap.title, 'gitara-tab.json'));
+  showTabToast(`Wyeksportowano „${snap.title}” (.gitara-tab.json)`);
+  renderStageAndInspector();
+}
+
+function applyLoadedTabLibraryItem(tab) {
+  if (!tab || !Array.isArray(tab.recordedEvents)) return;
+  if (typeof stopExercisePlayer === 'function') stopExercisePlayer(false);
+  state.exerciseTitle = tab.title || tab.name || 'Wczytane ćwiczenie TAB';
+  if (tab.rootPc !== undefined) state.rootPc = tab.rootPc;
+  if (tab.scaleId) state.scaleId = tab.scaleId;
+  if (tab.posSystem !== undefined) state.posSystem = tab.posSystem;
+  if (tab.bpm) state.tempoBpm = tab.bpm;
+  if (tab.timeSigNum) state.timeSigNum = tab.timeSigNum;
+  if (tab.timeSigDen) state.timeSigDen = tab.timeSigDen;
+  state.recordedEvents = tab.recordedEvents.map(ev => Object.assign({ dur: 1, tuplet: 0, rest: 0, tech: '-' }, ev));
+}
+
+function loadSavedTabFromLibrary(idx) {
+  const list = window.userLibraryStore ? window.userLibraryStore.getItems('tabs') : [];
+  const item = list[idx];
+  if (!item) return;
+  applyLoadedTabLibraryItem(item);
+  showTabToast(`Wczytano „${item.title || item.name}”`);
+  renderAll();
+}
+
+function exportSavedTabFromLibrary(idx) {
+  if (!window.UserLibrary || !window.userLibraryStore) return;
+  const item = window.userLibraryStore.getItems('tabs')[idx];
+  if (!item) return;
+  const payload = window.UserLibrary.exportItemPayload('tabs', item);
+  window.UserLibrary.downloadJsonPayload(payload, window.UserLibrary.makeSafeFilename(item.title || item.name, 'gitara-tab.json'));
+}
+
+async function deleteSavedTabFromLibrary(idx) {
+  if (!window.userLibraryStore) return;
+  const item = window.userLibraryStore.getItems('tabs')[idx];
+  if (!item) return;
+  await window.userLibraryStore.deleteItem('tabs', item.id);
+  syncAllUserLibrariesIntoState();
+  showTabToast(`Usunięto „${item.title || item.name}”`);
+  renderStageAndInspector();
+}
+
+function importTabFilePermanently() {
+  triggerLibraryFileImport('tabs', async (res) => {
+    const entry = res.entries.find(e => e.category === 'tabs');
+    if (entry && entry.item) {
+      applyLoadedTabLibraryItem(entry.item);
+      showTabToast(`Wczytano i zapisano na stałe „${entry.item.title || entry.item.name}”`);
+    } else {
+      showTabToast(`Zaimportowano ${res.count} elem. do lokalnej biblioteki`);
+    }
+    await renderAll();
+  });
+}
+
+function buildLocalTabLibraryBarHtml() {
+  const savedTabs = window.userLibraryStore ? window.userLibraryStore.getItems('tabs') : [];
+  const curTitleVal = state.exerciseTitle && state.exerciseTitle !== 'Twoje ćwiczenie' ? state.exerciseTitle : '';
+  return `<div style="display:flex;flex-direction:column;gap:6px;padding:8px 11px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;">
+    ${state.tabToastMsg ? `<div style="font-size:11.5px;font-weight:700;color:#86efac;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.4);border-radius:6px;padding:4px 9px;">${escapeHtmlText(state.tabToastMsg)}</div>` : ''}
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+      <span style="font-size:10.5px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;">📚 Moje i wczytane TAB-y (${savedTabs.length})</span>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-left:auto;">
+        <input id="tabSaveNameInput" type="text" value="${escapeHtmlText(curTitleVal)}" placeholder="Nazwa ćwiczenia / TAB..." style="width:180px;padding:4px 8px;font-size:11.5px;background:var(--bg-dark);color:var(--text);border:1px solid var(--border);border-radius:6px;">
+        <button class="chip-btn" style="padding:4px 9px;font-size:11px;border-color:var(--accent);color:var(--accent);" onclick="saveTabExerciseLocally()">💾 Zapisz TAB</button>
+      </div>
+    </div>
+    ${savedTabs.length > 0 ? `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-top:4px;border-top:1px dashed var(--border);">
+      ${savedTabs.map((tb, idx) => `
+        <div style="display:inline-flex;align-items:center;gap:2px;background:var(--bg-dark);border:1px solid var(--border);border-radius:7px;padding:2px 4px;">
+          <button class="chip-btn" style="border:none;background:transparent;padding:2px 6px;font-size:11px;"
+                  onclick="loadSavedTabFromLibrary(${idx})">${tb.source === 'imported' ? '📥 ' : '💾 '}${escapeHtmlText(tb.title || tb.name)}</button>
+          <button class="chip-btn" style="border:none;background:transparent;padding:2px 4px;font-size:10px;color:var(--text-muted);"
+                  onclick="exportSavedTabFromLibrary(${idx})" title="Eksportuj do pliku">📤</button>
+          <button class="chip-btn" style="border:none;background:transparent;padding:2px 5px;font-size:10px;color:#f87171;"
+                  onclick="deleteSavedTabFromLibrary(${idx})" title="Usuń z lokalnej biblioteki">✕</button>
+        </div>
+      `).join('')}
+    </div>` : `<div style="font-size:11px;color:var(--text-muted);">Brak zapisanych ćwiczeń TAB. Wpisz nazwę i kliknij „💾 Zapisz TAB” lub wczytaj plik od znajomego.</div>`}
+  </div>`;
+}
+
+function exportAllUserLibraryPack() {
+  if (!window.UserLibrary || !window.userLibraryStore) return;
+  const payload = window.UserLibrary.exportPackPayload(window.userLibraryStore.getAll(), { name: 'Moja paczka Apka Gitarowa' });
+  window.UserLibrary.downloadJsonPayload(payload, window.UserLibrary.makeSafeFilename('apka_gitara_paczka', 'gitara-pack.json'));
+}
+
+function importAnyLibraryPackOrFile() {
+  triggerLibraryFileImport(null, async (res) => {
+    if (res.count > 0) {
+      alert(`Zapisano na stałe w lokalnej bibliotece (${res.count} elem. w: ${res.categories.join(', ')}).`);
+    }
+    await renderAll();
+  });
+}
+
 window.__gitaraStudioHost = {
   getState: () => state,
   getDetector: () => livePitchPleaseDetector,
@@ -19149,12 +22569,42 @@ window.__gitaraStudioHost = {
   playKeyboardPresetNote: (...args) => playKeyboardPresetNote(...args),
   playDrumHit: (...args) => playDrumHit(...args),
   playMetronomeTickAudio: (...args) => playMetronomeTickAudio(...args),
+  stopAllPreviewVoices: () => { stopPreviewVoices(0.03); stopAllSustainedVoices(); },
   midiToFreq: (m) => midiToFreq(m),
   getRootLabels: () => getRootLabels(),
   fetchJson: (u) => fetchJson(u),
-  t: (pl, en) => t(pl, en)
+  t: (pl, en) => t(pl, en),
+  getLibraryItems: (cat) => (window.userLibraryStore ? window.userLibraryStore.getItems(cat) : []),
+  saveLibraryItem: async (cat, item) => {
+    if (!window.userLibraryStore) return null;
+    const saved = await window.userLibraryStore.saveItem(cat, item);
+    syncAllUserLibrariesIntoState();
+    return saved;
+  },
+  deleteLibraryItem: async (cat, id) => {
+    if (!window.userLibraryStore) return false;
+    const ok = await window.userLibraryStore.deleteItem(cat, id);
+    syncAllUserLibrariesIntoState();
+    return ok;
+  },
+  exportLibraryItem: (cat, item, fname) => {
+    if (!window.UserLibrary) return false;
+    const payload = window.UserLibrary.exportItemPayload(cat, item);
+    const extMap = { sweeps: 'gitara-sweep.json', progressions: 'gitara-prog.json', tabs: 'gitara-tab.json', studio: 'gitara-studio.json', sessions: 'gitara-session.json' };
+    const safeName = fname || window.UserLibrary.makeSafeFilename(item?.name || item?.title || item?.song?.title, extMap[cat] || 'json');
+    return window.UserLibrary.downloadJsonPayload(payload, safeName);
+  },
+  exportLibraryPack: () => exportAllUserLibraryPack(),
+  importLibraryText: async (txt, fallbackCat = null) => {
+    if (!window.userLibraryStore) throw new Error('Moduł biblioteki niedostępny.');
+    const res = await window.userLibraryStore.importTextPermanently(txt, fallbackCat);
+    syncAllUserLibrariesIntoState();
+    return res;
+  },
+  refreshAfterLibraryImport: () => { syncAllUserLibrariesIntoState(); }
 };
 </script>
+<input id="globalLibraryFileInput" type="file" accept=".json,.gitara.json,.gitara-sweep.json,.gitara-prog.json,.gitara-tab.json,.gitara-studio.json,.gitara-pack.json,application/json" style="display:none;" onchange="onGlobalLibraryFileSelected(this)">
 </body>
 </html>
 )HTML";

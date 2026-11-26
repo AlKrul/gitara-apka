@@ -345,8 +345,14 @@ bool parseStudioSongJson(std::string_view jsonText, Song& outSong, std::string* 
         tr.midiChannel = tr.isPercussion ? 9 : std::clamp(tj.getInt("midiChannel", static_cast<int>(tIdx)), 0, 15);
         tr.midiProgram = tr.isPercussion ? 0 : std::clamp(tj.getInt("midiProgram", 25), 0, 127);
 
-        if (tr.isPercussion) {
-            tr.tuning = gitara::theory::findTuning("standard");
+        if (tr.isPercussion || instType == "keys") {
+            if (instType == "keys") {
+                tr.tuning = gitara::theory::Tuning{};
+                tr.tuning.id = "keys";
+                tr.tuning.polishName = "Klawisze / Synth";
+            } else {
+                tr.tuning = gitara::theory::findTuning("standard");
+            }
         } else {
             const auto* openArr = tj.find("openStringMidis");
             if (openArr && openArr->type == JsonType::Array && !openArr->arrVal.empty()) {
@@ -405,7 +411,11 @@ bool parseStudioSongJson(std::string_view jsonText, Song& outSong, std::string* 
                                 if (nj.type != JsonType::Object) continue;
                                 TabNote note{};
                                 note.stringIndex = std::max(0, nj.getInt("string", nj.getInt("stringIndex", 0)));
-                                note.fret = std::clamp(nj.getInt("fret", 0), 0, 127);
+                                if (instType == "keys") {
+                                    note.fret = std::clamp(nj.getInt("midi", nj.getInt("fret", 60)), 0, 127);
+                                } else {
+                                    note.fret = std::clamp(nj.getInt("fret", 0), 0, 127);
+                                }
                                 note.velocity = std::clamp(nj.getInt("velocity", 95), 1, 127);
                                 note.tied = nj.getBool("tied", false);
                                 note.hammerOn = nj.getBool("hammerOn", false);
@@ -431,8 +441,8 @@ bool parseStudioSongJson(std::string_view jsonText, Song& outSong, std::string* 
                                     for (const auto& bp : bendsVal->arrVal) {
                                         if (bp.type != JsonType::Object) continue;
                                         BendPoint pt{};
-                                        pt.position = std::clamp(bp.getInt("position", 0), 0, 60);
-                                        pt.value = std::clamp(bp.getInt("value", 0), -200, 400);
+                                        pt.position = std::clamp(bp.getInt("position", bp.getInt("pos", 0)), 0, 60);
+                                        pt.value = std::clamp(bp.getInt("value", bp.getInt("val", 0)), -200, 400);
                                         pt.vibrato = bp.getBool("vibrato", false);
                                         note.bendPoints.push_back(pt);
                                     }

@@ -15,6 +15,7 @@ import {
   getDrumBlockById,
   resolveDrumMeasureSteps
 } from './studioDrumBlocks.js';
+import { ChordNamer } from '../dsp/dechorder/chordNamer.js';
 
 export const NOTE_NAMES_SHARP = Object.freeze(['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']);
 export const NOTE_NAMES_FLAT = Object.freeze(['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']);
@@ -143,13 +144,56 @@ export const TRACK_ROLE_PRESETS = Object.freeze({
   }
 });
 
+export const DEFAULT_DSP_THRESHOLD_ON = 0.58;
+export const DEFAULT_DSP_HIGH_THRESHOLD_ON = 0.42;
+
+/**
+ * Przelicza względną korektę wrażliwości (-5 .. 0 .. +5, gdzie 0 = sprawdzona domyślna 0.58/0.42)
+ * na parę progów detekcji PitchPlease (wyższe + = niższy próg = łatwiejsze wyłapywanie cichych dźwięków).
+ */
+export function sensitivityOffsetToThresholds(offset = 0, fineHighOffset = 0) {
+  const off = Number.isFinite(Number(offset)) ? Math.max(-5, Math.min(5, Math.round(Number(offset)))) : 0;
+  const fine = Number.isFinite(Number(fineHighOffset)) ? Math.max(-3, Math.min(3, Math.round(Number(fineHighOffset)))) : 0;
+  const rawOn = off === 0
+    ? DEFAULT_DSP_THRESHOLD_ON
+    : (off > 0 ? (DEFAULT_DSP_THRESHOLD_ON - off * 0.03) : (DEFAULT_DSP_THRESHOLD_ON - off * 0.04));
+  const thresholdOn = Math.round(Math.max(0.40, Math.min(0.78, rawOn)) * 100) / 100;
+  const baseHigh = off === 0
+    ? DEFAULT_DSP_HIGH_THRESHOLD_ON
+    : (off > 0 ? (DEFAULT_DSP_HIGH_THRESHOLD_ON - off * 0.025) : (DEFAULT_DSP_HIGH_THRESHOLD_ON - off * 0.04));
+  const rawHigh = fine === 0
+    ? baseHigh
+    : (fine > 0 ? (baseHigh - fine * 0.025) : (baseHigh - fine * 0.035));
+  const highThresholdOn = Math.round(Math.max(0.28, Math.min(thresholdOn, Math.min(0.66, rawHigh))) * 100) / 100;
+  return { offset: off, fineHighOffset: fine, thresholdOn, highThresholdOn };
+}
+
+/**
+ * Odtwarza względną korektę (-5..+5) z progu detekcji (0.58 -> 0).
+ */
+export function thresholdToSensitivityOffset(thresholdOn = DEFAULT_DSP_THRESHOLD_ON) {
+  const v = Number(thresholdOn);
+  if (!Number.isFinite(v) || Math.abs(v - DEFAULT_DSP_THRESHOLD_ON) < 0.015) return 0;
+  const raw = v < DEFAULT_DSP_THRESHOLD_ON
+    ? (DEFAULT_DSP_THRESHOLD_ON - v) / 0.03
+    : (DEFAULT_DSP_THRESHOLD_ON - v) / 0.04;
+  return Math.max(-5, Math.min(5, Math.round(raw)));
+}
+
 export const DEFAULT_STUDIO_PREFS = Object.freeze({
-  detectSensitivity: 0.58,
+  detectSensitivity: DEFAULT_DSP_THRESHOLD_ON,
+  detectSensitivityOffset: 0,
   detectHighThresholdOn: null,
   minNoteDurationMs: 80,
   liveRecMode: 'offline',
   quantizeGrid: 1,
-  soundMode: 'webaudio'
+  soundMode: 'webaudio',
+  showOctaveBands: false,
+  octaveAnchorPc: null,
+  showAutoChords: true,
+  tabZoom: 100,
+  fretboardZoom: 100,
+  uiMode: 'simple'
 });
 
 export const DEFAULT_METRONOME_PATTERN = Object.freeze({
@@ -214,11 +258,21 @@ const MAX_PLAYBACK_BARS = 512;
 
 export function clampStudioPrefs(raw) {
   const src = (raw && typeof raw === 'object') ? raw : {};
-  const sens = Number.isFinite(Number(src.detectSensitivity))
-    ? Math.max(0.36, Math.min(0.88, Math.round(Number(src.detectSensitivity) * 100) / 100))
-    : DEFAULT_STUDIO_PREFS.detectSensitivity;
+  const hasExplicitOffset = src.detectSensitivityOffset !== undefined && src.detectSensitivityOffset !== null && Number.isFinite(Number(src.detectSensitivityOffset));
+  const hasExplicitSens = src.detectSensitivity !== undefined && src.detectSensitivity !== null && Number.isFinite(Number(src.detectSensitivity));
+  let detectSensitivityOffset = 0;
+  let sens = DEFAULT_DSP_THRESHOLD_ON;
+  if (hasExplicitOffset) {
+    detectSensitivityOffset = Math.max(-5, Math.min(5, Math.round(Number(src.detectSensitivityOffset))));
+    sens = hasExplicitSens
+      ? Math.max(0.36, Math.min(0.88, Math.round(Number(src.detectSensitivity) * 100) / 100))
+      : sensitivityOffsetToThresholds(detectSensitivityOffset).thresholdOn;
+  } else if (hasExplicitSens) {
+    sens = Math.max(0.36, Math.min(0.88, Math.round(Number(src.detectSensitivity) * 100) / 100));
+    detectSensitivityOffset = thresholdToSensitivityOffset(sens);
+  }
   const highThr = (src.detectHighThresholdOn !== null && src.detectHighThresholdOn !== undefined && Number.isFinite(Number(src.detectHighThresholdOn)))
-    ? Math.max(0.30, Math.min(0.84, Math.round(Number(src.detectHighThresholdOn) * 100) / 100))
+    ? Math.max(0.28, Math.min(0.84, Math.round(Number(src.detectHighThresholdOn) * 100) / 100))
     : null;
   const minDur = Number.isFinite(Number(src.minNoteDurationMs))
     ? Math.max(20, Math.min(300, Math.round(Number(src.minNoteDurationMs))))
@@ -227,13 +281,33 @@ export function clampStudioPrefs(raw) {
   const rawGrid = Number(src.quantizeGrid);
   const quantizeGrid = Number.isInteger(rawGrid) && rawGrid >= -1 && rawGrid <= 3 ? rawGrid : DEFAULT_STUDIO_PREFS.quantizeGrid;
   const soundMode = src.soundMode === 'sf2' ? 'sf2' : 'webaudio';
+  const showOctaveBands = Boolean(src.showOctaveBands);
+  const rawAnchor = src.octaveAnchorPc;
+  const octaveAnchorPc = (rawAnchor !== null && rawAnchor !== undefined && Number.isInteger(Number(rawAnchor)))
+    ? (((Number(rawAnchor) % 12) + 12) % 12)
+    : null;
+  const showAutoChords = src.showAutoChords !== undefined ? Boolean(src.showAutoChords) : DEFAULT_STUDIO_PREFS.showAutoChords;
+  const tabZoom = Number.isFinite(Number(src.tabZoom))
+    ? Math.max(70, Math.min(160, Math.round(Number(src.tabZoom))))
+    : DEFAULT_STUDIO_PREFS.tabZoom;
+  const fretboardZoom = Number.isFinite(Number(src.fretboardZoom))
+    ? Math.max(75, Math.min(150, Math.round(Number(src.fretboardZoom))))
+    : DEFAULT_STUDIO_PREFS.fretboardZoom;
+  const uiMode = src.uiMode === 'pro' ? 'pro' : DEFAULT_STUDIO_PREFS.uiMode;
   return {
     detectSensitivity: sens,
+    detectSensitivityOffset,
     detectHighThresholdOn: highThr,
     minNoteDurationMs: minDur,
     liveRecMode: mode,
     quantizeGrid,
-    soundMode
+    soundMode,
+    showOctaveBands,
+    octaveAnchorPc,
+    showAutoChords,
+    tabZoom,
+    fretboardZoom,
+    uiMode
   };
 }
 
@@ -271,6 +345,16 @@ export const BEND_PRESETS = Object.freeze({
   pre_bend:     { id: 'pre_bend',     label: 'Pre-bend',     shortLabel: 'Pre', points: [{ pos: 0, val: 100 }, { pos: 60, val: 100 }] }
 });
 
+export const WHAMMY_PRESETS = Object.freeze({
+  dive_half:  { id: 'dive_half',  label: 'Dive -½',       shortLabel: '-½',  points: [{ pos: 0, val: 0 }, { pos: 60, val: -50 }] },
+  dive_full:  { id: 'dive_full',  label: 'Dive -1 ton',   shortLabel: '-1',  points: [{ pos: 0, val: 0 }, { pos: 60, val: -100 }] },
+  dive_bomb:  { id: 'dive_bomb',  label: 'Dive Bomb -2½', shortLabel: '-2½', points: [{ pos: 0, val: 0 }, { pos: 60, val: -250 }] },
+  dip_half:   { id: 'dip_half',   label: 'Dip v -½',      shortLabel: 'v-½', points: [{ pos: 0, val: 0 }, { pos: 30, val: -50 }, { pos: 60, val: 0 }] },
+  dip_full:   { id: 'dip_full',   label: 'Dip v -1',      shortLabel: 'v-1', points: [{ pos: 0, val: 0 }, { pos: 30, val: -100 }, { pos: 60, val: 0 }] },
+  scoop:      { id: 'scoop',      label: 'Scoop /-1→0',   shortLabel: '/-1', points: [{ pos: 0, val: -100 }, { pos: 30, val: 0 }, { pos: 60, val: 0 }] },
+  raise_half: { id: 'raise_half', label: 'Pull Up +½',    shortLabel: '+½',  points: [{ pos: 0, val: 0 }, { pos: 60, val: 50 }] }
+});
+
 export const DYNAMIC_LEVELS = Object.freeze([
   { value: 1, label: 'pp' },
   { value: 2, label: 'p' },
@@ -283,6 +367,14 @@ export const DYNAMIC_LEVELS = Object.freeze([
 
 export function createTabNote(opts = {}) {
   const slideType = String(opts.slideType || (opts.slide ? 'shift' : ''));
+  const bendPreset = String(opts.bendPreset || '');
+  const bendPoints = (Array.isArray(opts.bendPoints) && opts.bendPoints.length > 0)
+    ? opts.bendPoints.map(p => ({ ...p }))
+    : (bendPreset && BEND_PRESETS[bendPreset] ? BEND_PRESETS[bendPreset].points.map(p => ({ ...p })) : []);
+  const whammyPreset = String(opts.whammyPreset || '');
+  const whammyPoints = (Array.isArray(opts.whammyPoints) && opts.whammyPoints.length > 0)
+    ? opts.whammyPoints.map(p => ({ ...p }))
+    : (whammyPreset && WHAMMY_PRESETS[whammyPreset] ? WHAMMY_PRESETS[whammyPreset].points.map(p => ({ ...p })) : []);
   return {
     string: Number.isFinite(opts.string) ? opts.string : 0,
     fret: Number.isFinite(opts.fret) ? Math.max(0, Math.min(24, Math.round(opts.fret))) : 0,
@@ -306,8 +398,10 @@ export function createTabNote(opts = {}) {
     tremoloPicking: Boolean(opts.tremoloPicking),
     trill: Boolean(opts.trill),
     harmonicType: Number.isFinite(opts.harmonicType) ? opts.harmonicType : 0,
-    bendPreset: String(opts.bendPreset || ''),
-    bendPoints: Array.isArray(opts.bendPoints) ? opts.bendPoints.map(p => ({ ...p })) : []
+    bendPreset,
+    bendPoints,
+    whammyPreset,
+    whammyPoints
   };
 }
 
@@ -334,19 +428,30 @@ export function createEmptyBeat(duration = 0, isRest = true) {
   return createBeat({ duration, isRest, notes: [] });
 }
 
-export function createEmptyMeasure(numerator = 4, denominator = 4, drumBlockId = 'rock_8th', isDrumTrack = false) {
+export function createEmptyMeasure(numerator = 4, denominator = 4, drumBlockId = 'rock_8th', isDrumTrack = false, defaultBeatDuration = null) {
+  const num = Math.max(1, Math.min(16, Number(numerator) || 4));
+  const den = [2, 4, 8, 16].includes(Number(denominator)) ? Number(denominator) : 4;
   const beats = [];
   if (!isDrumTrack) {
-    // Wypełniamy takty pojedynczymi pauzami o wartości odpowiadającej metrum (np. 4x ćwierćnuta w 4/4)
-    const beatDur = (denominator === 8) ? 1 : (denominator === 2 ? -1 : 0);
-    const count = Math.max(1, Math.min(12, Number(numerator) || 4));
-    for (let i = 0; i < count; i++) {
-      beats.push(createEmptyBeat(beatDur, true));
+    if (Number.isInteger(defaultBeatDuration)) {
+      const beatDur = Math.max(-2, Math.min(4, defaultBeatDuration));
+      const beatQ = durationToQuarterNotes({ duration: beatDur });
+      const capQ = num * (4 / den);
+      const count = Math.max(1, Math.min(16, Math.round(capQ / Math.max(0.0625, beatQ))));
+      for (let i = 0; i < count; i++) {
+        beats.push(createEmptyBeat(beatDur, true));
+      }
+    } else {
+      // Wypełniamy takty pojedynczymi pauzami o wartości odpowiadającej metrum (np. 4x ćwierćnuta w 4/4)
+      const beatDur = (den === 16) ? 2 : (den === 8 ? 1 : (den === 2 ? -1 : 0));
+      for (let i = 0; i < num; i++) {
+        beats.push(createEmptyBeat(beatDur, true));
+      }
     }
   }
   return {
-    numerator: Math.max(1, Math.min(16, Number(numerator) || 4)),
-    denominator: [2, 4, 8, 16].includes(Number(denominator)) ? Number(denominator) : 4,
+    numerator: num,
+    denominator: den,
     isPickup: false,
     repeatOpen: false,
     repeatClose: 0,
@@ -483,6 +588,7 @@ export function expandPlaybackTimeline(song) {
     const voltaMask = Number(m.voltaMask) || 0;
     if (voltaMask === 0 && idx > lastRepeatCloseIdx && currentPass > 1) {
       currentPass = 1;
+      repeatStartIdx = idx;
     }
     if (voltaMask > 0) {
       const bit = 1 << Math.max(0, currentPass - 1);
@@ -507,15 +613,17 @@ export function expandPlaybackTimeline(song) {
     const repeatTarget = Number(m.repeatClose) || 0;
     if (repeatTarget >= 2) {
       lastRepeatCloseIdx = Math.max(lastRepeatCloseIdx, idx);
-      const taken = repeatPassCount.get(idx) || 0;
-      if (taken + 1 < repeatTarget) {
-        repeatPassCount.set(idx, taken + 1);
-        currentPass = taken + 2;
+      if (currentPass < repeatTarget) {
+        currentPass += 1;
         justJumpedBack = true;
         idx = Math.max(0, Math.min(idx, repeatStartIdx));
         continue;
       } else {
-        currentPass = 1;
+        const nextVolta = Number(masterMeasures[idx + 1]?.voltaMask) || 0;
+        if (nextVolta === 0) {
+          currentPass = 1;
+          repeatStartIdx = idx + 1;
+        }
       }
     }
 
@@ -554,6 +662,9 @@ export function buildBeatEventsForTrack(song, trackIdx, timeline = null) {
     return events;
   }
 
+  const isKeysTrack = track.instrumentType === 'keys';
+  let prevNoteByKey = new Map();
+
   for (const entry of tl) {
     const m = track.measures[entry.measureIdx];
     if (!m || !Array.isArray(m.beats)) continue;
@@ -563,12 +674,23 @@ export function buildBeatEventsForTrack(song, trackIdx, timeline = null) {
       const durQ = durationToQuarterNotes(beat);
       if (!beat.isRest && Array.isArray(beat.notes) && beat.notes.length > 0) {
         const resolved = [];
+        const currNoteByKey = new Map();
         for (const n of beat.notes) {
           const midi = noteToMidi(track, n);
           if (midi !== null && midi >= 0 && midi <= 127) {
-            resolved.push({ ...n, midi });
+            const tieKey = isKeysTrack ? `m:${midi}` : `s:${n.string}:m:${midi}`;
+            const prevMatched = prevNoteByKey.get(tieKey);
+            if (n.tied && prevMatched) {
+              prevMatched.tieExtraQ = (prevMatched.tieExtraQ || 0) + durQ;
+              currNoteByKey.set(tieKey, prevMatched);
+            } else {
+              const outNote = { ...n, midi, tieExtraQ: 0 };
+              resolved.push(outNote);
+              currNoteByKey.set(tieKey, outNote);
+            }
           }
         }
+        prevNoteByKey = currNoteByKey;
         if (resolved.length > 0) {
           events.push({
             kind: 'notes',
@@ -578,10 +700,13 @@ export function buildBeatEventsForTrack(song, trackIdx, timeline = null) {
             beatIdx: bIdx,
             startQ: entry.startQ + offsetQ,
             durationQ: durQ,
+            beatDynamic: Math.max(1, Math.min(7, Number(beat.dynamic) || 6)),
             beat,
             notes: resolved
           });
         }
+      } else {
+        prevNoteByKey = new Map();
       }
       offsetQ += durQ;
     }
@@ -594,15 +719,16 @@ export function addTrack(song, role = 'guitar2') {
   const masterLen = Math.max(1, getMasterMeasureCount(song));
   const refMeasures = song.tracks[0]?.measures || [];
   const tr = createTrackPreset(role, masterLen, refMeasures[0]?.numerator || 4, refMeasures[0]?.denominator || 4);
+  const isDrum = tr.instrumentType === 'drums' || Boolean(tr.isPercussion);
   for (let i = 0; i < masterLen; i++) {
     const ref = refMeasures[i];
     if (ref && tr.measures[i]) {
-      tr.measures[i].numerator = ref.numerator;
-      tr.measures[i].denominator = ref.denominator;
-      tr.measures[i].repeatOpen = Boolean(ref.repeatOpen);
-      tr.measures[i].repeatClose = Number(ref.repeatClose) || 0;
-      tr.measures[i].voltaMask = Number(ref.voltaMask) || 0;
-      tr.measures[i].sectionMarker = ref.sectionMarker || '';
+      const rebuilt = createEmptyMeasure(ref.numerator, ref.denominator, isDrum ? 'rock_8th' : '', isDrum);
+      rebuilt.repeatOpen = Boolean(ref.repeatOpen);
+      rebuilt.repeatClose = Number(ref.repeatClose) || 0;
+      rebuilt.voltaMask = Number(ref.voltaMask) || 0;
+      rebuilt.sectionMarker = ref.sectionMarker || '';
+      tr.measures[i] = rebuilt;
     }
   }
   // Uniknij kolizji kanału MIDI jeśli rola była już użyta
@@ -647,7 +773,7 @@ export function removeTrack(song, trackIdx) {
   return true;
 }
 
-export function addMeasure(song, afterIdx = -1) {
+export function addMeasure(song, afterIdx = -1, defaultBeatDuration = null) {
   if (!song || !Array.isArray(song.tracks) || song.tracks.length === 0) return -1;
   const masterLen = getMasterMeasureCount(song);
   const insertPos = (afterIdx >= 0 && afterIdx < masterLen) ? afterIdx + 1 : masterLen;
@@ -657,7 +783,7 @@ export function addMeasure(song, afterIdx = -1) {
   for (const tr of song.tracks) {
     const isDrum = tr.instrumentType === 'drums' || tr.isPercussion;
     const prevBlock = tr.measures[refIdx]?.drumBlockId || 'rock_8th';
-    const newM = createEmptyMeasure(refM.numerator, refM.denominator, prevBlock, isDrum);
+    const newM = createEmptyMeasure(refM.numerator, refM.denominator, prevBlock, isDrum, defaultBeatDuration);
     tr.measures.splice(insertPos, 0, newM);
   }
   return insertPos;
@@ -735,6 +861,7 @@ export function setDrumBlockForMeasure(song, trackIdx, measureIdx, blockId) {
   const m = tr.measures?.[measureIdx];
   if (!m) return false;
   m.drumBlockId = getDrumBlockById(blockId).id;
+  m.customDrumGrid = null;
   return true;
 }
 
@@ -781,14 +908,18 @@ export function createStudioHistory(maxSteps = 50) {
   };
 }
 
-export function serializeStudioSong(song, prefs = null) {
-  return JSON.stringify({
+export function serializeStudioSong(song, prefs = null, extraMeta = null) {
+  const payload = {
     format: 'apka-gitara-studio',
     version: 1,
     savedAt: new Date().toISOString(),
     studioPrefs: clampStudioPrefs(prefs),
     song
-  }, null, 2);
+  };
+  if (extraMeta && typeof extraMeta === 'object' && extraMeta.proBackup) {
+    payload.proBackup = extraMeta.proBackup;
+  }
+  return JSON.stringify(payload, null, 2);
 }
 
 export function deserializeStudioSong(rawInput) {
@@ -798,9 +929,12 @@ export function deserializeStudioSong(rawInput) {
   } catch (err) {
     throw new Error(`Nieprawidłowy plik projektu JSON: ${err.message}`);
   }
-  const songObj = (parsed && parsed.song && Array.isArray(parsed.song.tracks))
-    ? parsed.song
-    : (parsed && Array.isArray(parsed.tracks) ? parsed : null);
+  const sourceObj = (parsed && parsed.format === 'apka-gitara-library-v1' && parsed.item && typeof parsed.item === 'object')
+    ? parsed.item
+    : parsed;
+  const songObj = (sourceObj && sourceObj.song && Array.isArray(sourceObj.song.tracks))
+    ? sourceObj.song
+    : (sourceObj && Array.isArray(sourceObj.tracks) ? sourceObj : null);
   if (!songObj || songObj.tracks.length === 0) {
     throw new Error('Plik nie zawiera poprawnej struktury utworu Studio TAB (brak ścieżek).');
   }
@@ -859,7 +993,8 @@ export function deserializeStudioSong(rawInput) {
       metronomePattern: normalizeMetronomePattern(songObj.metronomePattern, normalizedTracks[0]?.measures?.[0]?.numerator || 4),
       tracks: normalizedTracks
     },
-    studioPrefs: clampStudioPrefs(parsed?.studioPrefs)
+    studioPrefs: clampStudioPrefs(sourceObj?.studioPrefs || parsed?.studioPrefs),
+    proBackup: (sourceObj?.proBackup || parsed?.proBackup) || null
   };
 }
 
@@ -1249,7 +1384,7 @@ export function getNoteAt(song, trackIdx, measureIdx, beatIdx, stringIdx) {
   const tr = song?.tracks?.[trackIdx];
   const beat = getBeatAt(song, trackIdx, measureIdx, beatIdx);
   if (!tr || !beat || beat.isRest || !Array.isArray(beat.notes)) return null;
-  if (tr.instrumentType === 'keys') return beat.notes[0] || null;
+  if (tr.instrumentType === 'keys') return stringIdx < 0 ? null : (beat.notes[stringIdx] || beat.notes[0] || null);
   return beat.notes.find(n => n.string === stringIdx) || null;
 }
 
@@ -1353,7 +1488,7 @@ export function deleteBeatAt(song, trackIdx, measureIdx, beatIdx) {
   if (!m || !Array.isArray(m.beats) || beatIdx < 0 || beatIdx >= m.beats.length) return -1;
   m.beats.splice(beatIdx, 1);
   if (m.beats.length === 0) {
-    const restDur = (m.denominator === 8) ? 1 : (m.denominator === 2 ? -1 : 0);
+    const restDur = (m.denominator === 16) ? 2 : (m.denominator === 8 ? 1 : (m.denominator === 2 ? -1 : 0));
     m.beats.push(createEmptyBeat(restDur, true));
   }
   return Math.max(0, Math.min(m.beats.length - 1, beatIdx));
@@ -1365,6 +1500,7 @@ export function clearMeasureAt(song, trackIdx, measureIdx) {
   if (!tr || !m) return false;
   if (tr.instrumentType === 'drums' || tr.isPercussion) {
     m.drumBlockId = 'break';
+    m.customDrumGrid = null;
     return true;
   }
   const fresh = createEmptyMeasure(m.numerator, m.denominator, '', false);
@@ -1482,6 +1618,16 @@ export function toggleNoteEffect(song, trackIdx, measureIdx, beatIdx, stringIdx,
     });
     return true;
   }
+  if (effect === 'whammyPreset') {
+    const presetKey = String(value || 'dive_full');
+    const preset = WHAMMY_PRESETS[presetKey] || WHAMMY_PRESETS.dive_full;
+    const clear = (ref.whammyPreset === preset.id) || (presetKey === 'clear');
+    targets.forEach(n => {
+      n.whammyPreset = clear ? '' : preset.id;
+      n.whammyPoints = clear ? [] : preset.points.map(p => ({ ...p }));
+    });
+    return true;
+  }
 
   const boolEffects = new Set([
     'tied', 'palmMute', 'letRing', 'hammerOn', 'vibrato', 'wideVibrato',
@@ -1553,7 +1699,66 @@ export function setMeasureTripletFeel(song, measureIdx, feel = 0) {
   return true;
 }
 
-export function addMeasureBefore(song, measureIdx) {
+export function tieOrExtendPreviousNote(song, trackIdx, measureIdx, beatIdx, stringIdx = 0, defaultDuration = null) {
+  const tr = song?.tracks?.[trackIdx];
+  const beat = getBeatAt(song, trackIdx, measureIdx, beatIdx);
+  if (!tr || !beat || tr.instrumentType === 'drums' || tr.isPercussion) {
+    return { changed: false, extended: false, reason: 'invalid' };
+  }
+
+  const existing = getNoteAt(song, trackIdx, measureIdx, beatIdx, stringIdx);
+  if (existing) {
+    existing.tied = !existing.tied;
+    return { changed: true, extended: false, tied: Boolean(existing.tied) };
+  }
+
+  // Znajdź bezpośrednio poprzednie uderzenie (w obrębie taktu lub z końca poprzedniego taktu)
+  let prevBeat = null;
+  if (beatIdx > 0) {
+    prevBeat = getBeatAt(song, trackIdx, measureIdx, beatIdx - 1);
+  } else if (measureIdx > 0) {
+    const prevM = tr.measures?.[measureIdx - 1];
+    if (prevM && Array.isArray(prevM.beats) && prevM.beats.length > 0) {
+      prevBeat = prevM.beats[prevM.beats.length - 1];
+    }
+  }
+  if (!prevBeat || prevBeat.isRest || !Array.isArray(prevBeat.notes) || prevBeat.notes.length === 0) {
+    return { changed: false, extended: false, reason: 'prev_rest' };
+  }
+
+  if (beat.isRest && Number.isInteger(defaultDuration)) {
+    beat.duration = Math.max(-2, Math.min(4, defaultDuration));
+  }
+
+  if (tr.instrumentType === 'keys') {
+    let added = 0;
+    for (const pn of prevBeat.notes) {
+      const midi = noteToMidi(tr, pn);
+      if (midi !== null) {
+        setNoteAt(song, trackIdx, measureIdx, beatIdx, 0, midi, { chord: added > 0, tied: true });
+        added++;
+      }
+    }
+    return added > 0 ? { changed: true, extended: true, tied: true } : { changed: false, extended: false, reason: 'no_notes' };
+  }
+
+  const sameStringPrev = prevBeat.notes.find(n => n.string === stringIdx);
+  if (sameStringPrev) {
+    setNoteAt(song, trackIdx, measureIdx, beatIdx, sameStringPrev.string, sameStringPrev.fret, { tied: true });
+    return { changed: true, extended: true, tied: true };
+  }
+
+  if (beat.isRest) {
+    for (const pn of prevBeat.notes) {
+      setNoteAt(song, trackIdx, measureIdx, beatIdx, pn.string, pn.fret, { tied: true });
+    }
+    return { changed: true, extended: true, tied: true };
+  }
+
+  return { changed: false, extended: false, reason: 'no_matching_string' };
+}
+
+export function addMeasureBefore(song, measureIdx, defaultBeatDuration = null) {
   if (!song || !Array.isArray(song.tracks) || song.tracks.length === 0) return -1;
   const maxM = getMasterMeasureCount(song);
   const insertPos = Math.max(0, Math.min(maxM, Number(measureIdx) || 0));
@@ -1561,7 +1766,7 @@ export function addMeasureBefore(song, measureIdx) {
   for (const tr of song.tracks) {
     const isDrum = tr.instrumentType === 'drums' || tr.isPercussion;
     const prevBlock = tr.measures[insertPos]?.drumBlockId || 'rock_8th';
-    tr.measures.splice(insertPos, 0, createEmptyMeasure(refM.numerator, refM.denominator, prevBlock, isDrum));
+    tr.measures.splice(insertPos, 0, createEmptyMeasure(refM.numerator, refM.denominator, prevBlock, isDrum, defaultBeatDuration));
   }
   return insertPos;
 }
@@ -1773,7 +1978,25 @@ export function pasteMeasuresFromClipboard(song, clipboard, { targetMeasureIdx =
       const cm = cloneSong(srcList[i]);
       if (isDrum) {
         tr.measures[targetStart + i].drumBlockId = cm.drumBlockId || 'rock_8th';
+        tr.measures[targetStart + i].customDrumGrid = cm.customDrumGrid ? cloneSong(cm.customDrumGrid) : null;
       } else {
+        if (!Array.isArray(cm.beats) || cm.beats.length === 0) {
+          cm.beats = createEmptyMeasure(cm.numerator, cm.denominator).beats;
+        }
+        const nStr = tr.instrumentType === 'keys' ? 0 : (tr.openStringMidis?.length || tr.stringCount || 6);
+        if (nStr > 0) {
+          for (const b of cm.beats) {
+            if (!Array.isArray(b.notes)) continue;
+            const seen = new Set();
+            b.notes = b.notes.filter(n => {
+              const s = Math.max(0, Math.min(nStr - 1, Number(n.string) || 0));
+              if (seen.has(s)) return false;
+              n.string = s;
+              seen.add(s);
+              return true;
+            });
+          }
+        }
         tr.measures[targetStart + i] = cm;
       }
     }
@@ -1850,157 +2073,404 @@ export function setNotePosition(song, trackIdx, measureIdx, beatIdx, fromString,
 }
 
 /**
- * Analizuje alternatywne pozycje ręki na gryfie (Pozycja 1, 2, 3...) dla sekwencji nagranych lub wybranych nut.
+ * Szuka bezkolizyjnego przypisania wszystkich nut pojedynczego uderzenia do osobnych strun w zakresie gryfu.
+ * Zwraca null, jeśli dowolna nuta nie mieści się w [minFret..maxFret] lub dwie nuty musiałyby zająć tę samą strunę.
+ */
+export function solveBeatFretAssignments(track, beatNotes, midiShift = 0, opts = {}) {
+  if (!track || !Array.isArray(beatNotes) || beatNotes.length === 0) return null;
+  if (!Array.isArray(track.openStringMidis) || track.openStringMidis.length === 0) return null;
+
+  const minFret = Math.max(0, Math.min(24, Math.round(Number(opts.minFret) || 0)));
+  const maxFret = Math.max(minFret, Math.min(24, Math.round(Number(opts.maxFret) ?? 24)));
+  const boxStart = Math.max(minFret, Math.min(maxFret, Math.round(Number(opts.boxStart) || 0)));
+  const boxEnd = Math.max(boxStart, Math.min(maxFret, Math.round(Number(opts.boxEnd) ?? maxFret)));
+  const prevFret = Number.isFinite(Number(opts.prevFret)) ? Number(opts.prevFret) : null;
+  const prevString = Number.isFinite(Number(opts.prevString)) ? Number(opts.prevString) : null;
+  const midF = (boxStart + boxEnd) / 2;
+
+  const entries = [];
+  for (let i = 0; i < beatNotes.length; i++) {
+    const n = beatNotes[i];
+    const baseMidi = Number.isFinite(Number(n.midi)) && !Array.isArray(track.openStringMidis)
+      ? Math.round(Number(n.midi))
+      : noteToMidi(track, n);
+    if (baseMidi === null || !Number.isFinite(baseMidi)) return null;
+    const targetMidi = baseMidi + midiShift;
+    const rawCands = findFretCandidatesForMidi(track, targetMidi, minFret, maxFret);
+    if (rawCands.length === 0) return null;
+    const orderedCands = rawCands.slice().sort((a, b) => {
+      const aIn = (a.fret >= boxStart && a.fret <= boxEnd) || (a.fret === 0 && boxStart <= 2);
+      const bIn = (b.fret >= boxStart && b.fret <= boxEnd) || (b.fret === 0 && boxStart <= 2);
+      if (aIn !== bIn) return aIn ? -1 : 1;
+      return Math.abs(a.fret - midF) - Math.abs(b.fret - midF) || a.fret - b.fret;
+    });
+    entries.push({ origIdx: i, note: n, targetMidi, cands: orderedCands });
+  }
+
+  entries.sort((a, b) => a.cands.length - b.cands.length || a.origIdx - b.origIdx);
+
+  let bestScore = Infinity;
+  let bestPicked = null;
+  let visited = 0;
+  const current = new Array(entries.length);
+  const usedStrings = new Set();
+
+  function backtrack(depth) {
+    if (visited++ > 2500) return;
+    if (depth === entries.length) {
+      let outCount = 0;
+      let boxDist = 0;
+      let sumFret = 0;
+      let sumStr = 0;
+      let nonOpenMin = 99;
+      let nonOpenMax = -1;
+      let shapeBias = 0;
+
+      for (let k = 0; k < current.length; k++) {
+        const pick = current[k];
+        const f = pick.cand.fret;
+        const s = pick.cand.string;
+        const inBox = (f >= boxStart && f <= boxEnd);
+        const openShortcut = (f === 0 && boxStart <= 2);
+        if (!inBox && !openShortcut) {
+          outCount++;
+          boxDist += Math.abs(f - midF) * 4.5 + 12;
+        } else if (inBox) {
+          boxDist += Math.abs(f - midF) * 0.35;
+        } else {
+          boxDist += 0.5;
+        }
+        if (f > 0) {
+          if (f < nonOpenMin) nonOpenMin = f;
+          if (f > nonOpenMax) nonOpenMax = f;
+        }
+        if (s === pick.note.string) shapeBias -= 0.25;
+        sumFret += f;
+        sumStr += s;
+      }
+
+      const chordSpan = nonOpenMax >= 0 ? (nonOpenMax - nonOpenMin) : 0;
+      const stretchPenalty = chordSpan > 4 ? (chordSpan - 4) * 14 : 0;
+      const avgF = sumFret / current.length;
+      const avgS = sumStr / current.length;
+      const jumpCost = (prevFret !== null && prevString !== null)
+        ? (Math.abs(avgF - prevFret) + Math.abs(avgS - prevString) * 1.1)
+        : 0;
+      const score = outCount * 50 + stretchPenalty + boxDist + jumpCost + shapeBias;
+      if (score < bestScore) {
+        bestScore = score;
+        bestPicked = current.slice();
+      }
+      return;
+    }
+
+    const item = entries[depth];
+    for (let cIdx = 0; cIdx < item.cands.length; cIdx++) {
+      const cand = item.cands[cIdx];
+      if (usedStrings.has(cand.string)) continue;
+      usedStrings.add(cand.string);
+      current[depth] = { origIdx: item.origIdx, note: item.note, targetMidi: item.targetMidi, cand };
+      backtrack(depth + 1);
+      usedStrings.delete(cand.string);
+    }
+  }
+
+  backtrack(0);
+  if (!bestPicked) return null;
+
+  bestPicked.sort((a, b) => a.origIdx - b.origIdx);
+  let actMin = 99;
+  let actMax = 0;
+  let outOfBoxCount = 0;
+  let sumF = 0;
+  let sumS = 0;
+  const assignments = bestPicked.map(p => {
+    const f = p.cand.fret;
+    const s = p.cand.string;
+    if (f < actMin) actMin = f;
+    if (f > actMax) actMax = f;
+    if (!((f >= boxStart && f <= boxEnd) || (f === 0 && boxStart <= 2))) {
+      outOfBoxCount++;
+    }
+    sumF += f;
+    sumS += s;
+    return {
+      measureIdx: Number.isFinite(Number(p.note.measureIdx)) ? Number(p.note.measureIdx) : 0,
+      beatIdx: Number.isFinite(Number(p.note.beatIdx)) ? Number(p.note.beatIdx) : 0,
+      oldString: p.note.string,
+      oldFret: p.note.fret,
+      newString: s,
+      newFret: f,
+      midi: p.targetMidi
+    };
+  });
+
+  return {
+    assignments,
+    outOfBoxCount,
+    cost: bestScore,
+    minFret: actMin <= 24 ? actMin : 0,
+    maxFret: actMax,
+    avgFret: sumF / bestPicked.length,
+    avgStr: sumS / bestPicked.length
+  };
+}
+
+/**
+ * Analizuje bezkolizyjne pozycje ręki na gryfie (Pozycja 1, 2, 3...) dla sekwencji nut lub zaznaczonego fragmentu.
  */
 export function analyzePhrasePositions(track, noteRefs = null, opts = {}) {
   if (!track || track.instrumentType === 'drums' || track.isPercussion) return [];
-  const items = [];
+  if (!Array.isArray(track.openStringMidis) || track.openStringMidis.length === 0) return [];
+
+  const maxFret = Math.max(12, Math.min(24, Math.round(Number(opts.maxFret) || 24)));
+  const octaveShift = Math.round(Number(opts.octaveShift) || 0);
+  const midiShift = octaveShift * 12;
+
+  const beatMap = new Map();
+  const pushItem = (mIdx, bIdx, refObj) => {
+    const midi = Number.isFinite(refObj.midi) ? Math.round(refObj.midi) : noteToMidi(track, refObj);
+    if (midi === null) return;
+    const key = `${mIdx}:${bIdx}`;
+    if (!beatMap.has(key)) beatMap.set(key, { measureIdx: mIdx, beatIdx: bIdx, notes: [] });
+    beatMap.get(key).notes.push({
+      measureIdx: mIdx,
+      beatIdx: bIdx,
+      string: refObj.string,
+      fret: refObj.fret ?? 0,
+      midi
+    });
+  };
 
   if (Array.isArray(noteRefs) && noteRefs.length > 0) {
     for (const ref of noteRefs) {
       const m = track.measures?.[ref.measureIdx];
       const b = m?.beats?.[ref.beatIdx];
       const n = b?.notes?.find(x => x.string === ref.string);
-      const midi = Number.isFinite(ref.midi) ? Math.round(ref.midi) : (n ? noteToMidi(track, n) : null);
-      if (midi !== null) {
-        items.push({
-          measureIdx: ref.measureIdx,
-          beatIdx: ref.beatIdx,
-          oldString: ref.string,
-          oldFret: n ? n.fret : (ref.fret ?? 0),
-          midi
-        });
-      }
+      pushItem(ref.measureIdx, ref.beatIdx, {
+        string: ref.string,
+        fret: n ? n.fret : (ref.fret ?? 0),
+        midi: Number.isFinite(ref.midi) ? Math.round(ref.midi) : (n ? noteToMidi(track, n) : null)
+      });
     }
   } else {
     (track.measures || []).forEach((m, mIdx) => {
       (m.beats || []).forEach((b, bIdx) => {
         if (b.isRest || !Array.isArray(b.notes)) return;
         for (const n of b.notes) {
-          const midi = noteToMidi(track, n);
-          if (midi !== null) {
-            items.push({
-              measureIdx: mIdx,
-              beatIdx: bIdx,
-              oldString: n.string,
-              oldFret: n.fret,
-              midi
-            });
-          }
+          pushItem(mIdx, bIdx, n);
         }
       });
     });
   }
 
-  if (items.length === 0) return [];
+  const beatGroups = Array.from(beatMap.values());
+  if (beatGroups.length === 0) return [];
 
-  const boxSpan = Math.max(3, Math.min(6, Math.round(Number(opts.boxSpan) || 4)));
-  const maxNeck = 24;
-  const maxOptions = Math.max(1, Math.min(8, Math.round(Number(opts.maxOptions) || 5)));
+  // Najpierw sprawdź twardą wykonalność każdego uderzenia w tej oktawie i zakresie gryfu
+  for (const bg of beatGroups) {
+    const feasible = solveBeatFretAssignments(track, bg.notes, midiShift, { minFret: 0, maxFret, boxStart: 0, boxEnd: maxFret });
+    if (!feasible) return [];
+  }
+
+  const baseSpan = Math.max(3, Math.min(6, Math.round(Number(opts.boxSpan) || 4)));
+  const maxOptions = Math.max(1, Math.min(8, Math.round(Number(opts.maxOptions) || 6)));
   const bySignature = new Map();
 
-  for (let startF = 0; startF <= maxNeck - boxSpan; startF++) {
-    const endF = startF + boxSpan;
-    const midF = (startF + endF) / 2;
-    let prevFret = midF;
-    let prevString = 2;
-    let outOfBoxCount = 0;
-    let cost = 0;
-    let actualMin = 99;
-    let actualMax = 0;
-    const assignments = [];
+  const evaluateWindowSpan = (span) => {
+    const maxStart = Math.max(0, maxFret - span);
+    for (let startF = 0; startF <= maxStart; startF++) {
+      const endF = Math.min(maxFret, startF + span);
+      let prevFret = (startF + endF) / 2;
+      let prevString = Math.min(2, Math.max(0, Math.floor((track.openStringMidis.length - 1) / 2)));
+      let outOfBoxCount = 0;
+      let cost = 0;
+      let actualMin = 99;
+      let actualMax = 0;
+      const assignments = [];
+      let failed = false;
 
-    for (let idx = 0; idx < items.length; idx++) {
-      const it = items[idx];
-      const cands = findFretCandidatesForMidi(track, it.midi, 0, maxNeck);
-      if (cands.length === 0) {
-        outOfBoxCount++;
-        assignments.push({
-          measureIdx: it.measureIdx,
-          beatIdx: it.beatIdx,
-          oldString: it.oldString,
-          newString: it.oldString,
-          newFret: it.oldFret,
-          midi: it.midi
+      for (const bg of beatGroups) {
+        const solved = solveBeatFretAssignments(track, bg.notes, midiShift, {
+          minFret: 0,
+          maxFret,
+          boxStart: startF,
+          boxEnd: endF,
+          prevFret,
+          prevString
         });
-        continue;
-      }
-
-      const inBox = cands.filter(c => c.fret >= startF && c.fret <= endF);
-      const pool = inBox.length > 0 ? inBox : cands;
-      if (inBox.length === 0) outOfBoxCount++;
-
-      let best = pool[0];
-      let bestScore = Infinity;
-      for (const c of pool) {
-        const distAnchor = idx === 0
-          ? Math.abs(c.fret - midF) * 0.7
-          : Math.abs(c.fret - prevFret) + Math.abs(c.string - prevString) * 1.4;
-        const outPenalty = (c.fret < startF || c.fret > endF) ? Math.abs(c.fret - midF) * 2.5 : 0;
-        const sc = distAnchor + outPenalty;
-        if (sc < bestScore) {
-          bestScore = sc;
-          best = c;
+        if (!solved) {
+          failed = true;
+          break;
         }
+        outOfBoxCount += solved.outOfBoxCount;
+        cost += solved.cost;
+        if (solved.minFret < actualMin) actualMin = solved.minFret;
+        if (solved.maxFret > actualMax) actualMax = solved.maxFret;
+        prevFret = solved.avgFret;
+        prevString = solved.avgStr;
+        for (const a of solved.assignments) assignments.push(a);
       }
+      if (failed || assignments.length === 0) continue;
 
-      cost += bestScore;
-      prevFret = best.fret;
-      prevString = best.string;
-      if (best.fret < actualMin) actualMin = best.fret;
-      if (best.fret > actualMax) actualMax = best.fret;
-      assignments.push({
-        measureIdx: it.measureIdx,
-        beatIdx: it.beatIdx,
-        oldString: it.oldString,
-        newString: best.string,
-        newFret: best.fret,
-        midi: it.midi
-      });
+      const sig = assignments.map(a => `${a.newString}:${a.newFret}`).join('|');
+      const areaMin = actualMin <= maxFret ? actualMin : startF;
+      const areaMax = Math.max(areaMin, actualMax);
+      const fretSpan = areaMax - areaMin;
+      const prev = bySignature.get(sig);
+      if (!prev || outOfBoxCount < prev.outOfBoxCount || (outOfBoxCount === prev.outOfBoxCount && cost < prev.cost)) {
+        bySignature.set(sig, {
+          minFret: areaMin,
+          maxFret: areaMax,
+          fretSpan,
+          outOfBoxCount,
+          cost,
+          assignments
+        });
+      }
     }
+  };
 
-    const sig = assignments.map(a => `${a.newString}:${a.newFret}`).join('|');
-    const areaMin = actualMin <= 24 ? actualMin : startF;
-    const areaMax = Math.max(areaMin, actualMax);
-    const prev = bySignature.get(sig);
-    if (!prev || outOfBoxCount < prev.outOfBoxCount || (outOfBoxCount === prev.outOfBoxCount && cost < prev.cost)) {
-      bySignature.set(sig, {
-        minFret: areaMin,
-        maxFret: areaMax,
-        outOfBoxCount,
-        cost,
-        assignments
-      });
-    }
+  evaluateWindowSpan(baseSpan);
+  const hasZeroOut = Array.from(bySignature.values()).some(x => x.outOfBoxCount === 0);
+  if (!hasZeroOut && baseSpan < 6) {
+    evaluateWindowSpan(baseSpan + 1);
   }
 
   const allUnique = Array.from(bySignature.values());
   if (allUnique.length === 0) return [];
   const bestOut = Math.min(...allUnique.map(x => x.outOfBoxCount));
-  const filtered = allUnique
-    .filter(x => x.outOfBoxCount <= bestOut + Math.max(1, Math.floor(items.length * 0.2)))
-    .sort((a, b) => a.minFret - b.minFret || a.outOfBoxCount - b.outOfBoxCount || a.cost - b.cost);
+  let filtered = (bestOut === 0)
+    ? allUnique.filter(x => x.outOfBoxCount === 0)
+    : allUnique.filter(x => x.outOfBoxCount <= bestOut + Math.max(1, Math.floor(beatGroups.length * 0.25)));
 
-  return filtered.slice(0, maxOptions).map((pos, idx) => ({
-    index: idx + 1,
-    label: `Pozycja ${idx + 1} (${pos.minFret}–${pos.maxFret})`,
-    minFret: pos.minFret,
-    maxFret: pos.maxFret,
-    outOfBoxCount: pos.outOfBoxCount,
-    cost: Math.round(pos.cost * 100) / 100,
-    assignments: pos.assignments
-  }));
+  const minSpanFound = Math.min(...filtered.map(x => x.fretSpan));
+  const tightFiltered = filtered.filter(x => x.fretSpan <= Math.max(baseSpan + 2, minSpanFound + 4));
+  if (tightFiltered.length > 0) filtered = tightFiltered;
+
+  filtered.sort((a, b) => a.minFret - b.minFret || a.maxFret - b.maxFret || a.outOfBoxCount - b.outOfBoxCount || a.cost - b.cost);
+
+  return filtered.slice(0, maxOptions).map((pos, idx) => {
+    const isCurrent = octaveShift === 0 && pos.assignments.every(a => a.newString === a.oldString && a.newFret === a.oldFret);
+    const shortRange = `Pr. ${pos.minFret}–${pos.maxFret}`;
+    const label = octaveShift === 0
+      ? `Pozycja ${idx + 1} (${pos.minFret}–${pos.maxFret})`
+      : `${octaveShift > 0 ? '+' : ''}${octaveShift} okt. (${pos.minFret}–${pos.maxFret})`;
+    return {
+      index: idx + 1,
+      label,
+      shortRange,
+      minFret: pos.minFret,
+      maxFret: pos.maxFret,
+      octaveShift,
+      semitones: midiShift,
+      isCurrent,
+      outOfBoxCount: pos.outOfBoxCount,
+      cost: Math.round(pos.cost * 100) / 100,
+      assignments: pos.assignments
+    };
+  });
 }
 
 /**
- * Aplikuje wybraną pozycję z analizatora fraz do ścieżki w utworze (obsługuje też akordy w jednym uderzeniu).
+ * Dla zaznaczonego fragmentu wyznacza osobno:
+ *  - możliwe pozycje na gryfie w TEJ SAMEJ oktawie (`sameOctave`),
+ *  - wszystkie realnie wykonalne przeniesienia między OKTAWAMI (`octaveOptions` / `allOctavePositions`)
+ *    przy aktualnym stroju, kapodastrze i maksymalnej liczbie progów.
+ */
+export function analyzeSelectionPositionsAndOctaves(song, trackIdx, selection, opts = {}) {
+  const tr = song?.tracks?.[trackIdx];
+  const maxFret = Math.max(12, Math.min(24, Math.round(Number(opts.maxFret) || 24)));
+  const norm = normalizeBeatSelection(song, selection ? { ...selection, trackIdx } : null);
+  if (!tr || !norm || tr.instrumentType === 'drums' || tr.isPercussion) {
+    return { noteCount: 0, beatCount: 0, maxFret, sameOctave: [], octaveOptions: [], allOctavePositions: [] };
+  }
+
+  const coords = getSelectedBeatCoords(song, trackIdx, norm);
+  const noteRefs = [];
+  for (const { measureIdx, beatIdx } of coords) {
+    const beat = tr.measures?.[measureIdx]?.beats?.[beatIdx];
+    if (!beat || beat.isRest || !Array.isArray(beat.notes)) continue;
+    for (const n of beat.notes) {
+      const midi = noteToMidi(tr, n);
+      if (midi !== null) {
+        noteRefs.push({ measureIdx, beatIdx, string: n.string, fret: n.fret, midi });
+      }
+    }
+  }
+
+  if (noteRefs.length === 0) {
+    return { noteCount: 0, beatCount: norm.beatCount, maxFret, sameOctave: [], octaveOptions: [], allOctavePositions: [] };
+  }
+
+  if (tr.instrumentType === 'keys') {
+    const octaveOptions = [];
+    const allOctavePositions = [];
+    for (const oct of [-3, -2, -1, 1, 2, 3]) {
+      const semis = oct * 12;
+      if (noteRefs.every(r => r.midi + semis >= 21 && r.midi + semis <= 108)) {
+        const pos = {
+          index: octaveOptions.length + 1,
+          label: `${oct > 0 ? '+' : ''}${oct} okt.`,
+          shortRange: `${oct > 0 ? '+' : ''}${oct} okt.`,
+          minFret: 0,
+          maxFret: 0,
+          octaveShift: oct,
+          semitones: semis,
+          isCurrent: false,
+          assignments: noteRefs.map(r => ({
+            measureIdx: r.measureIdx,
+            beatIdx: r.beatIdx,
+            oldString: r.string,
+            oldFret: 0,
+            newString: r.string,
+            newFret: 0,
+            midi: r.midi + semis
+          }))
+        };
+        octaveOptions.push({ octaveShift: oct, semitones: semis, label: pos.label, positions: [pos] });
+        allOctavePositions.push(pos);
+      }
+    }
+    return { noteCount: noteRefs.length, beatCount: norm.beatCount, maxFret, sameOctave: [], octaveOptions, allOctavePositions };
+  }
+
+  const sameOctave = analyzePhrasePositions(tr, noteRefs, { octaveShift: 0, maxFret, boxSpan: 4, maxOptions: 6 });
+  const octaveOptions = [];
+  const allOctavePositions = [];
+  for (const oct of [-3, -2, -1, 1, 2, 3]) {
+    const positions = analyzePhrasePositions(tr, noteRefs, { octaveShift: oct, maxFret, boxSpan: 4, maxOptions: 3 });
+    if (positions.length > 0) {
+      octaveOptions.push({
+        octaveShift: oct,
+        semitones: oct * 12,
+        label: `${oct > 0 ? '+' : ''}${oct} okt.`,
+        positions
+      });
+      for (const p of positions) allOctavePositions.push(p);
+    }
+  }
+
+  return {
+    noteCount: noteRefs.length,
+    beatCount: norm.beatCount,
+    maxFret,
+    sameOctave,
+    octaveOptions,
+    allOctavePositions
+  };
+}
+
+/**
+ * Aplikuje wybraną pozycję / przeniesienie oktawowe do ścieżki bez nadpisywania sąsiednich strun (atomowo na uderzenie).
  */
 export function applyPhrasePosition(song, trackIdx, position) {
   if (!song || !position || !Array.isArray(position.assignments)) return 0;
   const tr = song.tracks?.[trackIdx];
-  if (!tr) return 0;
+  if (!tr || tr.instrumentType === 'drums' || tr.isPercussion) return 0;
 
-  const maxStr = Math.max(0, (tr.openStringMidis?.length || 6) - 1);
+  const isKeys = tr.instrumentType === 'keys';
+  const maxStr = isKeys ? 0 : Math.max(0, (tr.openStringMidis?.length || 6) - 1);
   const byBeat = new Map();
   for (const a of position.assignments) {
     const key = `${a.measureIdx}:${a.beatIdx}`;
@@ -2008,28 +2478,46 @@ export function applyPhrasePosition(song, trackIdx, position) {
     byBeat.get(key).push(a);
   }
 
-  let applied = 0;
+  // Walidacja przed zapisem (żadne uderzenie nie może mieć dwóch nut na tej samej strunie)
+  const prepared = [];
   for (const [key, list] of byBeat.entries()) {
     const [mStr, bStr] = key.split(':');
     const beat = tr.measures?.[Number(mStr)]?.beats?.[Number(bStr)];
     if (!beat || beat.isRest || !Array.isArray(beat.notes)) continue;
+
+    if (isKeys) {
+      const nextNotes = beat.notes.map((n, idx) => {
+        const match = list.find((a, lIdx) => lIdx === idx || a.oldMidi === n.midi);
+        const midi = match && Number.isFinite(match.midi) ? Math.max(21, Math.min(108, Math.round(match.midi))) : n.midi;
+        return { ...n, midi };
+      });
+      prepared.push({ beat, nextNotes, count: list.length });
+      continue;
+    }
 
     const assignedOldStrings = new Set(list.map(x => x.oldString));
     const keptNotes = beat.notes.filter(n => !assignedOldStrings.has(n.string));
     const usedStrings = new Set(keptNotes.map(n => n.string));
 
     for (const a of list) {
-      const orig = beat.notes.find(n => n.string === a.oldString) || createTabNote();
-      const sTo = Math.max(0, Math.min(maxStr, Math.round(a.newString)));
-      const fTo = Math.max(0, Math.min(24, Math.round(a.newFret)));
-      if (!usedStrings.has(sTo)) {
-        keptNotes.push({ ...orig, string: sTo, fret: fTo });
-        usedStrings.add(sTo);
-        applied++;
+      const orig = beat.notes.find(n => n.string === a.oldString);
+      if (!orig) return 0;
+      const sTo = Math.round(a.newString);
+      const fTo = Math.round(a.newFret);
+      if (sTo < 0 || sTo > maxStr || fTo < 0 || fTo > 24 || usedStrings.has(sTo)) {
+        return 0;
       }
+      keptNotes.push({ ...orig, string: sTo, fret: fTo });
+      usedStrings.add(sTo);
     }
     keptNotes.sort((a, b) => a.string - b.string);
-    beat.notes = keptNotes;
+    prepared.push({ beat, nextNotes: keptNotes, count: list.length });
+  }
+
+  let applied = 0;
+  for (const item of prepared) {
+    item.beat.notes = item.nextNotes;
+    applied += item.count;
   }
   return applied;
 }
@@ -2080,6 +2568,7 @@ export function buildMeasuresFromSteps(steps, opts = {}) {
       notes.push(createTabNote({
         string: s,
         fret: f,
+        midi: Number.isFinite(Number(n.midi)) ? Math.round(Number(n.midi)) : undefined,
         velocity: Number(n.velocity) || 96,
         tap: Boolean(n.tapped || n.tap),
         hammerOn: Boolean(n.hammerOn),
@@ -2212,11 +2701,17 @@ export function buildSongExportPayload(song) {
             const nextQ = (i + 1 < steps.length) ? steps[i + 1].beatOffsetQ : capQ;
             const deltaQ = Math.max(0.125, nextQ - steps[i].beatOffsetQ);
             const df = quantizeDeltaToDurationFields(deltaQ);
-            const notes = (steps[i].hits || []).map((h, hIdx) => ({
-              string: hIdx,
-              fret: GM_DRUM_MIDI[h.kind] ?? 36,
-              velocity: Math.max(1, Math.min(127, Math.round(h.velocity || 96)))
-            }));
+            const notes = (steps[i].hits || []).map((h, hIdx) => {
+              const rv = Number(h.velocity);
+              const scaledVel = Number.isFinite(rv)
+                ? (rv <= 1 ? Math.max(1, Math.min(127, Math.round(rv * 127))) : Math.max(1, Math.min(127, Math.round(rv))))
+                : 96;
+              return {
+                string: hIdx,
+                fret: GM_DRUM_MIDI[h.kind] ?? 36,
+                velocity: scaledVel
+              };
+            });
             outBeats.push({
               duration: df.duration,
               dots: df.dots,
@@ -2243,6 +2738,7 @@ export function buildSongExportPayload(song) {
           notes: (Array.isArray(b.notes) ? b.notes : []).map(n => ({
             string: Math.max(0, Math.round(Number(n.string) || 0)),
             fret: Math.max(0, Math.min(127, Math.round(Number(n.fret) || 0))),
+            ...(Number.isFinite(Number(n.midi)) ? { midi: Math.max(12, Math.min(127, Math.round(Number(n.midi)))) } : {}),
             velocity: Math.max(1, Math.min(127, Math.round(Number(n.velocity) || 95))),
             tied: Boolean(n.tied),
             hammerOn: Boolean(n.hammerOn),
@@ -2265,9 +2761,16 @@ export function buildSongExportPayload(song) {
             bendPreset: String(n.bendPreset || ''),
             bendPoints: Array.isArray(n.bendPoints)
               ? n.bendPoints.map(bp => ({
-                  position: Math.max(0, Math.min(60, Math.round(Number(bp.position) || 0))),
-                  value: Math.max(-200, Math.min(400, Math.round(Number(bp.value) || 0))),
+                  position: Math.max(0, Math.min(60, Math.round(Number(bp.position ?? bp.pos) || 0))),
+                  value: Math.max(-200, Math.min(400, Math.round(Number(bp.value ?? bp.val) || 0))),
                   vibrato: Boolean(bp.vibrato)
+                }))
+              : [],
+            whammyPreset: String(n.whammyPreset || ''),
+            whammyPoints: Array.isArray(n.whammyPoints)
+              ? n.whammyPoints.map(wp => ({
+                  position: Math.max(0, Math.min(60, Math.round(Number(wp.position ?? wp.pos) || 0))),
+                  value: Math.max(-400, Math.min(400, Math.round(Number(wp.value ?? wp.val) || 0)))
                 }))
               : []
           }))
@@ -2287,12 +2790,13 @@ export function buildSongExportPayload(song) {
       });
     }
 
+    const isKeys = tr.instrumentType === 'keys';
     return {
       name: String(tr.name || `Ścieżka ${tIdx + 1}`),
       instrumentType: String(tr.instrumentType || 'guitar'),
       isPercussion: isPerc,
-      tuningId: String(tr.tuningId || 'standard'),
-      openStringMidis: isPerc ? [] : (Array.isArray(tr.openStringMidis) ? tr.openStringMidis.slice() : [40, 45, 50, 55, 59, 64]),
+      tuningId: isPerc ? '' : (isKeys ? 'keys' : String(tr.tuningId || 'standard')),
+      openStringMidis: (isPerc || isKeys) ? [] : (Array.isArray(tr.openStringMidis) ? tr.openStringMidis.slice() : [40, 45, 50, 55, 59, 64]),
       capo: isPerc ? 0 : Math.max(0, Math.min(12, Math.round(Number(tr.capo) || 0))),
       midiChannel: isPerc ? 9 : Math.max(0, Math.min(15, Math.round(Number(tr.midiChannel ?? tIdx)))),
       midiProgram: isPerc ? 0 : Math.max(0, Math.min(127, Math.round(Number(tr.midiProgram ?? 25)))),
@@ -2517,53 +3021,174 @@ export function getSelectedBeatCoords(song, trackIdx, sel) {
 
 /**
  * Przesuwa wysokość wszystkich nut w zaznaczonym fragmencie o `semitones` półtonów (+/-1, +/-12 itd.).
+ * Dla ścieżek strunowych rozwiązuje przesunięcie atomowo na bezkolizyjnym gryfie — jeśli część nut nie mieści się w zakresie progów,
+ * nie modyfikuje utworu połowicznie i zwraca `outOfRange: true`.
  */
-export function shiftSelectionPitch(song, trackIdx, selection, semitones, { allTracks = false } = {}) {
+function shiftTrackCoordsAtomic(song, tIdx, coords, semitones, maxFret = 24) {
+  const tr = song?.tracks?.[tIdx];
+  if (!tr || tr.instrumentType === 'drums' || tr.isPercussion) return { beatsChanged: 0, notesChanged: 0, outOfRange: false };
+
+  const beatEntries = [];
+  for (const { measureIdx, beatIdx } of coords) {
+    const b = tr.measures?.[measureIdx]?.beats?.[beatIdx];
+    if (b && !b.isRest && Array.isArray(b.notes) && b.notes.length > 0) {
+      beatEntries.push({ measureIdx, beatIdx, beat: b });
+    }
+  }
+  if (beatEntries.length === 0) return { beatsChanged: 0, notesChanged: 0, outOfRange: false };
+
+  if (tr.instrumentType === 'keys') {
+    for (const entry of beatEntries) {
+      for (const n of entry.beat.notes) {
+        const m = (n.midi ?? 60) + semitones;
+        if (m < 21 || m > 108) return { beatsChanged: 0, notesChanged: 0, outOfRange: true };
+      }
+    }
+    let notesChanged = 0;
+    for (const entry of beatEntries) {
+      for (const n of entry.beat.notes) {
+        n.midi = (n.midi ?? 60) + semitones;
+        notesChanged++;
+      }
+    }
+    return { beatsChanged: beatEntries.length, notesChanged, outOfRange: false };
+  }
+
+  let fretSum = 0;
+  let noteCount = 0;
+  for (const entry of beatEntries) {
+    for (const n of entry.beat.notes) {
+      fretSum += Number(n.fret) || 0;
+      noteCount++;
+    }
+  }
+  const avgOrigFret = noteCount > 0 ? (fretSum / noteCount) : 5;
+  const maxNeck = Math.max(12, Math.min(24, Math.round(Number(maxFret) || 24)));
+  const capo = Number(tr.capo) || 0;
+  const openMidis = Array.isArray(tr.openStringMidis) ? tr.openStringMidis : [];
+
+  // Szybka ścieżka bezkolizyjna: jeśli wszystkie nuty mieszczą się na swoich oryginalnych strunach w [0..maxNeck], zachowaj układ strun
+  const sameStringAssignments = [];
+  let canKeepOriginalStrings = openMidis.length > 0;
+  for (const entry of beatEntries) {
+    if (!canKeepOriginalStrings) break;
+    const usedStrings = new Set();
+    for (const n of entry.beat.notes) {
+      const baseMidi = noteToMidi(tr, n);
+      if (baseMidi === null || n.string < 0 || n.string >= openMidis.length || usedStrings.has(n.string)) {
+        canKeepOriginalStrings = false;
+        break;
+      }
+      const targetMidi = baseMidi + semitones;
+      const sameFret = targetMidi - (openMidis[n.string] + capo);
+      if (sameFret < 0 || sameFret > maxNeck) {
+        canKeepOriginalStrings = false;
+        break;
+      }
+      usedStrings.add(n.string);
+      sameStringAssignments.push({
+        measureIdx: entry.measureIdx,
+        beatIdx: entry.beatIdx,
+        oldString: n.string,
+        oldFret: n.fret,
+        newString: n.string,
+        newFret: sameFret,
+        midi: targetMidi
+      });
+    }
+  }
+  if (canKeepOriginalStrings && sameStringAssignments.length > 0) {
+    const appliedSame = applyPhrasePosition(song, tIdx, { assignments: sameStringAssignments });
+    if (appliedSame > 0) {
+      return { beatsChanged: beatEntries.length, notesChanged: appliedSame, outOfRange: false };
+    }
+  }
+
+  // Najpierw sprawdź, czy każde uderzenie ma w ogóle bezkolizyjne rozwiązanie w [0..maxNeck]
+  for (const entry of beatEntries) {
+    const taggedNotes = entry.beat.notes.map(n => ({ ...n, measureIdx: entry.measureIdx, beatIdx: entry.beatIdx }));
+    if (!solveBeatFretAssignments(tr, taggedNotes, semitones, { minFret: 0, maxFret: maxNeck, boxStart: 0, boxEnd: maxNeck })) {
+      return { beatsChanged: 0, notesChanged: 0, outOfRange: true };
+    }
+  }
+
+  let bestPlan = null;
+  let bestRank = Infinity;
+  const span = 5;
+  for (let startF = 0; startF <= Math.max(0, maxNeck - span); startF++) {
+    const endF = Math.min(maxNeck, startF + span);
+    let prevFret = (startF + endF) / 2;
+    let prevString = Math.min(2, Math.max(0, Math.floor(((tr.openStringMidis?.length || 6) - 1) / 2)));
+    let outCount = 0;
+    let cost = 0;
+    const assignments = [];
+    let ok = true;
+
+    for (const entry of beatEntries) {
+      const taggedNotes = entry.beat.notes.map(n => ({ ...n, measureIdx: entry.measureIdx, beatIdx: entry.beatIdx }));
+      const solved = solveBeatFretAssignments(tr, taggedNotes, semitones, {
+        minFret: 0,
+        maxFret: maxNeck,
+        boxStart: startF,
+        boxEnd: endF,
+        prevFret,
+        prevString
+      });
+      if (!solved) { ok = false; break; }
+      outCount += solved.outOfBoxCount;
+      cost += solved.cost;
+      prevFret = solved.avgFret;
+      prevString = solved.avgStr;
+      for (const a of solved.assignments) assignments.push(a);
+    }
+    if (!ok) continue;
+
+    const boxCenter = (startF + endF) / 2;
+    const anchorBias = Math.abs(semitones) < 12 ? Math.abs(boxCenter - avgOrigFret) * 1.4 : boxCenter * 0.15;
+    const rank = outCount * 60 + cost + anchorBias;
+    if (rank < bestRank) {
+      bestRank = rank;
+      bestPlan = { assignments };
+    }
+  }
+
+  if (!bestPlan) return { beatsChanged: 0, notesChanged: 0, outOfRange: true };
+  const applied = applyPhrasePosition(song, tIdx, bestPlan);
+  if (applied <= 0) return { beatsChanged: 0, notesChanged: 0, outOfRange: true };
+  return { beatsChanged: beatEntries.length, notesChanged: applied, outOfRange: false };
+}
+
+export function shiftSelectionPitch(song, trackIdx, selection, semitones, { allTracks = false, maxFret = 24 } = {}) {
   const sel = normalizeBeatSelection(song, selection ? { ...selection, trackIdx } : null);
-  if (!sel || !semitones) return { beatsChanged: 0, notesChanged: 0 };
+  if (!sel || !semitones) return { beatsChanged: 0, notesChanged: 0, outOfRange: false };
 
   let beatsChanged = 0;
   let notesChanged = 0;
+  let anyOutOfRange = false;
 
   if (allTracks) {
     song.tracks.forEach((tr, tIdx) => {
       if (!tr || tr.instrumentType === 'drums' || tr.isPercussion) return;
-      if (tIdx === trackIdx && sel.kind === 'beats') {
-        for (const { measureIdx, beatIdx } of getSelectedBeatCoords(song, tIdx, sel)) {
-          const b = tr.measures[measureIdx]?.beats?.[beatIdx];
-          if (b && !b.isRest && b.notes.length > 0 && shiftNotePitch(song, tIdx, measureIdx, beatIdx, -1, semitones)) {
-            beatsChanged++;
-            notesChanged += b.notes.length;
-          }
-        }
-      } else {
-        for (let mIdx = sel.startMeasure; mIdx <= sel.endMeasure && mIdx < tr.measures.length; mIdx++) {
-          const beats = tr.measures[mIdx]?.beats || [];
-          for (let bIdx = 0; bIdx < beats.length; bIdx++) {
-            const b = beats[bIdx];
-            if (b && !b.isRest && b.notes.length > 0 && shiftNotePitch(song, tIdx, mIdx, bIdx, -1, semitones)) {
-              beatsChanged++;
-              notesChanged += b.notes.length;
+      const coords = (tIdx === trackIdx && sel.kind === 'beats')
+        ? getSelectedBeatCoords(song, tIdx, sel)
+        : (() => {
+            const arr = [];
+            for (let mIdx = sel.startMeasure; mIdx <= sel.endMeasure && mIdx < tr.measures.length; mIdx++) {
+              const beats = tr.measures[mIdx]?.beats || [];
+              for (let bIdx = 0; bIdx < beats.length; bIdx++) arr.push({ measureIdx: mIdx, beatIdx: bIdx });
             }
-          }
-        }
-      }
+            return arr;
+          })();
+      const res = shiftTrackCoordsAtomic(song, tIdx, coords, semitones, maxFret);
+      beatsChanged += res.beatsChanged;
+      notesChanged += res.notesChanged;
+      if (res.outOfRange) anyOutOfRange = true;
     });
-    return { beatsChanged, notesChanged };
+    return { beatsChanged, notesChanged, outOfRange: anyOutOfRange && beatsChanged === 0 };
   }
 
-  const tr = song.tracks[trackIdx];
-  if (!tr || tr.instrumentType === 'drums' || tr.isPercussion) return { beatsChanged: 0, notesChanged: 0 };
-  for (const { measureIdx, beatIdx } of getSelectedBeatCoords(song, trackIdx, sel)) {
-    const b = tr.measures[measureIdx]?.beats?.[beatIdx];
-    if (b && !b.isRest && b.notes.length > 0) {
-      if (shiftNotePitch(song, trackIdx, measureIdx, beatIdx, -1, semitones)) {
-        beatsChanged++;
-        notesChanged += b.notes.length;
-      }
-    }
-  }
-  return { beatsChanged, notesChanged };
+  const coords = getSelectedBeatCoords(song, trackIdx, sel);
+  return shiftTrackCoordsAtomic(song, trackIdx, coords, semitones, maxFret);
 }
 
 /**
@@ -2630,6 +3255,16 @@ export function applyEffectToSelection(song, trackIdx, selection, effect, value 
     allNotes.forEach(n => {
       n.bendPreset = clear ? '' : preset.id;
       n.bendPoints = clear ? [] : preset.points.map(p => ({ ...p }));
+    });
+    return allNotes.length;
+  }
+  if (effect === 'whammyPreset') {
+    const presetKey = String(value || 'dive_full');
+    const preset = WHAMMY_PRESETS[presetKey] || WHAMMY_PRESETS.dive_full;
+    const clear = (presetKey === 'clear') || allNotes.every(n => n.whammyPreset === preset.id);
+    allNotes.forEach(n => {
+      n.whammyPreset = clear ? '' : preset.id;
+      n.whammyPoints = clear ? [] : preset.points.map(p => ({ ...p }));
     });
     return allNotes.length;
   }
@@ -2856,8 +3491,25 @@ export function pasteBeatsFromClipboard(song, clipboard, { targetTrackIdx = 0, t
 
     const remQ = consumedQ - chunkQ;
     const padRests = remQ > 0.05 ? durationToRestBeats(remQ) : [];
-    const pastedClones = chunk.map(b => cloneSong(b));
+    const nStr = tr.instrumentType === 'keys' ? 0 : (tr.openStringMidis?.length || tr.stringCount || 6);
+    const pastedClones = chunk.map(b => {
+      const cb = cloneSong(b);
+      if (nStr > 0 && Array.isArray(cb.notes)) {
+        const seen = new Set();
+        cb.notes = cb.notes.filter(n => {
+          const s = Math.max(0, Math.min(nStr - 1, Number(n.string) || 0));
+          if (seen.has(s)) return false;
+          n.string = s;
+          seen.add(s);
+          return true;
+        });
+      }
+      return cb;
+    });
     m.beats.splice(clampedB, consumeCount, ...pastedClones, ...padRests);
+    if (m.beats.length === 0) {
+      m.beats = createEmptyMeasure(m.numerator, m.denominator).beats;
+    }
 
     lastEndM = mIdx;
     lastEndB = clampedB + pastedClones.length - 1;
@@ -2873,4 +3525,532 @@ export function pasteBeatsFromClipboard(song, clipboard, { targetTrackIdx = 0, t
     endMeasureIdx: lastEndM,
     endBeatIdx: lastEndB
   };
+}
+
+// ============================================================================
+// Auto-akordy (ChordNamer) oraz Generator Arpeggio / Sweep dla Studio TAB
+// ============================================================================
+
+function formatDetectedChordSymbol(reading, accMode = 2) {
+  if (!reading || reading.kind !== 'chord' || !reading.chord) return '';
+  const ch = reading.chord;
+  const rootName = midiToNoteName(ch.root, accMode);
+  const qSym = ch.quality?.symbol || '';
+  if (ch.isInversion) {
+    return `${rootName}${qSym}/${midiToNoteName(ch.bass, accMode)}`;
+  }
+  return `${rootName}${qSym}`;
+}
+
+export function detectAutoChordForBeat(track, beat, accMode = 2) {
+  if (!track || track.instrumentType === 'drums' || track.isPercussion) return '';
+  if (!beat || beat.isRest || !Array.isArray(beat.notes) || beat.notes.length < 2) return '';
+  const midis = [];
+  const pcs = new Set();
+  for (const n of beat.notes) {
+    if (n.deadNote) continue;
+    const m = noteToMidi(track, n);
+    if (m !== null) {
+      midis.push(m);
+      pcs.add(((m % 12) + 12) % 12);
+    }
+  }
+  if (pcs.size < 2) return '';
+  const reading = ChordNamer.read(midis);
+  return formatDetectedChordSymbol(reading, accMode);
+}
+
+export function detectAutoChordsForMeasure(track, measure, accMode = 2) {
+  if (!track || !measure || track.instrumentType === 'drums' || track.isPercussion) {
+    return { perBeat: [], measureChord: '' };
+  }
+  const beats = Array.isArray(measure.beats) ? measure.beats : [];
+  const perBeat = beats.map(b => detectAutoChordForBeat(track, b, accMode));
+  const hasPolyBeat = perBeat.some(Boolean);
+  if (hasPolyBeat) {
+    return { perBeat, measureChord: '' };
+  }
+  const allMidis = [];
+  const weights = [];
+  const pcs = new Set();
+  for (const b of beats) {
+    if (b.isRest || !Array.isArray(b.notes)) continue;
+    const w = Math.max(0.25, Math.min(2.0, durationToQuarterNotes(b)));
+    for (const n of b.notes) {
+      if (n.deadNote) continue;
+      const m = noteToMidi(track, n);
+      if (m !== null) {
+        allMidis.push(m);
+        weights.push(w);
+        pcs.add(((m % 12) + 12) % 12);
+      }
+    }
+  }
+  if (pcs.size < 2) return { perBeat, measureChord: '' };
+  const reading = ChordNamer.read(allMidis, weights);
+  return { perBeat, measureChord: formatDetectedChordSymbol(reading, accMode) };
+}
+
+export const STUDIO_ARP_QUALITIES = Object.freeze([
+  { id: 'minor', name: 'Moll (m)',       symbol: 'm',    intervals: [0, 3, 7] },
+  { id: 'major', name: 'Dur',            symbol: '',     intervals: [0, 4, 7] },
+  { id: 'min7',  name: 'Moll 7 (m7)',    symbol: 'm7',   intervals: [0, 3, 7, 10] },
+  { id: 'maj7',  name: 'Dur 7 (maj7)',   symbol: 'maj7', intervals: [0, 4, 7, 11] },
+  { id: 'dom7',  name: 'Dominant (7)',   symbol: '7',    intervals: [0, 4, 7, 10] },
+  { id: 'dim',   name: 'Zmniejsz. (dim)',symbol: 'dim',  intervals: [0, 3, 6] },
+  { id: 'dim7',  name: 'Dim7',           symbol: 'dim7', intervals: [0, 3, 6, 9] },
+  { id: 'sus4',  name: 'Sus4',           symbol: 'sus4', intervals: [0, 5, 7] },
+  { id: 'sus2',  name: 'Sus2',           symbol: 'sus2', intervals: [0, 2, 7] },
+  { id: 'power', name: 'Power (5)',      symbol: '5',    intervals: [0, 7] }
+]);
+
+export function generateStudioArpeggioOrSweepSteps({
+  mode = 'arpeggio',
+  rootPc = 0,
+  quality = 'minor',
+  direction = 'up_down',
+  track = null,
+  duration = 1,
+  accMode = 2
+} = {}) {
+  const qDef = STUDIO_ARP_QUALITIES.find(q => q.id === quality) || STUDIO_ARP_QUALITIES[0];
+  const root = ((Math.round(Number(rootPc) || 0) % 12) + 12) % 12;
+  const chordPcs = new Set(qDef.intervals.map(iv => (root + iv) % 12));
+  const chordLabel = `${midiToNoteName(root, accMode)}${qDef.symbol}`;
+  const isKeys = track?.instrumentType === 'keys';
+
+  let rawSeq = [];
+  if (isKeys) {
+    const baseMidi = 48 + root;
+    const pool = [];
+    for (let oct = 0; oct <= 1; oct++) {
+      for (const iv of qDef.intervals) {
+        pool.push({ midi: baseMidi + oct * 12 + iv, string: 0, fret: 0 });
+      }
+    }
+    pool.push({ midi: baseMidi + 24, string: 0, fret: 0 });
+    const asc = pool.slice(0, Math.min(6, pool.length));
+    if (direction === 'up') rawSeq = asc;
+    else if (direction === 'down') rawSeq = asc.slice().reverse();
+    else rawSeq = asc.concat(asc.slice(1, -1).reverse());
+  } else {
+    const openMidis = Array.isArray(track?.openStringMidis) && track.openStringMidis.length > 0
+      ? track.openStringMidis
+      : [40, 45, 50, 55, 59, 64];
+    const capo = Number(track?.capo) || 0;
+    const nStrings = openMidis.length;
+    const basePc0 = ((openMidis[0] + capo) % 12 + 12) % 12;
+    let anchorFret = (root - basePc0 + 12) % 12;
+    if (anchorFret === 0) anchorFret = 12;
+    if (anchorFret > 12) anchorFret = anchorFret - 12;
+    const boxMin = Math.max(0, anchorFret - 2);
+    const boxMax = Math.min(19, anchorFret + 4);
+
+    if (mode === 'sweep') {
+      const startStr = (nStrings >= 6 && anchorFret >= 3) ? 1 : 0;
+      const perString = [];
+      for (let s = startStr; s < nStrings; s++) {
+        const cands = [];
+        for (let f = boxMin; f <= boxMax; f++) {
+          const midi = openMidis[s] + capo + f;
+          const pc = ((midi % 12) + 12) % 12;
+          if (chordPcs.has(pc)) cands.push({ string: s, fret: f, midi });
+        }
+        if (cands.length > 0) {
+          cands.sort((a, b) => Math.abs(a.fret - anchorFret) - Math.abs(b.fret - anchorFret));
+          perString.push({ list: cands, pick: cands[0] });
+        }
+      }
+      const asc = perString.map(x => ({ ...x.pick, hammerOn: false }));
+      const topEntry = perString[perString.length - 1];
+      const topExtra = topEntry?.list?.find(c => c.fret > topEntry.pick.fret);
+      if (direction === 'up') {
+        rawSeq = asc;
+      } else if (direction === 'down') {
+        rawSeq = asc.slice().reverse();
+      } else {
+        rawSeq = asc.slice();
+        if (topExtra) rawSeq.push({ ...topExtra, hammerOn: true });
+        for (let i = asc.length - (topExtra ? 1 : 2); i >= 0; i--) {
+          if (i === 0 && rawSeq.length >= 2) continue;
+          rawSeq.push({ ...asc[i], hammerOn: false });
+        }
+      }
+    } else {
+      const byMidi = new Map();
+      for (let s = 0; s < nStrings; s++) {
+        for (let f = boxMin; f <= boxMax; f++) {
+          const midi = openMidis[s] + capo + f;
+          const pc = ((midi % 12) + 12) % 12;
+          if (!chordPcs.has(pc)) continue;
+          const prev = byMidi.get(midi);
+          if (!prev || Math.abs(f - anchorFret) < Math.abs(prev.fret - anchorFret)) {
+            byMidi.set(midi, { string: s, fret: f, midi });
+          }
+        }
+      }
+      const asc = Array.from(byMidi.values()).sort((a, b) => a.midi - b.midi);
+      if (asc.length >= 2) {
+        if (direction === 'up') {
+          rawSeq = asc;
+        } else if (direction === 'down') {
+          rawSeq = asc.slice().reverse();
+        } else if (direction === 'broken') {
+          for (let i = 0; i + 2 < asc.length; i++) {
+            rawSeq.push(asc[i], asc[i + 2], asc[i + 1]);
+          }
+          if (rawSeq.length === 0) rawSeq = asc;
+        } else {
+          rawSeq = asc.concat(asc.slice(1, -1).reverse());
+        }
+      } else {
+        rawSeq = asc;
+      }
+    }
+  }
+
+  return rawSeq.map((n, idx) => ({
+    duration: Number.isInteger(Number(duration)) ? Number(duration) : 1,
+    chordSymbol: idx === 0 ? chordLabel : '',
+    notes: [n]
+  }));
+}
+
+export function applyGeneratedStepsToSong(song, trackIdx, steps, {
+  insertMode = 'cursor',
+  measureIdx = 0,
+  beatIdx = 0,
+  sectionMarker = ''
+} = {}) {
+  if (!song || !Array.isArray(song.tracks) || !Array.isArray(steps) || steps.length === 0) {
+    return { ok: false, insertedBars: 0, insertedBeats: 0 };
+  }
+  const tr = song.tracks[trackIdx];
+  if (!tr || tr.instrumentType === 'drums' || tr.isPercussion) {
+    return { ok: false, insertedBars: 0, insertedBeats: 0 };
+  }
+  const refM = tr.measures?.[Math.max(0, Math.min(tr.measures.length - 1, measureIdx))] || { numerator: 4, denominator: 4 };
+  if (insertMode === 'append') {
+    const newMeasures = buildMeasuresFromSteps(steps, {
+      numerator: refM.numerator || 4,
+      denominator: refM.denominator || 4,
+      sectionMarker: sectionMarker || steps[0]?.chordSymbol || ''
+    });
+    const baseCount = tr.measures.length;
+    tr.measures.push(...newMeasures);
+    const newLen = tr.measures.length;
+    for (let t = 0; t < song.tracks.length; t++) {
+      if (t === trackIdx) continue;
+      const other = song.tracks[t];
+      const isDrum = other.instrumentType === 'drums' || other.isPercussion;
+      while (other.measures.length < newLen) {
+        const ref = tr.measures[other.measures.length] || refM;
+        other.measures.push(createEmptyMeasure(ref.numerator, ref.denominator, 'rock_8th', isDrum));
+      }
+    }
+    return { ok: true, insertedBars: newMeasures.length, insertedBeats: steps.length, startMeasureIdx: baseCount };
+  }
+
+  const built = buildMeasuresFromSteps(steps, { numerator: refM.numerator || 4, denominator: refM.denominator || 4 });
+  const beats = [];
+  for (const bm of built) {
+    for (const b of (bm.beats || [])) {
+      if (!b.isRest) beats.push(b);
+    }
+  }
+  const pasteRes = pasteBeatsFromClipboard(song, {
+    kind: 'beats',
+    scope: 'track',
+    sourceTrackIdx: trackIdx,
+    beatCount: beats.length,
+    beats
+  }, {
+    targetTrackIdx: trackIdx,
+    targetMeasureIdx: measureIdx,
+    targetBeatIdx: beatIdx,
+    mode: 'overwrite'
+  });
+  return {
+    ok: Boolean(pasteRes),
+    insertedBars: 0,
+    insertedBeats: pasteRes?.pastedCount || 0,
+    endMeasureIdx: pasteRes?.endMeasureIdx ?? measureIdx,
+    endBeatIdx: pasteRes?.endBeatIdx ?? beatIdx
+  };
+}
+
+/**
+ * Konwertuje surowe kroki z zakładek Arpeggio / Sweep (lub dowolnej listy kroków) do schowka uderzeń Studia TAB.
+ */
+export function buildBeatsClipboardFromSteps(steps, opts = {}) {
+  const srcList = Array.isArray(steps) ? steps : [];
+  const defaultDur = Number.isInteger(Number(opts.defaultDuration)) ? Number(opts.defaultDuration) : 2;
+  const beats = [];
+
+  for (const st of srcList) {
+    if (!st) continue;
+    const rawNotes = Array.isArray(st.notes)
+      ? st.notes
+      : (Number.isFinite(Number(st.s)) && Number.isFinite(Number(st.f))
+          ? [{
+              string: Number(st.s),
+              fret: Number(st.f),
+              hammerOn: st.tech === 'H' || st.tech === 'P' || st.tech === 'Hammer-on' || st.tech === 'Pull-off',
+              slide: st.tech === 'S' || st.tech === 'Slide',
+              tap: Boolean(st.tapped || st.tap)
+            }]
+          : (Number.isFinite(Number(st.string)) && Number.isFinite(Number(st.fret)) ? [st] : []));
+
+    const seenStr = new Set();
+    const notes = [];
+    for (const n of rawNotes) {
+      const s = Math.max(0, Math.min(7, Math.round(Number(n.string) || 0)));
+      if (seenStr.has(s)) continue;
+      seenStr.add(s);
+      notes.push(createTabNote({
+        string: s,
+        fret: Math.max(0, Math.min(24, Math.round(Number(n.fret) || 0))),
+        midi: Number.isFinite(Number(n.midi)) ? Math.round(Number(n.midi)) : undefined,
+        velocity: Number(n.velocity) || 96,
+        tap: Boolean(n.tap || n.tapped),
+        hammerOn: Boolean(n.hammerOn),
+        slide: Boolean(n.slide),
+        harmonicType: Number(n.harmonicType) || (n.harmonic ? 1 : 0)
+      }));
+    }
+    notes.sort((a, b) => a.string - b.string);
+    beats.push(createBeat({
+      duration: Number.isInteger(Number(st.duration)) ? Number(st.duration) : defaultDur,
+      dots: Number(st.dots) || 0,
+      tupletNumerator: Number(st.tupletNumerator) || 0,
+      tupletDenominator: Number(st.tupletDenominator) || 0,
+      isRest: notes.length === 0,
+      chordSymbol: st.chordSymbol ? String(st.chordSymbol) : '',
+      text: st.text ? String(st.text) : '',
+      notes
+    }));
+  }
+
+  return {
+    kind: 'beats',
+    scope: 'track',
+    sourceTrackIdx: 0,
+    beatCount: beats.length,
+    barCount: 0,
+    label: String(opts.label || ''),
+    beats
+  };
+}
+
+/**
+ * Sprawdza, czy utwór zawiera struktury repetycji lub volt trybu Pro (`repeatOpen`, `repeatClose`, `voltaMask`).
+ */
+export function hasProRepeatStructure(song) {
+  const master = song?.tracks?.[0]?.measures;
+  if (!Array.isArray(master)) return false;
+  return master.some(m => Boolean(m && (m.repeatOpen || (Number(m.repeatClose) || 0) >= 2 || (Number(m.voltaMask) || 0) > 0)));
+}
+
+/**
+ * Rozwija repetycje i volty utworu Pro w prostą, liniową sekwencję taktów dla trybu Uproszczonego.
+ */
+export function expandSongToLinearMeasures(song) {
+  const linearSong = cloneSong(song);
+  const tl = expandPlaybackTimeline(song);
+  if (!tl.length) {
+    return { linearSong, sourceMap: [] };
+  }
+
+  const seenPrimary = new Set();
+  const sourceMap = tl.map(entry => {
+    const isPrimary = !seenPrimary.has(entry.measureIdx);
+    seenPrimary.add(entry.measureIdx);
+    return {
+      sourceMeasureIdx: entry.measureIdx,
+      pass: entry.pass || 1,
+      isPrimary
+    };
+  });
+
+  linearSong.tracks = (song.tracks || []).map(tr => {
+    const measures = sourceMap.map(info => {
+      const srcM = tr.measures?.[info.sourceMeasureIdx]
+        || createEmptyMeasure(4, 4, 'rock_8th', tr.instrumentType === 'drums' || Boolean(tr.isPercussion));
+      const copyM = cloneSong(srcM);
+      copyM.repeatOpen = false;
+      copyM.repeatClose = 0;
+      copyM.voltaMask = 0;
+      return copyM;
+    });
+    return { ...cloneSong(tr), measures };
+  });
+
+  return { linearSong, sourceMap };
+}
+
+function measureContentSignature(m) {
+  if (!m) return '';
+  return JSON.stringify({
+    numerator: m.numerator || 4,
+    denominator: m.denominator || 4,
+    sectionMarker: m.sectionMarker || '',
+    drumBlockId: m.drumBlockId || '',
+    customDrumGrid: m.customDrumGrid || null,
+    beats: (m.beats || []).map(b => ({
+      duration: b.duration,
+      dots: b.dots || 0,
+      tupletNumerator: b.tupletNumerator || 0,
+      tupletDenominator: b.tupletDenominator || 0,
+      isRest: Boolean(b.isRest),
+      dynamic: b.dynamic ?? 6,
+      chordSymbol: b.chordSymbol || '',
+      text: b.text || '',
+      notes: (b.notes || []).map(n => ({
+        s: n.string, f: n.fret, midi: n.midi,
+        tied: Boolean(n.tied), pm: Boolean(n.palmMute), lr: Boolean(n.letRing),
+        ho: Boolean(n.hammerOn), sl: n.slideType || '', vib: Boolean(n.vibrato),
+        wv: Boolean(n.wideVibrato), bp: n.bendPreset || '', wp: n.whammyPreset || '',
+        tap: Boolean(n.tap), ht: n.harmonicType || 0, dn: Boolean(n.deadNote),
+        gn: Boolean(n.ghostNote), acc: Boolean(n.accented), ha: Boolean(n.heavyAccented),
+        st: Boolean(n.staccato)
+      }))
+    }))
+  });
+}
+
+function mergeProBeatMetadata(targetMeasure, origProMeasure) {
+  if (!targetMeasure || !origProMeasure || !Array.isArray(targetMeasure.beats) || !Array.isArray(origProMeasure.beats)) return;
+  const count = Math.min(targetMeasure.beats.length, origProMeasure.beats.length);
+  for (let bIdx = 0; bIdx < count; bIdx++) {
+    const tb = targetMeasure.beats[bIdx];
+    const pb = origProMeasure.beats[bIdx];
+    if (!tb || !pb) continue;
+    if (pb.pickStroke) tb.pickStroke = pb.pickStroke;
+    if (pb.brushStroke) tb.brushStroke = pb.brushStroke;
+    if (pb.fermata) tb.fermata = true;
+    if (tb.text === '' && pb.text) tb.text = pb.text;
+    if (!tb.isRest && !pb.isRest && Array.isArray(tb.notes) && Array.isArray(pb.notes)) {
+      for (const tn of tb.notes) {
+        const pn = pb.notes.find(x => x.string === tn.string && x.fret === tn.fret) || pb.notes.find(x => x.string === tn.string);
+        if (pn) {
+          if (pn.graceNote) tn.graceNote = true;
+          if (pn.tremoloPicking) tn.tremoloPicking = true;
+          if (pn.trill) tn.trill = true;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Scala zmiany wykonane w trybie Uproszczonym (na rozwiniętej partyturze) z powrotem do utworu Pro,
+ * bezstratnie przywracając repetycje, volty oraz ukryte oznaczenia Pro (kostkowanie, przednutki, tryle, fermatę).
+ */
+export function reconcileLinearEditsIntoProSong(proSong, linearSong, sourceMap = [], baselineLinearSong = null) {
+  if (!proSong || !linearSong) return { song: cloneSong(linearSong || proSong), foldedToPro: false };
+  const mapList = Array.isArray(sourceMap) ? sourceMap : [];
+  const proMasterLen = proSong.tracks?.[0]?.measures?.length || 0;
+  const linMasterLen = linearSong.tracks?.[0]?.measures?.length || 0;
+
+  if (mapList.length === 0 || linMasterLen !== mapList.length) {
+    // Nie można zwinąć pętli, jeśli użytkownik dodał/usunął takty; zachowujemy przynajmniej ocalałe metadane Pro
+    const outSong = cloneSong(linearSong);
+    if (mapList.length > 0 && Array.isArray(outSong.tracks) && Array.isArray(proSong.tracks)) {
+      for (let t = 0; t < outSong.tracks.length && t < proSong.tracks.length; t++) {
+        const lMs = outSong.tracks[t].measures || [];
+        const pMs = proSong.tracks[t].measures || [];
+        for (let li = 0; li < lMs.length && li < mapList.length; li++) {
+          const origM = pMs[mapList[li].sourceMeasureIdx];
+          if (origM) mergeProBeatMetadata(lMs[li], origM);
+        }
+      }
+    }
+    return { song: outSong, foldedToPro: false };
+  }
+
+  // Sprawdź czy powtórzone przebiegi tej samej miary źródłowej nie rozeszły się wskutek różnych edycji
+  const trackCount = Math.min(proSong.tracks?.length || 0, linearSong.tracks?.length || 0);
+  const chosenLinearIdxByTrackAndSrc = Array.from({ length: trackCount }, () => new Map());
+
+  for (let t = 0; t < trackCount; t++) {
+    const lMs = linearSong.tracks[t].measures || [];
+    const baseMs = baselineLinearSong?.tracks?.[t]?.measures || [];
+    const grouped = new Map();
+    for (let li = 0; li < mapList.length; li++) {
+      const srcM = mapList[li].sourceMeasureIdx;
+      if (!grouped.has(srcM)) grouped.set(srcM, []);
+      grouped.get(srcM).push(li);
+    }
+
+    for (const [srcM, indices] of grouped.entries()) {
+      const sigs = indices.map(li => measureContentSignature(lMs[li]));
+      const baseSigs = indices.map(li => (baseMs[li] ? measureContentSignature(baseMs[li]) : sigs[0]));
+      const editedFlags = sigs.map((s, k) => s !== baseSigs[k]);
+      const editedSigs = new Set(sigs.filter((_, k) => editedFlags[k]));
+      const allSameNow = new Set(sigs).size === 1;
+
+      if (allSameNow) {
+        chosenLinearIdxByTrackAndSrc[t].set(srcM, indices[0]);
+      } else if (editedSigs.size === 1) {
+        const idxEdited = indices.find((_, k) => editedFlags[k]);
+        chosenLinearIdxByTrackAndSrc[t].set(srcM, idxEdited);
+      } else {
+        // Rozbieżne edycje między powtórzeniami tej samej miary -> zachowaj rozwiniętą wersję bez utraty edycji
+        const outSong = cloneSong(linearSong);
+        for (let tt = 0; tt < outSong.tracks.length && tt < proSong.tracks.length; tt++) {
+          const outMs = outSong.tracks[tt].measures || [];
+          const pMs = proSong.tracks[tt].measures || [];
+          for (let li = 0; li < outMs.length && li < mapList.length; li++) {
+            const origM = pMs[mapList[li].sourceMeasureIdx];
+            if (origM) mergeProBeatMetadata(outMs[li], origM);
+          }
+        }
+        return { song: outSong, foldedToPro: false };
+      }
+    }
+  }
+
+  const restored = cloneSong(proSong);
+  restored.title = linearSong.title || restored.title;
+  restored.artist = linearSong.artist ?? restored.artist;
+  restored.album = linearSong.album ?? restored.album;
+  restored.tempoBpm = linearSong.tempoBpm || restored.tempoBpm;
+  restored.keyRootPc = linearSong.keyRootPc ?? restored.keyRootPc;
+  restored.keyScaleId = linearSong.keyScaleId || restored.keyScaleId;
+  restored.metronomePattern = cloneSong(linearSong.metronomePattern || restored.metronomePattern);
+
+  for (let t = 0; t < linearSong.tracks.length; t++) {
+    if (t >= restored.tracks.length) {
+      restored.tracks.push(cloneSong(linearSong.tracks[t]));
+      continue;
+    }
+    const proTr = proSong.tracks[t];
+    const linTr = linearSong.tracks[t];
+    const resTr = restored.tracks[t];
+    resTr.name = linTr.name || resTr.name;
+    resTr.tonePreset = linTr.tonePreset || resTr.tonePreset;
+    resTr.muted = Boolean(linTr.muted);
+    resTr.solo = Boolean(linTr.solo);
+    resTr.volume = linTr.volume ?? resTr.volume;
+    resTr.capo = linTr.capo ?? resTr.capo;
+    resTr.drumAutoFill = linTr.drumAutoFill ?? resTr.drumAutoFill;
+    resTr.drumCrashOnOne = linTr.drumCrashOnOne ?? resTr.drumCrashOnOne;
+
+    for (let srcM = 0; srcM < proMasterLen; srcM++) {
+      const li = chosenLinearIdxByTrackAndSrc[t]?.get(srcM);
+      if (li === undefined) continue;
+      const origProM = proTr.measures?.[srcM];
+      const editedLinM = linTr.measures?.[li];
+      if (!origProM || !editedLinM) continue;
+      const mergedM = cloneSong(editedLinM);
+      mergedM.repeatOpen = Boolean(origProM.repeatOpen);
+      mergedM.repeatClose = Number(origProM.repeatClose) || 0;
+      mergedM.voltaMask = Number(origProM.voltaMask) || 0;
+      mergedM.tripletFeel = Number(origProM.tripletFeel) || 0;
+      mergeProBeatMetadata(mergedM, origProM);
+      resTr.measures[srcM] = mergedM;
+    }
+  }
+
+  return { song: restored, foldedToPro: true };
 }

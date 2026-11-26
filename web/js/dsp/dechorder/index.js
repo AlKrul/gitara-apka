@@ -10,7 +10,7 @@ export { ChordEngine, ActiveNote, matchChordFromMidis, readingLabel, WINDOW, HOP
 export { Notes } from './music.js';
 
 import { ChordEngine } from './chordEngine.js';
-import { ChordNamer, Quality } from './chordNamer.js';
+import { ChordNamer, Chord, Quality } from './chordNamer.js';
 import { NoteDetector, DetectionParams } from './noteDetector.js';
 import { Spectrum, Peak } from './spectrum.js';
 import { Fft } from './fft.js';

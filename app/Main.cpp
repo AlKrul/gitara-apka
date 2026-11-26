@@ -6,6 +6,7 @@
 #include "gitara/engine/WorkshopGenerator.h"
 #include "gitara/score/Score.h"
 #include "gitara/score/StudioJsonCodec.h"
+#include "gitara/score/UserLibrary.h"
 #include "gitara/theory/Arpeggio.h"
 #include "gitara/theory/Chord.h"
 #include "gitara/theory/Fretboard.h"
@@ -156,18 +157,264 @@ Tuning resolveRequestedTuning(std::string_view query) {
             std::string tok = (comma == std::string::npos)
                 ? customStr.substr(pos)
                 : customStr.substr(pos, comma - pos);
-            int midi = std::clamp(std::atoi(tok.c_str()), 24, 88);
-            customPitches.push_back(Pitch::fromMidiNumber(midi, AccidentalMode::Sharps));
+            if (!tok.empty()) {
+                int midi = std::clamp(std::atoi(tok.c_str()), 12, 108);
+                customPitches.push_back(Pitch::fromMidiNumber(midi, AccidentalMode::Sharps));
+            }
             if (comma == std::string::npos) break;
             pos = comma + 1;
         }
-        if (customPitches.size() == 6) {
+        if (customPitches.size() >= 4 && customPitches.size() <= 8) {
             t.id = "custom";
             t.polishName = "Własny strój";
             t.openStrings = std::move(customPitches);
         }
     }
     return t;
+}
+
+std::string sanitizeAsciiFilenameSlug(std::string_view raw, std::string_view fallback = "progresja") {
+    std::string out;
+    out.reserve(48);
+    for (unsigned char c : raw) {
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
+            out.push_back(static_cast<char>(c));
+        } else if (c == ' ' && (out.empty() || out.back() != '_')) {
+            out.push_back('_');
+        }
+        if (out.size() >= 48) break;
+    }
+    while (!out.empty() && out.back() == '_') out.pop_back();
+    return out.empty() ? std::string(fallback) : out;
+}
+
+ChordProgression buildCustomProgressionFromJson(std::string_view json) {
+    auto skipWs = [&](std::size_t& p) {
+        while (p < json.size() && (json[p] == ' ' || json[p] == '\t' || json[p] == '\r' || json[p] == '\n')) ++p;
+    };
+    auto matchString = [&](std::size_t p, std::string& out, std::size_t& nextPos) -> bool {
+        if (p >= json.size() || json[p] != '"') return false;
+        ++p;
+        out.clear();
+        while (p < json.size()) {
+            char c = json[p++];
+            if (c == '\\' && p < json.size()) {
+                char esc = json[p++];
+                if (esc == 'n') out.push_back('\n');
+                else if (esc == 'r') out.push_back('\r');
+                else if (esc == 't') out.push_back('\t');
+                else out.push_back(esc);
+            } else if (c == '"') {
+                nextPos = p;
+                return true;
+            } else {
+                out.push_back(c);
+            }
+        }
+        return false;
+    };
+    auto findMatching = [&](std::size_t openPos, char openCh, char closeCh) -> std::size_t {
+        if (openPos >= json.size() || json[openPos] != openCh) return std::string_view::npos;
+        int depth = 0;
+        bool inStr = false;
+        for (std::size_t p = openPos; p < json.size(); ++p) {
+            char c = json[p];
+            if (inStr) {
+                if (c == '\\' && p + 1 < json.size()) { ++p; continue; }
+                if (c == '"') inStr = false;
+                continue;
+            }
+            if (c == '"') { inStr = true; continue; }
+            if (c == openCh) ++depth;
+            else if (c == closeCh) {
+                --depth;
+                if (depth == 0) return p;
+            }
+        }
+        return std::string_view::npos;
+    };
+    auto findTopValueStart = [&](std::size_t objStart, std::size_t objEnd, std::string_view targetKey) -> std::size_t {
+        if (objStart >= objEnd || json[objStart] != '{') return std::string_view::npos;
+        std::size_t p = objStart + 1;
+        while (p < objEnd) {
+            skipWs(p);
+            if (p >= objEnd || json[p] == '}') break;
+            if (json[p] == ',') { ++p; continue; }
+            std::string key;
+            std::size_t afterKey = p;
+            if (!matchString(p, key, afterKey)) break;
+            p = afterKey;
+            skipWs(p);
+            if (p >= objEnd || json[p] != ':') break;
+            ++p;
+            skipWs(p);
+            if (key == targetKey) return p;
+            if (p >= objEnd) break;
+            if (json[p] == '{') {
+                auto e = findMatching(p, '{', '}');
+                if (e == std::string_view::npos) break;
+                p = e + 1;
+            } else if (json[p] == '[') {
+                auto e = findMatching(p, '[', ']');
+                if (e == std::string_view::npos) break;
+                p = e + 1;
+            } else if (json[p] == '"') {
+                std::string dummy;
+                if (!matchString(p, dummy, p)) break;
+            } else {
+                while (p < objEnd && json[p] != ',' && json[p] != '}') ++p;
+            }
+        }
+        return std::string_view::npos;
+    };
+    auto getStrField = [&](std::size_t s, std::size_t e, std::string_view key, std::string def) -> std::string {
+        auto v = findTopValueStart(s, e, key);
+        if (v == std::string_view::npos) return def;
+        std::string out;
+        std::size_t np = v;
+        return matchString(v, out, np) ? out : def;
+    };
+    auto getIntField = [&](std::size_t s, std::size_t e, std::string_view key, int def) -> int {
+        auto v = findTopValueStart(s, e, key);
+        if (v == std::string_view::npos || v >= e) return def;
+        char c = json[v];
+        if (c != '-' && (c < '0' || c > '9')) return def;
+        return std::atoi(json.substr(v, e - v).data());
+    };
+    auto getBoolField = [&](std::size_t s, std::size_t e, std::string_view key, bool def) -> bool {
+        auto v = findTopValueStart(s, e, key);
+        if (v == std::string_view::npos || v >= e) return def;
+        if (json.substr(v, 4) == "true") return true;
+        if (json.substr(v, 5) == "false") return false;
+        return def;
+    };
+
+    ChordProgression prog{};
+    prog.id = "custom_progression";
+    prog.title = "Wlasna progresja";
+    prog.styleCategory = "Custom";
+    prog.tempoBpm = 108;
+
+    std::size_t rootStart = json.find('{');
+    if (rootStart == std::string_view::npos) return builtinProgressions().front();
+    std::size_t rootEnd = findMatching(rootStart, '{', '}');
+    if (rootEnd == std::string_view::npos) return builtinProgressions().front();
+
+    prog.title = getStrField(rootStart, rootEnd, "title", getStrField(rootStart, rootEnd, "name", "Wlasna progresja"));
+    prog.tempoBpm = std::clamp(getIntField(rootStart, rootEnd, "bpm", 108), 40, 240);
+    int keyRootPc = ((getIntField(rootStart, rootEnd, "keyRootPc", 0) % 12) + 12) % 12;
+    prog.isMinorKey = getBoolField(rootStart, rootEnd, "isMinor", false);
+    prog.keyRoot = Note::fromPitchClass(keyRootPc);
+
+    std::string timeSig = getStrField(rootStart, rootEnd, "timeSig", "4/4");
+    auto slashPos = timeSig.find('/');
+    if (slashPos != std::string::npos) {
+        prog.numerator = std::clamp(std::atoi(timeSig.substr(0, slashPos).c_str()), 1, 12);
+        int den = std::atoi(timeSig.substr(slashPos + 1).c_str());
+        prog.denominator = (den == 2 || den == 4 || den == 8 || den == 16) ? den : 4;
+    }
+
+    std::string feel = getStrField(rootStart, rootEnd, "feel", "Prosto");
+    std::string grooveStr = getStrField(rootStart, rootEnd, "groove", "straight");
+    if (feel == "Blues" && grooveStr == "shuffle") {
+        prog.groove = GrooveStyle::Shuffle;
+        prog.swing = SwingLevel::Medium;
+    } else if (feel == "Blues" && grooveStr == "slow12_8") {
+        prog.groove = GrooveStyle::Slow12_8;
+    } else if (feel == "Swing Jazz") {
+        prog.swing = SwingLevel::Medium;
+    }
+
+    auto parseSlotObj = [&](std::size_t objS, std::size_t objE, int beatIdx) -> ChordSlot {
+        int off = ((getIntField(objS, objE, "offsetSemi", 0) % 12) + 12) % 12;
+        std::string cid = getStrField(objS, objE, "chordId", "major");
+        if (!findChordDefinition(cid)) cid = "major";
+        std::string roman = getStrField(objS, objE, "roman", "I");
+        return ChordSlot{beatIdx, intervalFromSemitones(off), cid, roman};
+    };
+
+    ProgressionSection sec{};
+    sec.name = "A";
+    sec.repeatCount = 1;
+
+    std::size_t measuresVal = findTopValueStart(rootStart, rootEnd, "measures");
+    if (measuresVal != std::string_view::npos && json[measuresVal] == '[') {
+        std::size_t mArrEnd = findMatching(measuresVal, '[', ']');
+        if (mArrEnd != std::string_view::npos) {
+            std::size_t p = measuresVal + 1;
+            while (p < mArrEnd) {
+                skipWs(p);
+                if (p >= mArrEnd || json[p] == ']') break;
+                if (json[p] == ',') { ++p; continue; }
+                if (json[p] == '{') {
+                    std::size_t mEnd = findMatching(p, '{', '}');
+                    if (mEnd == std::string_view::npos) break;
+                    ProgressionMeasure pm{};
+                    pm.voltaNumber = std::clamp(getIntField(p, mEnd, "volta", 0), 0, 2);
+                    std::size_t beatsVal = findTopValueStart(p, mEnd, "beats");
+                    if (beatsVal != std::string_view::npos && json[beatsVal] == '[') {
+                        std::size_t bArrEnd = findMatching(beatsVal, '[', ']');
+                        if (bArrEnd != std::string_view::npos) {
+                            std::size_t bp = beatsVal + 1;
+                            int beatIdx = 0;
+                            while (bp < bArrEnd) {
+                                skipWs(bp);
+                                if (bp >= bArrEnd || json[bp] == ']') break;
+                                if (json[bp] == ',') { ++bp; continue; }
+                                if (json[bp] == '{') {
+                                    std::size_t bEnd = findMatching(bp, '{', '}');
+                                    if (bEnd == std::string_view::npos) break;
+                                    pm.chords.push_back(parseSlotObj(bp, bEnd, beatIdx));
+                                    bp = bEnd + 1;
+                                    ++beatIdx;
+                                } else {
+                                    while (bp < bArrEnd && json[bp] != ',' && json[bp] != ']') ++bp;
+                                    ++beatIdx;
+                                }
+                            }
+                        }
+                    }
+                    sec.measures.push_back(std::move(pm));
+                    p = mEnd + 1;
+                } else {
+                    ++p;
+                }
+            }
+        }
+    }
+
+    if (sec.measures.empty()) {
+        std::size_t barsVal = findTopValueStart(rootStart, rootEnd, "bars");
+        if (barsVal != std::string_view::npos && json[barsVal] == '[') {
+            std::size_t bArrEnd = findMatching(barsVal, '[', ']');
+            if (bArrEnd != std::string_view::npos) {
+                std::size_t p = barsVal + 1;
+                while (p < bArrEnd) {
+                    skipWs(p);
+                    if (p >= bArrEnd || json[p] == ']') break;
+                    if (json[p] == ',') { ++p; continue; }
+                    if (json[p] == '{') {
+                        std::size_t bEnd = findMatching(p, '{', '}');
+                        if (bEnd == std::string_view::npos) break;
+                        ProgressionMeasure pm{};
+                        pm.chords.push_back(parseSlotObj(p, bEnd, 0));
+                        sec.measures.push_back(std::move(pm));
+                        p = bEnd + 1;
+                    } else {
+                        ++p;
+                    }
+                }
+            }
+        }
+    }
+
+    if (sec.measures.empty()) {
+        ProgressionMeasure pm{};
+        pm.chords.push_back(ChordSlot{0, intervals::P1, prog.isMinorKey ? "minor" : "major", prog.isMinorKey ? "i" : "I"});
+        sec.measures.push_back(std::move(pm));
+    }
+    prog.sections.push_back(std::move(sec));
+    return prog;
 }
 
 std::string handleInitApi() {
@@ -425,7 +672,10 @@ std::string handleVoicingsApi(std::string_view query) {
         defs = groupDefs;
     } else {
         const auto* d = findChordDefinition(chordId);
-        if (!d) d = findChordDefinition("major");
+        if (!d) {
+            d = findChordDefinition("major");
+            if (d) chordId = d->id;
+        }
         bool fitsGroup = std::find(groupDefs.begin(), groupDefs.end(), d) != groupDefs.end();
         if (!fitsGroup && !groupDefs.empty()) {
             d = groupDefs.front();
@@ -525,7 +775,9 @@ std::string handleHarmonicsApi(std::string_view query) {
     AccidentalMode mode = toAccMode(getQueryInt(query, "accMode", 2));
 
     Fretboard fb{resolveRequestedTuning(query), 24};
-    std::optional<int> optStr = (stringIdx >= 0 && stringIdx < 6) ? std::optional<int>(stringIdx) : std::nullopt;
+    std::optional<int> optStr = (stringIdx >= 0 && stringIdx < fb.stringCount())
+        ? std::optional<int>(stringIdx)
+        : std::nullopt;
     auto list = fb.computeNaturalHarmonics(optStr, 0.0, 12.0, 15, mode);
 
     std::ostringstream oss;
@@ -548,7 +800,7 @@ std::string handleHarmonicsApi(std::string_view query) {
             << "\",\"location\":\"" << jsonEscape(h.polishLocation)
             << "\",\"interval\":\"" << jsonEscape(h.intervalOverOpen.symbol(false))
             << "\",\"stringIdx\":" << h.stringIndex
-            << ",\"stringNum\":" << (6 - h.stringIndex)
+            << ",\"stringNum\":" << (fb.stringCount() - h.stringIndex)
             << ",\"stringName\":\"" << jsonEscape(fb.tuning().openStrings[static_cast<std::size_t>(h.stringIndex)].note.toString(false))
             << "\",\"exactFret\":" << h.exactFret
             << ",\"midi\":" << h.soundingPitch.midiNumber()
@@ -798,7 +1050,7 @@ std::string handleDiatonicApi(std::string_view query) {
 }
 
 std::string handleArpeggioApi(std::string_view query) {
-    int rootPc = getQueryInt(query, "rootPc", 0);
+    int rootPc = ((getQueryInt(query, "rootPc", 0) % 12) + 12) % 12;
     std::string chordId = getQueryParam(query, "chordId", "minor");
     int patternInt = getQueryInt(query, "pattern", 6);
     int posIdx = getQueryInt(query, "posIdx", 0);
@@ -936,7 +1188,7 @@ std::string handleArpeggioApi(std::string_view query) {
         activeSteps = buildArpeggioSequenceSteps(fb, activeNodes, pat, direction, mode, seqStyle, startString, returnString);
     }
 
-    auto transition = generateSweepTransition(fb, transitionId, rootPc, sweepStrings, posIdx, &ch, &sc, mode, diatonicSevenths);
+    auto transition = generateSweepTransition(fb, transitionId, rootPc, sweepStrings, posIdx, &ch, &sc, mode, diatonicSevenths, direction, stringSet);
 
     std::ostringstream oss;
     oss << "{\"chordSymbol\":\"" << jsonEscape(ch.symbol(false, mode)) << "\""
@@ -1067,14 +1319,14 @@ std::string handleArpeggioApi(std::string_view query) {
     return oss.str();
 }
 
-Song buildSongFromJsonEvents(std::string_view eventsJson, int bpm) {
+Song buildSongFromJsonEvents(std::string_view eventsJson, int bpm, const Tuning& tuning = findTuning("standard")) {
     Song song{};
     song.title = "Twoje Cwiczenie";
     song.tempoBpm = std::max(40, bpm);
 
     Track track{};
-    track.name = "Gitara";
-    track.tuning = findTuning("standard");
+    track.name = tuning.stringCount() <= 4 ? "Bas" : "Gitara";
+    track.tuning = tuning;
     Fretboard fb{track.tuning, 24};
 
     Measure currentM{};
@@ -1151,7 +1403,7 @@ std::string handleTabPreviewApi(std::string_view query, std::string_view body = 
         ? std::string(body)
         : getQueryParam(query, "events", "[]");
     int bpm = getQueryInt(query, "bpm", 120);
-    Song song = buildSongFromJsonEvents(evs, bpm);
+    Song song = buildSongFromJsonEvents(evs, bpm, resolveRequestedTuning(query));
     std::string tab = exportToAsciiTab(song);
     Scale key = detectKeyFromSong(song);
     std::ostringstream oss;
@@ -1222,7 +1474,7 @@ std::string handleWorkshopEventsApi(std::string_view query) {
     for (std::size_t i = 0; i < limit; ++i) {
         if (i > 0) oss << ",";
         const auto& st = gen.steps[i];
-        auto p = fb.pitchAt(st.targetPosition.stringIndex, st.targetPosition.fret, mode);
+        auto p = fb.pitchAt(st.targetPosition.stringIndex, st.targetPosition.fret, mode, &cfg.scale);
         oss << "{\"s\":" << st.targetPosition.stringIndex
             << ",\"f\":" << st.targetPosition.fret
             << ",\"midi\":" << st.expectedMidiNote
@@ -1560,7 +1812,7 @@ int main(int argc, char** argv) {
             std::string evs = (!reqBody.empty() && reqBody.front() == '[')
                 ? std::string(reqBody)
                 : getQueryParam(query, "events", "[]");
-            Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120));
+            Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120), resolveRequestedTuning(query));
             auto bytes = exportToGp5Bytes(song);
             sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
                          "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.gp5\"\r\n");
@@ -1568,26 +1820,66 @@ int main(int argc, char** argv) {
             std::string evs = (!reqBody.empty() && reqBody.front() == '[')
                 ? std::string(reqBody)
                 : getQueryParam(query, "events", "[]");
-            Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120));
+            Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120), resolveRequestedTuning(query));
             auto bytes = exportToMidiBytes(song);
             sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
                          "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.mid\"\r\n");
         } else if (path == "/api/export/progression_gp5") {
-            auto progOpt = findBuiltinProgression(getQueryParam(query, "id", "blues_12"));
-            ChordProgression prog = progOpt.value_or(builtinProgressions().front());
-            int reqKey = getQueryInt(query, "keyRootPc", -1);
-            int reqBpm = getQueryInt(query, "bpm", 0);
-            if (reqKey >= 0 && reqKey < 12) {
-                prog = transposeProgression(prog, Note::fromPitchClass(reqKey));
+            ChordProgression prog{};
+            bool hasBodyJson = false;
+            for (char c : reqBody) {
+                if (c == ' ' || c == '\t' || c == '\r' || c == '\n') continue;
+                hasBodyJson = (c == '{');
+                break;
             }
-            if (reqBpm >= 40 && reqBpm <= 240) {
-                prog.tempoBpm = reqBpm;
+            if (hasBodyJson) {
+                prog = buildCustomProgressionFromJson(reqBody);
+            } else {
+                auto progOpt = findBuiltinProgression(getQueryParam(query, "id", "blues_12"));
+                prog = progOpt.value_or(builtinProgressions().front());
+                int reqKey = getQueryInt(query, "keyRootPc", -1);
+                int reqBpm = getQueryInt(query, "bpm", 0);
+                if (reqKey >= 0 && reqKey < 12) {
+                    prog = transposeProgression(prog, Note::fromPitchClass(reqKey));
+                }
+                if (reqBpm >= 40 && reqBpm <= 240) {
+                    prog.tempoBpm = reqBpm;
+                }
             }
             Song song = generateBackingTrackSong(prog);
             auto bytes = exportToGp5Bytes(song);
-            std::string fname = prog.id.empty() ? "progresja_tuxguitar.gp5" : (prog.id + "_tuxguitar.gp5");
+            std::string fname = sanitizeAsciiFilenameSlug(hasBodyJson ? prog.title : prog.id, "progresja") + "_tuxguitar.gp5";
             std::string disp = "Content-Disposition: attachment; filename=\"" + fname + "\"\r\n";
             sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(), disp);
+        } else if (path == "/api/library") {
+            std::string body = gitara::score::listAllLibraryItemsJson("user_library");
+            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+        } else if (path == "/api/library/save") {
+            std::string cat = getQueryParam(query, "category", "");
+            std::string id = getQueryParam(query, "id", "");
+            std::string errMsg;
+            if (gitara::score::saveLibraryItem("user_library", cat, id, reqBody, &errMsg)) {
+                std::string okJson = "{\"ok\":true,\"category\":\"" + jsonEscape(cat) +
+                                     "\",\"id\":\"" + jsonEscape(gitara::score::sanitizeLibraryId(id)) + "\"}";
+                sendResponse("200 OK", "application/json; charset=utf-8", okJson.data(), okJson.size());
+            } else {
+                std::string errJson = "{\"ok\":false,\"error\":\"" + jsonEscape(errMsg) + "\"}";
+                sendResponse("400 Bad Request", "application/json; charset=utf-8", errJson.data(), errJson.size());
+            }
+        } else if (path == "/api/library/delete") {
+            std::string cat = getQueryParam(query, "category", "");
+            std::string id = getQueryParam(query, "id", "");
+            std::string errMsg;
+            if (gitara::score::deleteLibraryItem("user_library", cat, id, &errMsg)) {
+                const char* okJson = "{\"ok\":true}";
+                sendResponse("200 OK", "application/json; charset=utf-8", okJson, std::strlen(okJson));
+            } else {
+                const bool badInput = !gitara::score::isAllowedLibraryCategory(cat) ||
+                                      gitara::score::sanitizeLibraryId(id).empty();
+                std::string errJson = "{\"ok\":false,\"error\":\"" + jsonEscape(errMsg) + "\"}";
+                sendResponse(badInput ? "400 Bad Request" : "404 Not Found",
+                             "application/json; charset=utf-8", errJson.data(), errJson.size());
+            }
         } else if (path == "/api/studio/export_gp5") {
             Song studioSong{};
             std::string parseErr;

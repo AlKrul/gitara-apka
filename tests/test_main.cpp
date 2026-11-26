@@ -11,6 +11,7 @@
 #include "gitara/engine/WorkshopGenerator.h"
 #include "gitara/score/Score.h"
 #include "gitara/score/StudioJsonCodec.h"
+#include "gitara/score/UserLibrary.h"
 #include "gitara/theory/Arpeggio.h"
 #include "gitara/theory/Chord.h"
 #include "gitara/theory/Fretboard.h"
@@ -22,11 +23,17 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <iostream>
 #include <numbers>
 #include <set>
 #include <string>
 #include <vector>
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace {
 
@@ -1168,6 +1175,203 @@ void testGuitarNoteEngineCqtFluxHpsAndSustain() {
     }
 }
 
+void testAuditRegressions() {
+    using namespace gitara::theory;
+    using namespace gitara::score;
+    using namespace gitara::engine;
+
+    // 1. Messiaen 3 powinien zawierać m7 (10 półtonów), nie M6 (9)
+    const ScaleDefinition* m3 = findScaleDefinition("messiaen_3");
+    CHECK(m3 != nullptr);
+    if (m3) {
+        Scale sMess{Note{Letter::C, Accidental::Natural}, m3};
+        CHECK(sMess.containsPitchClass(10));
+        CHECK(!sMess.containsPitchClass(9));
+    }
+
+    // 2. d4 symbol/nazwa i P8 songHintAscending
+    CHECK(intervals::d4.symbol(true) == "♭4");
+    CHECK(intervals::d4.polishName() == "Kwarta zmniejszona");
+    CHECK(!intervals::P8.songHintAscending().empty());
+
+    // 3. spellAtLetter przy dużym odchyleniu chromatycznym zachowuje klasę wysokości
+    Note extremeSpelled = spellAtLetter(Letter::C, 6); // F#
+    CHECK(extremeSpelled.pitchClass() == 6);
+
+    // 4. EarTrainer odrzuca zagranie interwału w złym kierunku (asc vs desc)
+    EarTrainingConfig eCfg{};
+    eCfg.direction = EarDirection::Ascending;
+    eCfg.activeIntervals = {intervals::P5};
+    EarTrainer earCheck(eCfg);
+    auto eq = earCheck.nextQuestion();
+    int wrongDirMidi = eq.rootPitch.midiNumber() - eq.interval.semitones;
+    CHECK(!earCheck.submitPlayedGuitarMidi(wrongDirMidi, 250.0));
+
+    // 5. detectKeyFromSong z kapodastrem + pomijanie perkusji i pauz (C dur -> tonika 0)
+    Song keySong{};
+    Track gtrTrack{};
+    gtrTrack.tuning = findTuning("standard");
+    gtrTrack.capo = 2; // Z capo 2: A(47)+1=48(C), D(52)+0=52(E), E4(66)+1=67(G)
+    Measure kBar{};
+    for (int i = 0; i < 4; ++i) {
+        Beat b{};
+        b.duration = DurationValue::Quarter;
+        b.isRest = false;
+        b.notes.push_back(TabNote{1, 1, 95}); // 45 + 2 + 1 = 48 (C)
+        b.notes.push_back(TabNote{2, 0, 95}); // 50 + 2 + 0 = 52 (E)
+        b.notes.push_back(TabNote{5, 1, 95}); // 64 + 2 + 1 = 67 (G)
+        kBar.beats.push_back(b);
+    }
+    Beat restB{};
+    restB.isRest = true;
+    restB.notes.push_back(TabNote{0, 1, 95}); // resztkowe dane ignorowane przy isRest
+    kBar.beats.push_back(restB);
+    gtrTrack.measures.push_back(kBar);
+    Track drumIgn{};
+    drumIgn.isPercussion = true;
+    Measure dBar{};
+    Beat dBt{};
+    dBt.notes.push_back(TabNote{0, 37, 100}); // C# perkusyjne nie psuje detekcji tonacji
+    dBar.beats.push_back(dBt);
+    drumIgn.measures.push_back(dBar);
+    keySong.tracks = {gtrTrack, drumIgn};
+    auto detKey = detectKeyFromSong(keySong);
+    CHECK(detKey.root.pitchClass() == 0);
+    CHECK(detKey.definition != nullptr && detKey.definition->id == "major");
+
+    // 6. Arpeggio 2NPS dla Dm zwraca różne pozycje; Sweep na 4-str. basie oraz transition stringSetOffset działają poprawnie
+    Fretboard fb6{findTuning("standard"), 24};
+    Chord dmChord{Note{Letter::D, Accidental::Natural}, findChordDefinition("minor")};
+    auto dm0 = generateArpeggio(fb6, dmChord, ArpeggioPattern::TwoNPS, 0);
+    auto dm2 = generateArpeggio(fb6, dmChord, ArpeggioPattern::TwoNPS, 2);
+    CHECK(!dm0.empty() && !dm2.empty());
+    bool twoNpsDiff = (dm0.size() != dm2.size());
+    if (!twoNpsDiff && !dm0.empty()) {
+        for (std::size_t i = 0; i < dm0.size(); ++i) {
+            if (dm0[i].position.fret != dm2[i].position.fret) { twoNpsDiff = true; break; }
+        }
+    }
+    CHECK(twoNpsDiff);
+
+    Tuning bassTuning{"bass_standard", "Bas 4-str (E A D G)", {
+        Pitch{{Letter::E, Accidental::Natural}, 1},
+        Pitch{{Letter::A, Accidental::Natural}, 1},
+        Pitch{{Letter::D, Accidental::Natural}, 2},
+        Pitch{{Letter::G, Accidental::Natural}, 2}
+    }};
+    Fretboard fbBass4{bassTuning, 24};
+    auto bassSw = generateSweepShapes(fbBass4, dmChord, 5, 0, AccidentalMode::Sharps);
+    CHECK(!bassSw.empty());
+    for (const auto& sh : bassSw) {
+        for (const auto& n : sh.nodes) {
+            CHECK(n.position.stringIndex >= 0 && n.position.stringIndex < 4);
+        }
+    }
+    Scale dmScale{Note{Letter::D, Accidental::Natural}, findScaleDefinition("natural_minor")};
+    auto swTrUp = generateSweepTransition(fbBass4, "diatonic_climb", 2, 4, 0, &dmChord, &dmScale, AccidentalMode::Sharps, false, 0, 2);
+    CHECK(!swTrUp.segments.empty());
+    for (const auto& seg : swTrUp.segments) {
+        for (const auto& n : seg.nodes) {
+            CHECK(n.position.stringIndex >= 0 && n.position.stringIndex < 4);
+        }
+    }
+
+    // 7. GP5 4-strunowy bas + MIDI Time Signature (FF 58 04)
+    Song b4Song{};
+    b4Song.tempoBpm = 115;
+    Track b4{};
+    b4.name = "Bass 4";
+    b4.midiChannel = 1;
+    b4.midiProgram = 33;
+    b4.tuning = bassTuning;
+    Measure b4m{};
+    b4m.numerator = 7;
+    b4m.denominator = 8;
+    Beat b4bt{};
+    b4bt.duration = DurationValue::Eighth;
+    b4bt.notes.push_back(TabNote{0, 3, 100}); // G1 (28+3=31) na najniższej strunie basu
+    b4m.beats.push_back(b4bt);
+    b4.measures.push_back(b4m);
+    b4Song.tracks.push_back(b4);
+    const auto gp5B4 = exportToGp5Bytes(b4Song);
+    CHECK(gp5B4.size() > 256);
+    const auto midB4 = exportToMidiBytes(b4Song);
+    bool has7_8TimeSig = false;
+    for (std::size_t i = 0; i + 4 < midB4.size(); ++i) {
+        if (midB4[i] == 0xFF && midB4[i + 1] == 0x58 && midB4[i + 2] == 0x04 &&
+            midB4[i + 3] == 7 && midB4[i + 4] == 3) {
+            has7_8TimeSig = true;
+            break;
+        }
+    }
+    CHECK(has7_8TimeSig);
+}
+
+void testUserLibraryPersistenceAndSecurity() {
+    using namespace gitara::score;
+
+#ifdef _WIN32
+    const auto pid = static_cast<long>(_getpid());
+#else
+    const auto pid = static_cast<long>(::getpid());
+#endif
+    const std::filesystem::path tmpRoot =
+        std::filesystem::temp_directory_path() / ("apka_gitara_test_lib_" + std::to_string(pid));
+    std::error_code ec;
+    std::filesystem::remove_all(tmpRoot, ec);
+
+    CHECK(isAllowedLibraryCategory("sweeps"));
+    CHECK(isAllowedLibraryCategory("progressions"));
+    CHECK(isAllowedLibraryCategory("tabs"));
+    CHECK(isAllowedLibraryCategory("studio"));
+    CHECK(isAllowedLibraryCategory("sessions"));
+    CHECK(!isAllowedLibraryCategory("other"));
+    CHECK(!isAllowedLibraryCategory("../etc"));
+
+    CHECK(sanitizeLibraryId("my_sweep-01") == "my_sweep-01");
+    CHECK(sanitizeLibraryId("../evil").empty());
+    CHECK(sanitizeLibraryId("a/b").empty());
+    CHECK(sanitizeLibraryId("..").empty());
+    CHECK(sanitizeLibraryId("a.b").empty());
+    CHECK(sanitizeLibraryId("").empty());
+
+    std::string err;
+    CHECK(saveLibraryItem(tmpRoot, "sweeps", "sw1", "{\"id\":\"sw1\",\"name\":\"Sweep Alpha\",\"items\":[{}]}", &err));
+    CHECK(saveLibraryItem(tmpRoot, "progressions", "pr1", "{\"id\":\"pr1\",\"title\":\"Prog One\",\"measures\":[{}]}", &err));
+    CHECK(saveLibraryItem(tmpRoot, "tabs", "tb1", "{\"id\":\"tb1\",\"title\":\"Tab One\",\"recordedEvents\":[{}]}", &err));
+    CHECK(saveLibraryItem(tmpRoot, "studio", "st1", "{\"id\":\"st1\",\"name\":\"Studio One\",\"song\":{\"tracks\":[{}]}}", &err));
+
+    const std::string listed = listAllLibraryItemsJson(tmpRoot);
+    CHECK(listed.find("\"sweeps\":[") != std::string::npos);
+    CHECK(listed.find("\"progressions\":[") != std::string::npos);
+    CHECK(listed.find("\"tabs\":[") != std::string::npos);
+    CHECK(listed.find("\"studio\":[") != std::string::npos);
+    CHECK(listed.find("Sweep Alpha") != std::string::npos);
+    CHECK(listed.find("Prog One") != std::string::npos);
+    CHECK(listed.find("Tab One") != std::string::npos);
+    CHECK(listed.find("Studio One") != std::string::npos);
+
+    // Atomowe nadpisanie pod tym samym ID
+    CHECK(saveLibraryItem(tmpRoot, "sweeps", "sw1", "{\"id\":\"sw1\",\"name\":\"Sweep Updated\",\"items\":[{}]}", &err));
+    const std::string listedUpdated = listAllLibraryItemsJson(tmpRoot);
+    CHECK(listedUpdated.find("Sweep Updated") != std::string::npos);
+    CHECK(listedUpdated.find("Sweep Alpha") == std::string::npos);
+
+    // Bezpieczeństwo: odrzucanie path traversal, złej kategorii i nie-obiektowego JSON
+    CHECK(!saveLibraryItem(tmpRoot, "sweeps", "../evil", "{\"id\":\"x\"}", &err));
+    CHECK(!saveLibraryItem(tmpRoot, "sweeps", "a/b", "{\"id\":\"x\"}", &err));
+    CHECK(!saveLibraryItem(tmpRoot, "unknown", "id1", "{\"id\":\"x\"}", &err));
+    CHECK(!saveLibraryItem(tmpRoot, "sweeps", "badjson", "not json", &err));
+    CHECK(!saveLibraryItem(tmpRoot, "sweeps", "badarr", "[1,2,3]", &err));
+
+    // Usuwanie
+    CHECK(deleteLibraryItem(tmpRoot, "sweeps", "sw1", &err));
+    CHECK(!deleteLibraryItem(tmpRoot, "sweeps", "sw1", &err));
+    CHECK(listAllLibraryItemsJson(tmpRoot).find("\"id\":\"sw1\"") == std::string::npos);
+
+    std::filesystem::remove_all(tmpRoot, ec);
+}
+
 } // namespace
 
 int main() {
@@ -1179,6 +1383,8 @@ int main() {
     testStudioJsonCodecAndGp5V2();
     testExerciseVerifierAndMetronome();
     testArpeggioWorkshopEarTrainerProgressionsAndSessions();
+    testAuditRegressions();
+    testUserLibraryPersistenceAndSecurity();
 
     std::cout << "========================================\n"
               << "Wynik testow: " << g_passed << " zaliczonych, "

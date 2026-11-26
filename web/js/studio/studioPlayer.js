@@ -5,6 +5,8 @@
  *  - Obsługa Solo / Mute oraz obliczanie nut aktywnych i następnych (gryf Strefy E)
  */
 import {
+  BEND_PRESETS,
+  WHAMMY_PRESETS,
   buildBeatEventsForTrack,
   durationToQuarterNotes,
   expandPlaybackTimeline,
@@ -162,6 +164,13 @@ export function createStudioPlayer({
     return (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
   }
 
+  function getVisualOutputLatencySec() {
+    if (typeof clockFn === 'function') return 0;
+    const ctx = host && typeof host.ensureAudioCtx === 'function' ? host.ensureAudioCtx() : null;
+    const raw = Number(ctx?.outputLatency ?? 0);
+    return Number.isFinite(raw) && raw > 0 ? Math.min(0.15, raw) : 0;
+  }
+
   function getA4Hz() {
     const st = host && typeof host.getState === 'function' ? host.getState() : null;
     return (st && Number(st.a4ReferenceHz) > 300) ? Number(st.a4ReferenceHz) : 440.0;
@@ -182,14 +191,15 @@ export function createStudioPlayer({
     }
   }
 
-  function playMetronomeLevel(level = 1) {
+  function playMetronomeLevel(level = 1, whenSec = undefined) {
     if (level <= 0 || !host) return;
+    const hasWhen = Number.isFinite(whenSec);
     const ctx = typeof host.ensureAudioCtx === 'function' ? host.ensureAudioCtx() : null;
     if (ctx && typeof ctx.createOscillator === 'function' && typeof ctx.createGain === 'function') {
       const out = (typeof host.getMasterAudioOut === 'function' ? host.getMasterAudioOut() : null) || ctx.destination;
       const st = typeof host.getState === 'function' ? host.getState() : null;
       const mVol = (st && st.metronomeVolume !== undefined) ? Number(st.metronomeVolume) : 0.75;
-      const now = ctx.currentTime;
+      const now = hasWhen ? Math.max(ctx.currentTime, whenSec) : ctx.currentTime;
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       let freq = 720;
@@ -214,7 +224,8 @@ export function createStudioPlayer({
       return;
     }
     if (typeof host.playMetronomeTickAudio === 'function') {
-      host.playMetronomeTickAudio(level >= 3);
+      if (hasWhen) host.playMetronomeTickAudio(level >= 3, whenSec);
+      else host.playMetronomeTickAudio(level >= 3);
     }
   }
 
@@ -230,9 +241,11 @@ export function createStudioPlayer({
     let slice = loopEnabled
       ? fullTimeline.filter(e => e.measureIdx >= lA && e.measureIdx <= lB)
       : fullTimeline;
+    let usedFallbackSlice = false;
 
     if (slice.length === 0 && loopEnabled) {
       // Fallback gdy zakres pętli dotyczy wyłączonej volty
+      usedFallbackSlice = true;
       const master = song.tracks[0]?.measures || [];
       let q = 0;
       slice = [];
@@ -270,14 +283,15 @@ export function createStudioPlayer({
     sliceTotalQ = Math.max(0.25, runningQ);
 
     // Zdarzenia nutowe i perkusyjne dla wszystkich słyszalnych ścieżek
+    const sourceTimeline = usedFallbackSlice ? slice : fullTimeline;
     const allEvs = [];
     for (let tIdx = 0; tIdx < song.tracks.length; tIdx++) {
       if (!isTrackAudible(song.tracks, tIdx)) continue;
-      const trackEvs = buildBeatEventsForTrack(song, tIdx, fullTimeline);
+      const trackEvs = buildBeatEventsForTrack(song, tIdx, sourceTimeline);
       for (const ev of trackEvs) {
         const mappedEntry = seqMap.get(ev.seqIdx);
         if (!mappedEntry) continue;
-        const origEntry = fullTimeline[ev.seqIdx];
+        const origEntry = sourceTimeline[ev.seqIdx];
         const localQ = ev.startQ - (origEntry ? origEntry.startQ : 0);
         allEvs.push({
           ...ev,
@@ -333,11 +347,32 @@ export function createStudioPlayer({
     return { startQOffset };
   }
 
-  function triggerAudioEvent(ev, secPerQ) {
+  function computeScheduledNoteDurationSec(evDurationQ, secPerQ, note, curSpeedPercent) {
+    const tieExtraQ = Math.max(0, Number(note?.tieExtraQ) || 0);
+    const totalDurQ = evDurationQ + tieExtraQ;
+    const baseDurSec = Math.max(0.045, totalDurQ * secPerQ * 0.96);
+    const speedScale = 100 / Math.max(25, curSpeedPercent || 100);
+    if (note?.deadNote) {
+      return Math.max(0.035, Math.min(0.08 * speedScale, baseDurSec * 0.35));
+    }
+    if (note?.palmMute) {
+      return Math.max(0.05, Math.min(0.24 * speedScale, baseDurSec * 0.62));
+    }
+    if (note?.staccato) {
+      return Math.max(0.045, baseDurSec * 0.45);
+    }
+    if (note?.letRing) {
+      return Math.max(baseDurSec, 1.45 * speedScale);
+    }
+    return Math.max(0.05, baseDurSec);
+  }
+
+  function triggerAudioEvent(ev, secPerQ, whenSec = undefined) {
     if (!host || !song) return;
     const track = song.tracks[ev.trackIdx];
     if (!track || !isTrackAudible(song.tracks, ev.trackIdx)) return;
 
+    const scheduledWhen = Number.isFinite(whenSec) ? whenSec : undefined;
     const sfReady = useSoundFont && soundFontSynth && typeof soundFontSynth.playNote === 'function' && soundFontSynth.isLoaded?.();
 
     if (ev.kind === 'drum') {
@@ -345,31 +380,46 @@ export function createStudioPlayer({
       for (const hit of ev.hits) {
         if (sfReady) {
           const midi = GM_DRUM_MIDI[hit.kind] ?? 36;
-          if (soundFontSynth.playNote({ bank: 128, program: 0, midi, velocity: hit.velocity ?? 96, durationSec: 0.35, gain })) {
+          const rawVel = Number(hit.velocity);
+          const sfVel = Number.isFinite(rawVel)
+            ? (rawVel <= 1.0 ? Math.max(1, Math.min(127, Math.round(rawVel * 127))) : Math.max(1, Math.min(127, Math.round(rawVel))))
+            : 96;
+          if (soundFontSynth.playNote({
+            bank: 128,
+            program: 0,
+            midi,
+            velocity: sfVel,
+            durationSec: 0.35,
+            gain,
+            whenSec: scheduledWhen ?? null
+          })) {
             continue;
           }
         }
-        playStudioDrumHit(hit.kind, hit.velocity * gain, host);
+        playStudioDrumHit(hit.kind, hit.velocity * gain, host, scheduledWhen);
       }
       return;
     }
 
-    const durSec = Math.max(0.08, ev.durationQ * secPerQ * 0.96);
     const notes = ev.notes || [];
-    const polyScale = (track.volume ?? 0.85) / Math.sqrt(Math.max(1, notes.length));
+    const dynMulMap = { 1: 0.42, 2: 0.54, 3: 0.68, 4: 0.80, 5: 0.92, 6: 1.0, 7: 1.15 };
+    const dynMul = dynMulMap[ev.beatDynamic ?? 6] ?? 1.0;
+    const polyScale = ((track.volume ?? 0.85) * dynMul) / Math.sqrt(Math.max(1, notes.length));
     const a4 = getA4Hz();
 
     for (const n of notes) {
+      const noteDur = computeScheduledNoteDurationSec(ev.durationQ, secPerQ, n, speedPercent);
+      const noteGain = n.deadNote ? polyScale * 0.35 : (n.palmMute ? polyScale * 0.72 : (n.ghostNote ? polyScale * 0.45 : polyScale));
+
       if (sfReady) {
-        const noteDur = n.deadNote ? 0.06 : (n.palmMute ? Math.min(0.22, durSec * 0.65) : Math.max(0.18, durSec));
-        const noteGain = n.deadNote ? polyScale * 0.35 : (n.palmMute ? polyScale * 0.72 : (n.ghostNote ? polyScale * 0.45 : polyScale));
         if (soundFontSynth.playNote({
           bank: 0,
           program: track.midiProgram ?? 25,
           midi: n.midi,
           velocity: n.velocity ?? 95,
           durationSec: noteDur,
-          gain: noteGain
+          gain: noteGain,
+          whenSec: scheduledWhen ?? null
         })) {
           continue;
         }
@@ -381,14 +431,23 @@ export function createStudioPlayer({
           const st = host.getState?.();
           const prevKbd = st ? st.keyboardPreset : null;
           if (st && track.tonePreset) st.keyboardPreset = track.tonePreset;
-          host.playKeyboardPresetNote(freq, durSec, polyScale);
+          if (scheduledWhen !== undefined) {
+            host.playKeyboardPresetNote(freq, noteDur, polyScale, scheduledWhen);
+          } else {
+            host.playKeyboardPresetNote(freq, noteDur, polyScale);
+          }
           if (st && prevKbd !== null) st.keyboardPreset = prevKbd;
         }
         continue;
       }
 
       if (n.harmonicType > 0 && typeof host.playHarmonicBellFrequency === 'function') {
-        host.playHarmonicBellFrequency(freq, Math.max(0.4, durSec));
+        const harmDur = Math.max(0.09, noteDur * 1.15);
+        if (scheduledWhen !== undefined) {
+          host.playHarmonicBellFrequency(freq, harmDur, scheduledWhen);
+        } else {
+          host.playHarmonicBellFrequency(freq, harmDur);
+        }
         continue;
       }
 
@@ -396,9 +455,22 @@ export function createStudioPlayer({
         const st = host.getState?.();
         const prevTone = st ? st.guitarTonePreset : null;
         if (st && track.tonePreset) st.guitarTonePreset = track.tonePreset;
-        const noteDur = n.deadNote ? 0.06 : (n.palmMute ? Math.min(0.22, durSec * 0.65) : Math.max(0.22, durSec));
-        const noteGain = n.deadNote ? polyScale * 0.35 : (n.palmMute ? polyScale * 0.72 : (n.ghostNote ? polyScale * 0.45 : polyScale));
-        host.pluckGuitarFrequency(freq, noteDur, noteGain, false);
+        const whammyPts = (Array.isArray(n.whammyPoints) && n.whammyPoints.length >= 2)
+          ? n.whammyPoints
+          : (n.whammyPreset && WHAMMY_PRESETS[n.whammyPreset] ? WHAMMY_PRESETS[n.whammyPreset].points : null);
+        const bendPts = (Array.isArray(n.bendPoints) && n.bendPoints.length >= 2)
+          ? n.bendPoints
+          : (n.bendPreset && BEND_PRESETS[n.bendPreset] ? BEND_PRESETS[n.bendPreset].points : null);
+        const pitchCurve = whammyPts || bendPts || null;
+        host.pluckGuitarFrequency(freq, noteDur, noteGain, true, {
+          whenSec: scheduledWhen,
+          strictDuration: !n.letRing,
+          palmMute: Boolean(n.palmMute),
+          hammerOn: Boolean(n.hammerOn),
+          vibrato: Boolean(n.vibrato),
+          wideVibrato: Boolean(n.wideVibrato),
+          pitchCurve
+        });
         if (st && prevTone !== null) st.guitarTonePreset = prevTone;
       }
     }
@@ -406,7 +478,7 @@ export function createStudioPlayer({
 
   function locatePositionAtQ(nowQ) {
     if (activeSlice.length === 0) {
-      return { measureIdx: 0, beatIdx: 0, progress: 0 };
+      return { measureIdx: 0, beatIdx: 0, progress: 0, beatProgress: 0 };
     }
     const clampedQ = Math.max(0, Math.min(sliceTotalQ - 1e-6, nowQ));
     let entry = activeSlice[0];
@@ -422,10 +494,16 @@ export function createStudioPlayer({
       if (localQ >= bps[b].startOffsetQ - 1e-5) beatIdx = bps[b].beatIdx;
       else break;
     }
+    const curBp = bps[beatIdx] || { startOffsetQ: 0, durQ: entry.lengthQ || 1 };
+    const nextBpStartQ = (beatIdx + 1 < bps.length)
+      ? bps[beatIdx + 1].startOffsetQ
+      : Math.max(curBp.startOffsetQ + curBp.durQ, entry.lengthQ || curBp.durQ);
+    const beatSpanQ = Math.max(1e-4, nextBpStartQ - curBp.startOffsetQ);
+    const beatProgress = Math.max(0, Math.min(1, (localQ - curBp.startOffsetQ) / beatSpanQ));
     const progress = entry.lengthQ > 0 ? Math.max(0, Math.min(1, localQ / entry.lengthQ)) : 0;
     const stepQ = 4 / (entry.denominator || 4);
     const metroBeatCol = Math.max(0, Math.min((entry.numerator || 4) - 1, Math.floor((localQ + 1e-5) / stepQ)));
-    return { measureIdx: entry.measureIdx, beatIdx, progress, sliceIdx: entry.sliceIdx, metroBeatCol };
+    return { measureIdx: entry.measureIdx, beatIdx, progress, beatProgress, sliceIdx: entry.sliceIdx, metroBeatCol };
   }
 
   function advanceTimers(nowSec) {
@@ -434,8 +512,9 @@ export function createStudioPlayer({
     // 1. Obsługa odliczania (Count-In)
     while (nextCountInIdx < countInTicks.length && countInTicks[nextCountInIdx].timeSec <= nowSec + LOOKAHEAD_SEC) {
       const tick = countInTicks[nextCountInIdx];
+      const tickWhen = Math.max(nowSec, tick.timeSec);
       if (host && typeof host.playMetronomeTickAudio === 'function') {
-        host.playMetronomeTickAudio(tick.isDownbeat);
+        host.playMetronomeTickAudio(tick.isDownbeat, tickWhen);
       }
       if (typeof onPositionChange === 'function') {
         onPositionChange({
@@ -462,13 +541,16 @@ export function createStudioPlayer({
     while (nextMetroIdx < metronomeEvents.length && metronomeEvents[nextMetroIdx].startQ <= horizonQ) {
       const mEv = metronomeEvents[nextMetroIdx];
       if (metronomeEnabled) {
-        playMetronomeLevel(mEv.level ?? (mEv.isDownbeat ? 3 : 1));
+        const mWhen = Math.max(nowSec, epochSec + mEv.startQ * secPerQ);
+        playMetronomeLevel(mEv.level ?? (mEv.isDownbeat ? 3 : 1), mWhen);
       }
       nextMetroIdx++;
     }
 
     while (nextEventIdx < scheduledEvents.length && scheduledEvents[nextEventIdx].startQ <= horizonQ) {
-      triggerAudioEvent(scheduledEvents[nextEventIdx], secPerQ);
+      const ev = scheduledEvents[nextEventIdx];
+      const evWhen = Math.max(nowSec, epochSec + ev.startQ * secPerQ);
+      triggerAudioEvent(ev, secPerQ, evWhen);
       nextEventIdx++;
     }
 
@@ -510,12 +592,15 @@ export function createStudioPlayer({
         while (nextMetroIdx < metronomeEvents.length && metronomeEvents[nextMetroIdx].startQ <= newHorizonQ) {
           const mEv = metronomeEvents[nextMetroIdx];
           if (metronomeEnabled) {
-            playMetronomeLevel(mEv.level ?? (mEv.isDownbeat ? 3 : 1));
+            const mWhen = Math.max(nowSec, epochSec + mEv.startQ * newSecPerQ);
+            playMetronomeLevel(mEv.level ?? (mEv.isDownbeat ? 3 : 1), mWhen);
           }
           nextMetroIdx++;
         }
         while (nextEventIdx < scheduledEvents.length && scheduledEvents[nextEventIdx].startQ <= newHorizonQ) {
-          triggerAudioEvent(scheduledEvents[nextEventIdx], newSecPerQ);
+          const ev = scheduledEvents[nextEventIdx];
+          const evWhen = Math.max(nowSec, epochSec + ev.startQ * newSecPerQ);
+          triggerAudioEvent(ev, newSecPerQ, evWhen);
           nextEventIdx++;
         }
       } else {
@@ -524,7 +609,9 @@ export function createStudioPlayer({
       }
     }
 
-    const pos = locatePositionAtQ(nowQ);
+    const visualNowSec = Math.max(epochSec, nowSec - getVisualOutputLatencySec());
+    const visualQ = Math.max(0, (visualNowSec - epochSec) / getSecPerQuarter());
+    const pos = locatePositionAtQ(visualQ);
     cursorMeasureIdx = pos.measureIdx;
     cursorBeatIdx = pos.beatIdx;
     const key = `${pos.measureIdx}:${pos.beatIdx}`;
@@ -536,6 +623,7 @@ export function createStudioPlayer({
         measureIdx: pos.measureIdx,
         beatIdx: pos.beatIdx,
         progress: pos.progress,
+        beatProgress: pos.beatProgress,
         metroBeatCol: pos.metroBeatCol,
         noteChanged
       });
@@ -551,8 +639,9 @@ export function createStudioPlayer({
       const tickRaf = () => {
         if (!isPlaying || isPaused) return;
         const nowSec = getNowSec();
-        if (nowSec >= epochSec) {
-          const nowQ = (nowSec - epochSec) / getSecPerQuarter();
+        const visualNowSec = nowSec - getVisualOutputLatencySec();
+        if (visualNowSec >= epochSec) {
+          const nowQ = (visualNowSec - epochSec) / getSecPerQuarter();
           const pos = locatePositionAtQ(nowQ);
           cursorMeasureIdx = pos.measureIdx;
           cursorBeatIdx = pos.beatIdx;
@@ -565,6 +654,7 @@ export function createStudioPlayer({
               measureIdx: pos.measureIdx,
               beatIdx: pos.beatIdx,
               progress: pos.progress,
+              beatProgress: pos.beatProgress,
               metroBeatCol: pos.metroBeatCol,
               noteChanged
             });
@@ -608,6 +698,12 @@ export function createStudioPlayer({
 
   function setActiveTrack(trackIdx) {
     activeTrackIdx = Math.max(0, Number(trackIdx) || 0);
+    if (song && activeSlice.length > 0) {
+      activeSlice = activeSlice.map(entry => {
+        const refM = song.tracks[activeTrackIdx]?.measures?.[entry.measureIdx] || song.tracks[0]?.measures?.[entry.measureIdx];
+        return { ...entry, beatPositions: buildBeatPositionsForMeasure(refM) };
+      });
+    }
   }
 
   function play() {
@@ -668,8 +764,11 @@ export function createStudioPlayer({
     if (!isPlaying || isPaused) return;
     const nowSec = getNowSec();
     pausedAtQ = Math.max(0, (nowSec - epochSec) / getSecPerQuarter());
+    countInTicks = [];
+    nextCountInIdx = 0;
     isPaused = true;
     stopLoops();
+    if (host && typeof host.stopAllPreviewVoices === 'function') host.stopAllPreviewVoices();
     emitState();
   }
 
@@ -681,6 +780,7 @@ export function createStudioPlayer({
 
   function stop() {
     stopLoops();
+    if (host && typeof host.stopAllPreviewVoices === 'function') host.stopAllPreviewVoices();
     isPlaying = false;
     isPaused = false;
     pausedAtQ = 0;
@@ -696,6 +796,7 @@ export function createStudioPlayer({
         measureIdx: cursorMeasureIdx,
         beatIdx: 0,
         progress: 0,
+        beatProgress: 0,
         noteChanged: true
       });
     }
@@ -705,13 +806,22 @@ export function createStudioPlayer({
   function seekTo(measureIdx, beatIdx = 0) {
     cursorMeasureIdx = Math.max(0, Number(measureIdx) || 0);
     cursorBeatIdx = Math.max(0, Number(beatIdx) || 0);
-    if (isPlaying && !isPaused) {
+    if (isPlaying) {
       const { startQOffset } = rebuildScheduleData(cursorMeasureIdx);
-      const nowSec = getNowSec();
-      epochSec = nowSec - startQOffset * getSecPerQuarter();
-      nextEventIdx = scheduledEvents.findIndex(e => e.startQ >= startQOffset - 1e-6);
+      const entry = activeSlice.find(e => e.measureIdx === cursorMeasureIdx);
+      const beatStart = entry?.beatPositions?.[cursorBeatIdx]?.startOffsetQ ?? 0;
+      const targetQ = startQOffset + beatStart;
+      if (isPaused) {
+        pausedAtQ = targetQ;
+        countInTicks = [];
+        nextCountInIdx = 0;
+      } else {
+        const nowSec = getNowSec();
+        epochSec = nowSec - targetQ * getSecPerQuarter();
+      }
+      nextEventIdx = scheduledEvents.findIndex(e => e.startQ >= targetQ - 1e-6);
       if (nextEventIdx < 0) nextEventIdx = scheduledEvents.length;
-      nextMetroIdx = metronomeEvents.findIndex(e => e.startQ >= startQOffset - 1e-6);
+      nextMetroIdx = metronomeEvents.findIndex(e => e.startQ >= targetQ - 1e-6);
       if (nextMetroIdx < 0) nextMetroIdx = metronomeEvents.length;
       lastReportedKey = '';
     }
@@ -721,6 +831,7 @@ export function createStudioPlayer({
         measureIdx: cursorMeasureIdx,
         beatIdx: cursorBeatIdx,
         progress: 0,
+        beatProgress: 0,
         noteChanged: true
       });
     }
@@ -848,7 +959,8 @@ export function createStudioPlayer({
 
   function setMetronomePattern(pattern) {
     if (!song) return;
-    song.metronomePattern = normalizeMetronomePattern(pattern, song.tracks?.[0]?.measures?.[0]?.numerator || 4);
+    const maxNum = (song.tracks?.[0]?.measures || []).reduce((mx, m) => Math.max(mx, Number(m?.numerator) || 4), 4);
+    song.metronomePattern = normalizeMetronomePattern(pattern, maxNum);
     loadSong(song, activeTrackIdx, { preservePlayback: isPlaying });
   }
 

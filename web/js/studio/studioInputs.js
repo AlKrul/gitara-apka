@@ -25,11 +25,15 @@ import {
   deleteNoteAt,
   deleteSelectionNotes,
   duplicateMeasures,
+  durationToQuarterNotes,
   findFretCandidatesForMidi,
+  getBeatAt,
   getMasterMeasureCount,
   getNoteAt,
   insertBeatAfter,
   insertMidiNoteAt,
+  measureCapacityQuarterNotes,
+  measureFilledQuarterNotes,
   moveBeatInMeasure,
   moveNoteToAdjacentString,
   moveSelectionToAdjacentString,
@@ -49,6 +53,7 @@ import {
   shiftNotePitch,
   shiftSelectionPitch,
   stepBeatDuration,
+  tieOrExtendPreviousNote,
   toggleBeatProp,
   toggleMeasureRepeatOpen,
   toggleMeasureVolta,
@@ -96,6 +101,14 @@ export function createFretInputBuffer(windowMs = 450, nowFn = null) {
   };
 }
 
+function applyActiveDurationIfRest(ui, trackIdx, measureIdx, beatIdx) {
+  if (!Number.isInteger(ui?.activeDuration)) return;
+  const beat = getBeatAt(ui.song, trackIdx, measureIdx, beatIdx);
+  if (beat && beat.isRest) {
+    beat.duration = ui.activeDuration;
+  }
+}
+
 export function createStudioInputController(deps) {
   const fretBuf = createFretInputBuffer(450, deps.nowFn);
 
@@ -125,15 +138,37 @@ export function createStudioInputController(deps) {
     const tr = ui.song.tracks[ui.activeTrackIdx];
     if (!tr) return;
     const maxM = Math.max(0, tr.measures.length - 1);
-    const beatsLen = tr.measures[ui.cursor.measureIdx]?.beats?.length || 1;
+    const curMeasure = tr.measures[ui.cursor.measureIdx];
+    const beatsLen = curMeasure?.beats?.length || 1;
+    const curBeat = curMeasure?.beats?.[ui.cursor.beatIdx];
+    const stickyDur = Number.isInteger(ui.activeDuration) ? ui.activeDuration : null;
+    const nextDur = stickyDur !== null ? stickyDur : (curBeat?.duration ?? 0);
+
     if (ui.cursor.beatIdx + 1 < beatsLen) {
       ui.cursor.beatIdx++;
+      applyActiveDurationIfRest(ui, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
+    } else if (
+      addBarAtEnd &&
+      stickyDur !== null &&
+      curMeasure &&
+      !tr.isPercussion &&
+      tr.instrumentType !== 'drums' &&
+      (measureFilledQuarterNotes(curMeasure) + durationToQuarterNotes({ duration: nextDur }) <= measureCapacityQuarterNotes(curMeasure) + 1e-4)
+    ) {
+      // Niedopełniony takt przy aktywnej długości (np. 1/16): dopisz kolejny slot w tym samym takcie
+      deps.pushUndo();
+      const pos = insertBeatAfter(ui.song, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx, nextDur, true);
+      if (pos >= 0) {
+        ui.cursor.beatIdx = pos;
+        deps.onSongChanged(true);
+      }
     } else if (ui.cursor.measureIdx < maxM) {
       ui.cursor.measureIdx++;
       ui.cursor.beatIdx = 0;
+      applyActiveDurationIfRest(ui, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
     } else if (addBarAtEnd) {
       deps.pushUndo();
-      const inserted = addMeasure(ui.song, ui.cursor.measureIdx);
+      const inserted = addMeasure(ui.song, ui.cursor.measureIdx, stickyDur);
       if (inserted >= 0) {
         ui.cursor.measureIdx = inserted;
         ui.cursor.beatIdx = 0;
@@ -248,10 +283,21 @@ export function createStudioInputController(deps) {
     const hasMultiBeatSel = Boolean(sel && sel.beatCount > 1);
 
     if (cmdId.startsWith('dur:')) {
-      const dur = Number(cmdId.slice(4));
+      const dur = Math.max(-2, Math.min(4, Math.round(Number(cmdId.slice(4)) || 0)));
+      ui.activeDuration = dur;
       deps.pushUndo();
-      if (hasMultiBeatSel) applyBeatPropToSelection(ui.song, tIdx, sel, 'duration', dur);
-      else setBeatDuration(ui.song, tIdx, mIdx, bIdx, dur);
+      if (hasMultiBeatSel) {
+        applyBeatPropToSelection(ui.song, tIdx, sel, 'duration', dur);
+      } else {
+        setBeatDuration(ui.song, tIdx, mIdx, bIdx, dur);
+        const curBeats = tr.measures?.[mIdx]?.beats;
+        if (Array.isArray(curBeats)) {
+          for (let i = bIdx + 1; i < curBeats.length; i++) {
+            if (!curBeats[i].isRest) break;
+            curBeats[i].duration = dur;
+          }
+        }
+      }
       deps.onSongChanged(true);
       deps.onRender();
       return true;
@@ -276,8 +322,9 @@ export function createStudioInputController(deps) {
     }
     if (cmdId === 'edit:insertBeat') {
       const curBeat = tr.measures?.[mIdx]?.beats?.[bIdx];
+      const insDur = Number.isInteger(ui.activeDuration) ? ui.activeDuration : (curBeat?.duration ?? 0);
       deps.pushUndo();
-      const pos = insertBeatAfter(ui.song, tIdx, mIdx, bIdx, curBeat?.duration ?? 0, true);
+      const pos = insertBeatAfter(ui.song, tIdx, mIdx, bIdx, insDur, true);
       if (pos >= 0) ui.cursor.beatIdx = pos;
       deps.onSongChanged(true);
       deps.onRender();
@@ -290,6 +337,28 @@ export function createStudioInputController(deps) {
       deps.pushUndo();
       if (hasMultiBeatSel) applyBeatPropToSelection(ui.song, tIdx, sel, 'tuplet', { num, den });
       else setBeatTuplet(ui.song, tIdx, mIdx, bIdx, num, den);
+      deps.onSongChanged(true);
+      deps.onRender();
+      return true;
+    }
+    if (cmdId === 'effect:tied') {
+      if (hasMultiBeatSel) {
+        deps.pushUndo();
+        applyEffectToSelection(ui.song, tIdx, sel, 'tied');
+        deps.onSongChanged(true);
+        deps.onRender();
+        return true;
+      }
+      deps.pushUndo();
+      const tieRes = tieOrExtendPreviousNote(ui.song, tIdx, mIdx, bIdx, sIdx, Number.isInteger(ui.activeDuration) ? ui.activeDuration : null);
+      if (!tieRes.changed) {
+        deps.onToast?.('Ustaw kursor na pustym polu tuż za nutą, aby przedłużyć jej wybrzmiewanie.');
+        deps.onRender();
+        return false;
+      }
+      if (tieRes.extended) {
+        deps.onToast?.('Przedłużono wybrzmiewanie poprzedniego dźwięku (Tie ⌣)');
+      }
       deps.onSongChanged(true);
       deps.onRender();
       return true;
@@ -330,6 +399,16 @@ export function createStudioInputController(deps) {
       deps.onRender();
       return true;
     }
+    if (cmdId.startsWith('whammy:')) {
+      if (ui.studioPrefs?.uiMode === 'simple') return false;
+      const preset = cmdId.slice(7) || 'dive_full';
+      deps.pushUndo();
+      if (hasMultiBeatSel) applyEffectToSelection(ui.song, tIdx, sel, 'whammyPreset', preset);
+      else toggleNoteEffect(ui.song, tIdx, mIdx, bIdx, sIdx, 'whammyPreset', preset);
+      deps.onSongChanged(true);
+      deps.onRender();
+      return true;
+    }
     if (cmdId.startsWith('pick:')) {
       const pVal = Number(cmdId.slice(5)) || 1;
       deps.pushUndo();
@@ -366,6 +445,7 @@ export function createStudioInputController(deps) {
       return true;
     }
     if (cmdId === 'struct:repeatOpen') {
+      if (ui.studioPrefs?.uiMode === 'simple') return false;
       deps.pushUndo();
       toggleMeasureRepeatOpen(ui.song, mIdx);
       deps.onSongChanged(false);
@@ -373,6 +453,7 @@ export function createStudioInputController(deps) {
       return true;
     }
     if (cmdId.startsWith('struct:volta:')) {
+      if (ui.studioPrefs?.uiMode === 'simple') return false;
       const vNum = Number(cmdId.slice(13)) || 1;
       deps.pushUndo();
       toggleMeasureVolta(ui.song, mIdx, vNum);
@@ -382,7 +463,7 @@ export function createStudioInputController(deps) {
     }
     if (cmdId === 'struct:addBefore') {
       deps.pushUndo();
-      const pos = addMeasureBefore(ui.song, mIdx);
+      const pos = addMeasureBefore(ui.song, mIdx, Number.isInteger(ui.activeDuration) ? ui.activeDuration : null);
       if (pos >= 0) {
         ui.cursor.measureIdx = pos;
         ui.cursor.beatIdx = 0;
@@ -393,7 +474,7 @@ export function createStudioInputController(deps) {
     }
     if (cmdId === 'struct:addAfter') {
       deps.pushUndo();
-      const pos = addMeasure(ui.song, mIdx);
+      const pos = addMeasure(ui.song, mIdx, Number.isInteger(ui.activeDuration) ? ui.activeDuration : null);
       if (pos >= 0) {
         ui.cursor.measureIdx = pos;
         ui.cursor.beatIdx = 0;
@@ -403,6 +484,7 @@ export function createStudioInputController(deps) {
       return true;
     }
     if (cmdId.startsWith('prompt:')) {
+      if (ui.studioPrefs?.uiMode === 'simple' && cmdId === 'prompt:repeatClose') return false;
       openInlinePrompt(cmdId.slice(7));
       return true;
     }
@@ -442,11 +524,13 @@ export function createStudioInputController(deps) {
       const semis = semiMap[cmdId];
       deps.pushUndo();
       if (sel) {
-        const res = shiftSelectionPitch(ui.song, tIdx, sel, semis, { allTracks: false });
+        const res = shiftSelectionPitch(ui.song, tIdx, sel, semis, { allTracks: false, maxFret: deps.getMaxFret?.() || 24 });
         if (res.beatsChanged > 0) {
           deps.onSongChanged(true);
           deps.onToast?.(`Przesunięto zaznaczenie (${res.beatsChanged} ud.) o ${semis > 0 ? '+' : ''}${semis} półt.`);
           deps.onRender();
+        } else if (res.outOfRange) {
+          deps.onToast?.('Całe zaznaczenie nie mieści się w tej oktawie/wysokości na bieżącym gryfie (nie zmieniono nut).');
         } else {
           deps.onToast?.('Brak nut do przesunięcia w zaznaczeniu');
         }
@@ -585,6 +669,7 @@ export function createStudioInputController(deps) {
     deps.onAuditionFret?.(tr, stringIdx, fret);
     if (ui.fretInputMode === 'edit' || shiftKey) {
       deps.pushUndo();
+      applyActiveDurationIfRest(ui, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
       setNoteAt(ui.song, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx, stringIdx, fret);
       deps.onSongChanged(true);
       deps.onRender();
@@ -599,6 +684,7 @@ export function createStudioInputController(deps) {
     const tr = ui.song.tracks[ui.activeTrackIdx];
     if (!tr || tr.instrumentType === 'drums' || tr.isPercussion) return false;
     deps.pushUndo();
+    applyActiveDurationIfRest(ui, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
     const res = insertMidiNoteAt(
       ui.song,
       ui.activeTrackIdx,
@@ -615,6 +701,23 @@ export function createStudioInputController(deps) {
       return true;
     }
     return false;
+  }
+
+  function syncAfterHistoryReset(ui) {
+    ui.activeTrackIdx = Math.max(0, Math.min((ui.song?.tracks?.length || 1) - 1, ui.activeTrackIdx || 0));
+    const tr = ui.song?.tracks?.[ui.activeTrackIdx];
+    const maxM = Math.max(0, (tr?.measures?.length || 1) - 1);
+    ui.cursor.measureIdx = Math.max(0, Math.min(maxM, ui.cursor.measureIdx || 0));
+    const beatsLen = tr?.measures?.[ui.cursor.measureIdx]?.beats?.length || 1;
+    ui.cursor.beatIdx = Math.max(0, Math.min(beatsLen - 1, ui.cursor.beatIdx || 0));
+    const maxS = Math.max(0, (tr?.openStringMidis?.length || tr?.stringCount || 1) - 1);
+    ui.cursor.stringIdx = Math.max(0, Math.min(maxS, ui.cursor.stringIdx || 0));
+    clearAllSelection(ui);
+    ui.lastPlacedNote = null;
+    ui.positionAreaRange = null;
+    ui.phrasePositions = [];
+    ui.selectedPhrasePosIdx = -1;
+    fretBuf.reset();
   }
 
   function handleKeyDown(e) {
@@ -716,11 +819,13 @@ export function createStudioInputController(deps) {
       return true;
     }
     if (key === 'F9') {
+      if (ui.studioPrefs?.uiMode === 'simple') return false;
       e.preventDefault?.();
       deps.onSetLoop?.({ enabled: !ui.loopEnabled, start: ui.loopStart, end: ui.loopEnd });
       return true;
     }
     if (key === '[') {
+      if (ui.studioPrefs?.uiMode === 'simple') return false;
       e.preventDefault?.();
       const start = ui.cursor.measureIdx;
       const end = Math.max(start, ui.loopEnd);
@@ -728,6 +833,7 @@ export function createStudioInputController(deps) {
       return true;
     }
     if (key === ']') {
+      if (ui.studioPrefs?.uiMode === 'simple') return false;
       e.preventDefault?.();
       const end = ui.cursor.measureIdx;
       const start = Math.min(ui.loopStart, end);
@@ -741,6 +847,7 @@ export function createStudioInputController(deps) {
       const prev = ui.history.undo(ui.song);
       if (prev) {
         ui.song = prev;
+        syncAfterHistoryReset(ui);
         deps.onSongChanged(false);
         deps.onRender();
       }
@@ -751,6 +858,7 @@ export function createStudioInputController(deps) {
       const next = ui.history.redo(ui.song);
       if (next) {
         ui.song = next;
+        syncAfterHistoryReset(ui);
         deps.onSongChanged(false);
         deps.onRender();
       }
@@ -886,10 +994,11 @@ export function createStudioInputController(deps) {
     // Wpisywanie progów 0–24 (dwucyfrowe w oknie 450 ms)
     if (!ctrl && !alt && /^[0-9]$/.test(key)) {
       e.preventDefault?.();
-      if (tr.instrumentType === 'drums' || tr.isPercussion) return false;
+      if (tr.instrumentType === 'drums' || tr.isPercussion || tr.instrumentType === 'keys') return false;
       const slotKey = `${ui.activeTrackIdx}:${ui.cursor.measureIdx}:${ui.cursor.beatIdx}:${ui.cursor.stringIdx}`;
       const fret = fretBuf.pushDigit(Number(key), slotKey);
       deps.pushUndo();
+      applyActiveDurationIfRest(ui, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
       setNoteAt(ui.song, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx, ui.cursor.stringIdx, fret);
       deps.onSongChanged(true);
       deps.onAuditionFret?.(tr, ui.cursor.stringIdx, fret);
@@ -906,6 +1015,8 @@ export function createStudioInputController(deps) {
       e.preventDefault?.();
       deps.pushUndo();
       stepBeatDuration(ui.song, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx, +1);
+      const stepped = getBeatAt(ui.song, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
+      if (stepped) ui.activeDuration = stepped.duration;
       deps.onSongChanged(true);
       deps.onRender();
       return true;
@@ -914,6 +1025,8 @@ export function createStudioInputController(deps) {
       e.preventDefault?.();
       deps.pushUndo();
       stepBeatDuration(ui.song, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx, -1);
+      const stepped = getBeatAt(ui.song, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
+      if (stepped) ui.activeDuration = stepped.duration;
       deps.onSongChanged(true);
       deps.onRender();
       return true;
@@ -943,6 +1056,7 @@ export function createStudioInputController(deps) {
         h: 'effect:hammerOn',
         s: 'slide:shift',
         b: 'bend:full',
+        w: 'whammy:dive_full',
         v: 'effect:vibrato',
         x: 'effect:deadNote',
         o: 'harmonic:1',
@@ -1004,9 +1118,9 @@ export function createDurationGate(minDurationMs = 80) {
           if (confirmedSet.has(midi)) continue;
           if (minMs <= 0) {
             confirmedSet.add(midi);
-            accepted.push({ type: 'noteOn', midiNote: midi, vel: ev.vel ?? 95, durationMs: ev.durationMs ?? 0 });
+            accepted.push({ type: 'noteOn', midiNote: midi, vel: ev.vel ?? ev.velocity ?? 95, durationMs: ev.durationMs ?? 0 });
           } else {
-            pendingMap.set(midi, { midiNote: midi, vel: ev.vel ?? 95, startMs: nowMs });
+            pendingMap.set(midi, { midiNote: midi, vel: ev.vel ?? ev.velocity ?? 95, startMs: nowMs });
           }
         } else if (ev.type === 'noteOff') {
           const midi = Math.round(ev.midiNote);
@@ -1031,7 +1145,7 @@ export function createDurationGate(minDurationMs = 80) {
             accepted.push({
               type: 'noteOn',
               midiNote: midi,
-              vel: n.vel ?? pend?.vel ?? 95,
+              vel: n.vel ?? n.velocity ?? pend?.vel ?? 95,
               durationMs: dur
             });
           }
@@ -1139,23 +1253,40 @@ export function quantizeTimedNotesToMeasures(timedEvents = [], opts = {}) {
 
       const usedStrings = new Set();
       const notes = [];
-      for (const item of items) {
-        const cands = findFretCandidatesForMidi(track, item.midi, 0, 24);
-        if (cands.length === 0) continue;
-        const pick = cands.find(c => !usedStrings.has(c.string)) || cands[0];
-        if (!usedStrings.has(pick.string)) {
-          usedStrings.add(pick.string);
-          notes.push(createTabNote({ string: pick.string, fret: pick.fret, velocity: item.vel }));
+      if (track.instrumentType === 'keys') {
+        const seenMidi = new Set();
+        for (const item of items) {
+          if (seenMidi.has(item.midi)) continue;
+          seenMidi.add(item.midi);
+          notes.push(createTabNote({ string: 0, fret: 0, midi: item.midi, velocity: item.vel }));
           noteRefs.push({
             measureIdx: mIdx,
             beatIdx: beats.length,
-            string: pick.string,
-            fret: pick.fret,
+            string: 0,
+            fret: 0,
             midi: item.midi
           });
         }
+        notes.sort((a, b) => (a.midi || 0) - (b.midi || 0));
+      } else {
+        for (const item of items) {
+          const cands = findFretCandidatesForMidi(track, item.midi, 0, 24);
+          if (cands.length === 0) continue;
+          const pick = cands.find(c => !usedStrings.has(c.string)) || cands[0];
+          if (!usedStrings.has(pick.string)) {
+            usedStrings.add(pick.string);
+            notes.push(createTabNote({ string: pick.string, fret: pick.fret, velocity: item.vel }));
+            noteRefs.push({
+              measureIdx: mIdx,
+              beatIdx: beats.length,
+              string: pick.string,
+              fret: pick.fret,
+              midi: item.midi
+            });
+          }
+        }
+        notes.sort((a, b) => a.string - b.string);
       }
-      notes.sort((a, b) => a.string - b.string);
       beats.push(createBeat({
         duration: gridDuration,
         dots: 0,
@@ -1194,9 +1325,13 @@ export function recomputeOfflineRecordedFrames(frames = [], opts = {}) {
   const minDurMs = Number.isFinite(Number(opts.minDurationMs)) ? Number(opts.minDurationMs) : 80;
   const track = opts.track || { openStringMidis: [40, 45, 50, 55, 59, 64], capo: 0 };
 
-  const openMidis = track.openStringMidis || [40, 45, 50, 55, 59, 64];
-  const minMidi = Math.max(28, Math.min(...openMidis) + (track.capo || 0) - 2);
-  const maxMidi = Math.min(96, Math.max(...openMidis) + (track.capo || 0) + 24);
+  const openMidis = Array.isArray(track.openStringMidis) ? track.openStringMidis : [];
+  const minMidi = (track.instrumentType === 'keys' || openMidis.length === 0)
+    ? 36
+    : Math.max(23, Math.min(...openMidis) + (track.capo || 0) - 2);
+  const maxMidi = (track.instrumentType === 'keys' || openMidis.length === 0)
+    ? 96
+    : Math.min(96, Math.max(...openMidis) + (track.capo || 0) + 24);
 
   const tracker = new GuitarEventTracker({
     minMidi,
@@ -1378,32 +1513,49 @@ export function createStudioMicController(deps) {
       return;
     }
 
-    deps.pushUndo();
     const usedStrings = new Set();
     const newNotes = [];
     let firstPlaced = null;
 
-    for (const hit of stepChordBuf) {
-      const cands = findFretCandidatesForMidi(tr, hit.midi, 0, 24);
-      if (cands.length === 0) continue;
-      const pick = cands.find(c => !usedStrings.has(c.string)) || cands[0];
-      if (!usedStrings.has(pick.string)) {
-        usedStrings.add(pick.string);
-        newNotes.push(createTabNote({ string: pick.string, fret: pick.fret, velocity: hit.vel || 96 }));
+    if (tr.instrumentType === 'keys') {
+      const seenMidi = new Set();
+      for (const hit of stepChordBuf) {
+        const midi = Math.max(21, Math.min(108, Math.round(hit.midi)));
+        if (seenMidi.has(midi)) continue;
+        seenMidi.add(midi);
+        newNotes.push(createTabNote({ string: 0, fret: 0, midi, velocity: hit.vel || 96 }));
         if (!firstPlaced) {
-          firstPlaced = {
-            measureIdx: mIdx,
-            beatIdx: bIdx,
-            string: pick.string,
-            fret: pick.fret,
-            midi: hit.midi
-          };
+          firstPlaced = { measureIdx: mIdx, beatIdx: bIdx, string: 0, fret: 0, midi };
+        }
+      }
+      newNotes.sort((a, b) => (a.midi || 0) - (b.midi || 0));
+    } else {
+      for (const hit of stepChordBuf) {
+        const cands = findFretCandidatesForMidi(tr, hit.midi, 0, 24);
+        if (cands.length === 0) continue;
+        const pick = cands.find(c => !usedStrings.has(c.string)) || cands[0];
+        if (!usedStrings.has(pick.string)) {
+          usedStrings.add(pick.string);
+          newNotes.push(createTabNote({ string: pick.string, fret: pick.fret, velocity: hit.vel || 96 }));
+          if (!firstPlaced) {
+            firstPlaced = {
+              measureIdx: mIdx,
+              beatIdx: bIdx,
+              string: pick.string,
+              fret: pick.fret,
+              midi: hit.midi
+            };
+          }
         }
       }
     }
 
     if (newNotes.length > 0) {
-      newNotes.sort((a, b) => a.string - b.string);
+      deps.pushUndo();
+      if (tr.instrumentType !== 'keys') newNotes.sort((a, b) => a.string - b.string);
+      if (beat.isRest && Number.isInteger(ui.activeDuration)) {
+        beat.duration = ui.activeDuration;
+      }
       beat.isRest = false;
       beat.notes = newNotes;
       if (firstPlaced) {
@@ -1413,13 +1565,24 @@ export function createStudioMicController(deps) {
       deps.onSongChanged?.(true);
       refreshPhrasePositions();
       // Auto-przesunięcie kursora do kolejnego slotu po zakończeniu akordu
+      const stepStickyDur = Number.isInteger(ui.activeDuration) ? ui.activeDuration : null;
+      const stepNextDur = stepStickyDur !== null ? stepStickyDur : (beat.duration ?? 0);
       if (ui.cursor.beatIdx + 1 < m.beats.length) {
         ui.cursor.beatIdx++;
+        applyActiveDurationIfRest(ui, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
+      } else if (
+        stepStickyDur !== null &&
+        (measureFilledQuarterNotes(m) + durationToQuarterNotes({ duration: stepNextDur }) <= measureCapacityQuarterNotes(m) + 1e-4)
+      ) {
+        const insPos = insertBeatAfter(ui.song, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx, stepNextDur, true);
+        if (insPos >= 0) ui.cursor.beatIdx = insPos;
+        deps.onSongChanged?.(true);
       } else if (ui.cursor.measureIdx + 1 < tr.measures.length) {
         ui.cursor.measureIdx++;
         ui.cursor.beatIdx = 0;
+        applyActiveDurationIfRest(ui, ui.activeTrackIdx, ui.cursor.measureIdx, ui.cursor.beatIdx);
       } else {
-        const added = addMeasure(ui.song, ui.cursor.measureIdx);
+        const added = addMeasure(ui.song, ui.cursor.measureIdx, stepStickyDur);
         if (added >= 0) {
           ui.cursor.measureIdx = added;
           ui.cursor.beatIdx = 0;
@@ -1439,7 +1602,11 @@ export function createStudioMicController(deps) {
       ui.selectedPhrasePosIdx = -1;
       return;
     }
-    ui.phrasePositions = analyzePhrasePositions(tr, noteRefs, { boxSpan: 4, maxOptions: 5 });
+    ui.phrasePositions = analyzePhrasePositions(tr, noteRefs, {
+      boxSpan: 4,
+      maxOptions: 5,
+      maxFret: deps.getMaxFret?.() || 24
+    });
     ui.selectedPhrasePosIdx = -1;
   }
 
@@ -1610,6 +1777,13 @@ export function createStudioMicController(deps) {
       return 'off';
     }
 
+    const ui = deps.getState();
+    const tr = ui.song.tracks[ui.activeTrackIdx];
+    if (tr && (tr.instrumentType === 'drums' || tr.isPercussion)) {
+      deps.onToast?.('Na ścieżce perkusyjnej użyj siatki klocków (nagrywanie nut nie dotyczy bębnów).');
+      return mode;
+    }
+
     // Uruchom mikrofon hosta jeśli jeszcze nie działa
     if (typeof deps.ensureMicActive === 'function') {
       const ok = await deps.ensureMicActive();
@@ -1623,9 +1797,6 @@ export function createStudioMicController(deps) {
     applyStudioOverride();
     stepGate.reset();
     liveRecGate.reset();
-
-    const ui = deps.getState();
-    const tr = ui.song.tracks[ui.activeTrackIdx];
 
     if (mode === 'rec') {
       recActive = true;

@@ -364,7 +364,7 @@ export class GuitarEventTracker {
     };
 
     const isThinConfirmedByGoertzel = (midi, p) => {
-      if (!this.enableThinHybridBoost || !pcmBuf || midi < THIN_STRING_SPLIT_MIDI || p < 0.28) return false;
+      if (!this.enableThinHybridBoost || !pcmBuf || midi < THIN_STRING_SPLIT_MIDI || p < 0.24) return false;
       if (isHighOvertoneGhost(midi)) return false;
       const frameRms = getPcmRms();
       if (frameRms < 1e-4) return false;
@@ -669,8 +669,19 @@ export function createGuitarPitchDetector(options = {}) {
 
   return {
     async start(stream, sharedAudioCtx) {
+      const disconnectNodes = () => {
+        const nodes = [rawSrcNode, tunerHpFilter, tunerAnalyserNode, condHpFilter, condLowShelf, condHighShelf, condLeveler, condAnalyserNode, condDestNode];
+        for (const n of nodes) {
+          try { if (n && typeof n.disconnect === 'function') n.disconnect(); } catch {}
+        }
+        rawSrcNode = tunerHpFilter = tunerAnalyserNode = null;
+        condHpFilter = condLowShelf = condHighShelf = condLeveler = condAnalyserNode = condDestNode = null;
+      };
+      disconnectNodes();
       tracker.reset();
       lastActiveNotes = [];
+      lastChord = null;
+      cachedPcmStamp = -1;
       lastMaxGuitarProb = 0;
       lastMaxLowProb = 0;
       lastMaxHighProb = 0;
@@ -736,16 +747,24 @@ export function createGuitarPitchDetector(options = {}) {
             }
           }
         } catch (e) {
+          disconnectNodes();
           console.warn('[PitchPleaseBridge] Kondycjonowanie WebAudio niedostępne, używam surowego strumienia:', e);
         }
       }
-      return detector.start(detectorInputStream);
+      try {
+        return await detector.start(detectorInputStream);
+      } catch (err) {
+        disconnectNodes();
+        throw err;
+      }
     },
 
     stop() {
       detector.stop();
       tracker.reset();
       lastActiveNotes = [];
+      lastChord = null;
+      cachedPcmStamp = -1;
       lastMaxGuitarProb = 0;
       lastMaxLowProb = 0;
       lastMaxHighProb = 0;
@@ -913,9 +932,10 @@ export async function calibrateGuitarFromLiveInput({
     highThresholdOn = Math.round(Math.max(0.34, thresholdOn - 0.16) * 100) / 100;
   }
 
+  const minCalibratedFloor = noiseP90 > 0 ? Math.max(calibratedNoiseGate, noiseP90 * 1.15) : calibratedNoiseGate;
   const finalNoiseGate = ok
-    ? Math.min(calibratedNoiseGate, Math.max(0.0012, Math.min(percentile(highRms, 0.75) || guitarPeakRms, guitarPeakRms) * 0.20))
-    : calibratedNoiseGate;
+    ? Math.max(noiseP90 * 1.15, Math.min(minCalibratedFloor, Math.max(0.0012, Math.min(percentile(highRms, 0.75) || guitarPeakRms, guitarPeakRms) * 0.20)))
+    : minCalibratedFloor;
 
   return {
     ok,

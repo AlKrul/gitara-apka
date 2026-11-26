@@ -1,17 +1,23 @@
 import assert from 'node:assert/strict';
 import {
+  DEFAULT_DSP_HIGH_THRESHOLD_ON,
+  DEFAULT_DSP_THRESHOLD_ON,
   DEFAULT_STUDIO_PREFS,
   MAX_STUDIO_TRACKS,
   NOTE_NAMES_FLAT,
   NOTE_NAMES_SHARP,
+  WHAMMY_PRESETS,
   addMeasure,
   addMeasureBefore,
   addTrack,
   analyzePhrasePositions,
+  analyzeSelectionPositionsAndOctaves,
   applyBeatPropToSelection,
   applyEffectToSelection,
   applyMetronomePreset,
   applyPhrasePosition,
+  buildBeatEventsForTrack,
+  buildBeatsClipboardFromSteps,
   buildMeasuresFromSteps,
   buildSongExportPayload,
   clampStudioPrefs,
@@ -36,7 +42,14 @@ import {
   duplicateTrack,
   durationToQuarterNotes,
   expandPlaybackTimeline,
+  expandSongToLinearMeasures,
+  generateStudioArpeggioOrSweepSteps,
+  applyGeneratedStepsToSong,
+  detectAutoChordForBeat,
+  detectAutoChordsForMeasure,
   getNoteAt,
+  getScaleHintPitchClasses,
+  hasProRepeatStructure,
   insertMidiNoteAt,
   isBeatInSelection,
   midiToNoteName,
@@ -49,6 +62,7 @@ import {
   noteToMidi,
   pasteBeatsFromClipboard,
   pasteMeasuresFromClipboard,
+  reconcileLinearEditsIntoProSong,
   removeMeasure,
   removeTrack,
   resetMeasureDrumGrid,
@@ -60,8 +74,12 @@ import {
   setNoteAt,
   setNotePosition,
   setTrackTuning,
+  sensitivityOffsetToThresholds,
   shiftNotePitch,
   shiftSelectionPitch,
+  solveBeatFretAssignments,
+  thresholdToSensitivityOffset,
+  tieOrExtendPreviousNote,
   toggleBeatProp,
   toggleMeasureRepeatOpen,
   toggleMeasureVolta,
@@ -93,6 +111,8 @@ import {
   expandDrumCustomGridToSteps
 } from '../web/js/studio/studioDrumBlocks.js';
 import {
+  computePlayheadXForMeasure,
+  computeStaffStepFromMidi,
   renderArrangerMatrixHtml,
   renderMetronomeBlocksHtml,
   renderStudioFretboardSvg,
@@ -103,6 +123,15 @@ import {
   computeActiveAndNextNotes,
   createStudioPlayer
 } from '../web/js/studio/studioPlayer.js';
+import {
+  LIBRARY_FORMAT,
+  createUserLibraryStore,
+  exportItemPayload,
+  exportPackPayload,
+  makeSafeFilename,
+  parseImportText,
+  sanitizeItemId
+} from '../web/js/userLibrary.js';
 
 // 1. Nazewnictwo nut A-G (bez H) i konwersje MIDI z kapodastrem oraz basem 4-str.
 {
@@ -572,7 +601,39 @@ import {
 
   const cmdkHtml = renderCommandPaletteHtml({ open: true, query: 'bend', selectedIdx: 0 });
   assert.ok(cmdkHtml.includes('studio-cmdk-dialog') && cmdkHtml.includes('Bend +1 ton'));
-  console.log('[OK] Test 12: Paleta Songsterra w prawym panelu z dymkami, pasek inline bez modali i wyszukiwarka Ctrl+K');
+
+  assert.equal(DEFAULT_STUDIO_PREFS.uiMode, 'simple');
+  assert.equal(clampStudioPrefs({ uiMode: 'pro' }).uiMode, 'pro');
+  assert.equal(clampStudioPrefs({ uiMode: 'bogus' }).uiMode, 'simple');
+
+  // Tryb uproszczony (domyślny): zostawia dynamikę + techniki brzmieniowe, usuwa notacyjne detale
+  const palSimple = renderStudioPaletteHtml({
+    uiMode: 'simple',
+    track: song.tracks[0],
+    beat: song.tracks[0].measures[0].beats[0],
+    note: getNoteAt(song, 0, 0, 0, 0),
+    measure: song.tracks[0].measures[0],
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 0 }
+  });
+  assert.ok(palSimple.includes('data-action="palette-dynamic"'), 'Simple mode must keep dynamics control');
+  assert.ok(palSimple.includes('effect:palmMute') && palSimple.includes('bend:full') && palSimple.includes('harmonic:1'));
+  for (const hiddenCmd of ['pick:1', 'pick:2', 'brush:down', 'effect:graceNote', 'effect:trill', 'effect:tremoloPicking', 'beat:fermata', 'dur:4', 'tuplet:5:4']) {
+    assert.ok(!palSimple.includes(`data-cmd="${hiddenCmd}"`), `Simple mode must omit ${hiddenCmd}`);
+  }
+
+  // Tryb Pro: zawiera wszystkie detale notacyjne
+  const palPro = renderStudioPaletteHtml({
+    uiMode: 'pro',
+    track: song.tracks[0],
+    beat: song.tracks[0].measures[0].beats[0],
+    note: getNoteAt(song, 0, 0, 0, 0),
+    measure: song.tracks[0].measures[0],
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 0 }
+  });
+  for (const proCmd of ['pick:1', 'pick:2', 'brush:down', 'effect:graceNote', 'effect:trill', 'effect:tremoloPicking', 'beat:fermata', 'dur:4', 'tuplet:5:4']) {
+    assert.ok(palPro.includes(`data-cmd="${proCmd}"`), `Pro mode must include ${proCmd}`);
+  }
+  console.log('[OK] Test 12: Paleta Songsterra (tryb Uproszczony/Pro, dymki), pasek inline i wyszukiwarka Ctrl+K');
 }
 
 // 13. Faza 2: studioInputs.js (router skrótów klawiaturowych + wykonanie komend)
@@ -1205,4 +1266,889 @@ import {
   console.log('[OK] Test 24: Tryb czystej pięciolinii (Nuty 8vb), pełna partytura wielościeżkowa i zaznaczenie SVG');
 }
 
-console.log('\nWszystkie testy Studio TAB (24/24) zakończone sukcesem!');
+// 25. Czas trwania nut i precyzyjne planowanie WebAudio whenSec przy prędkości 50% / 100% / 150%
+{
+  let fakeNowSec = 10.0;
+  const triggered = [];
+  const stopAllCalls = [];
+  const stateObj = { guitarTonePreset: 'clean', keyboardPreset: 'rhodes', a4ReferenceHz: 440 };
+  const mockHost = {
+    getState: () => stateObj,
+    ensureAudioCtx: () => ({ currentTime: fakeNowSec }),
+    getMasterAudioOut: () => ({}),
+    pluckGuitarFrequency: (freq, dur, gain, preview, opts) => {
+      triggered.push({ type: 'guitar', t: fakeNowSec, freq, dur, gain, preview, opts: opts || {} });
+    },
+    stopAllPreviewVoices: () => stopAllCalls.push(fakeNowSec)
+  };
+
+  const song = createEmptySong({ bpm: 120, measureCount: 1 });
+  song.tracks[0].measures[0].beats = [
+    createBeat({ duration: 0, isRest: false, notes: [createTabNote({ string: 0, fret: 0 })] }),                   // 0.0 Q
+    createBeat({ duration: 2, isRest: false, notes: [createTabNote({ string: 0, fret: 2 })] }),                   // 1.0 Q (1/16)
+    createBeat({ duration: 2, isRest: false, notes: [createTabNote({ string: 0, fret: 3 })] }),                   // 1.25 Q (1/16)
+    createBeat({ duration: 0, isRest: false, notes: [createTabNote({ string: 0, fret: 5, palmMute: true })] }),   // 1.5 Q (PM)
+    createBeat({ duration: 0, isRest: false, notes: [createTabNote({ string: 0, fret: 7, staccato: true })] }),   // 2.5 Q (Staccato)
+    createBeat({ duration: 0, isRest: false, notes: [createTabNote({ string: 1, fret: 2, letRing: true })] })     // 3.5 Q (Let ring)
+  ];
+
+  const runAtSpeed = (speedPct, t0) => {
+    triggered.length = 0;
+    const p = createStudioPlayer({ host: mockHost, clockFn: () => fakeNowSec });
+    p.loadSong(song, 0);
+    p.setMetronome(false);
+    p.setSpeedPercent(speedPct);
+    fakeNowSec = t0;
+    p.play();
+    const totalSec = 4.5 * (60 / (120 * (speedPct / 100)));
+    for (let dt = 0.04; dt <= totalSec; dt += 0.04) {
+      fakeNowSec = t0 + dt;
+      p.stepSchedulerForTest(fakeNowSec);
+    }
+    const snapshot = triggered.slice();
+    p.stop();
+    p.destroy();
+    return snapshot;
+  };
+
+  const at50 = runAtSpeed(50, 20.0);
+  const at100 = runAtSpeed(100, 40.0);
+  const at150 = runAtSpeed(150, 60.0);
+
+  assert.equal(at50.length, 6);
+  assert.equal(at100.length, 6);
+  assert.equal(at150.length, 6);
+  assert.ok(stopAllCalls.length >= 3, 'stop() must cancel active sustained preview voices');
+
+  // Ćwierćnuta: 50% (0.96s) == 2x 100% (0.48s); 150% (0.32s) == 2/3x 100%
+  assert.ok(Math.abs(at50[0].dur - 2 * at100[0].dur) < 1e-6, `50% (${at50[0].dur}) should be 2x 100% (${at100[0].dur})`);
+  assert.ok(Math.abs(at150[0].dur - (2 / 3) * at100[0].dur) < 1e-6, `150% (${at150[0].dur}) should be 2/3x 100% (${at100[0].dur})`);
+  assert.equal(at150[0].opts.strictDuration, true);
+
+  // Szybkie 1/16 przy 150% (~0.08s) nie mogą być sztucznie wydłużone do 0.22s ani wpadać na ten sam whenSec
+  assert.ok(at150[1].dur < 0.11 && at150[2].dur < 0.11, `Fast 16ths at 150% must stay short, got ${at150[1].dur}`);
+  assert.ok(at150[2].opts.whenSec > at150[1].opts.whenSec + 0.06, 'Consecutive 16ths inside lookahead must get distinct whenSec');
+
+  // Palm mute skaluje się proporcjonalnie ze zmianą prędkości
+  assert.ok(at50[3].dur > at100[3].dur && at100[3].dur > at150[3].dur, 'Palm mute duration must scale inversely with speed');
+  assert.equal(at50[3].opts.palmMute, true);
+
+  // Staccato ~45% czasu taktu; Let Ring wyłącza strictDuration
+  assert.ok(Math.abs(at100[4].dur - at100[0].dur * 0.45) < 1e-4, 'Staccato must shorten normal duration to ~45%');
+  assert.equal(at100[5].opts.strictDuration, false, 'Let Ring must disable strictDuration cut');
+  console.log('[OK] Test 25: Skalowanie czasu nut (50/100/150%), Palm Mute/Staccato i precyzja whenSec');
+}
+
+// 26. Oznaczanie oktaw na gryfie Studia TAB (gitara 6-str. + bas 4-str.) i wybór dźwięku podziału ze skali
+{
+  const demo = createDemoSong('rock_riff_em');
+  const guitarTrack = demo.tracks[0];
+  const bassTrack = demo.tracks[2]; // Bas 4-str. [28, 33, 38, 43]
+  const emScale = getScaleHintPitchClasses(4, 'natural_minor');
+
+  const gSvgDefault = renderStudioFretboardSvg(guitarTrack, {
+    keyRootPc: 4,
+    keyScalePcs: emScale,
+    showOctaveBands: true,
+    octaveAnchorPc: 4
+  });
+  const gSvgAltAnchor = renderStudioFretboardSvg(guitarTrack, {
+    keyRootPc: 4,
+    keyScalePcs: emScale,
+    showOctaveBands: true,
+    octaveAnchorPc: 7 // Sol (G) ze skali E moll
+  });
+  assert.ok(gSvgDefault.includes('studio-fb-oct-band'), 'Guitar fretboard must emit octave band shading');
+  assert.ok(gSvgDefault.includes('studio-fb-oct-link'), 'Guitar fretboard must emit unison connector lines');
+  assert.notEqual(gSvgDefault, gSvgAltAnchor, 'Changing octave anchor note in scale must update octave bands/links');
+
+  const bassSvg = renderStudioFretboardSvg(bassTrack, {
+    keyRootPc: 4,
+    keyScalePcs: emScale,
+    showOctaveBands: true,
+    octaveAnchorPc: 4
+  });
+  assert.ok(bassSvg.includes('studio-fb-oct-band'), '4-string bass fretboard must support octave bands');
+  assert.ok(bassSvg.includes('studio-fb-oct-link'), '4-string bass fretboard must draw unison links');
+  assert.ok(!bassSvg.includes('NaN'), '4-string bass octave SVG must not contain NaN coordinates');
+
+  const clamped = clampStudioPrefs({ showOctaveBands: true, octaveAnchorPc: 7 });
+  assert.equal(clamped.showOctaveBands, true);
+  assert.equal(clamped.octaveAnchorPc, 7);
+  const rt = deserializeStudioSong(serializeStudioSong(demo, clamped));
+  assert.equal(rt.studioPrefs.showOctaveBands, true);
+  assert.equal(rt.studioPrefs.octaveAnchorPc, 7);
+  console.log('[OK] Test 26: Pasy oktawowe i wybór dźwięku podziału (gitara 6-str. i bas 4-str.)');
+}
+
+// 27. Auto-akordy (ChordNamer A–G), pisownia bemolowa na pięciolinii, 7/16, multi-volta i pełna transpozycja akordu na klawiszach
+{
+  const song = createEmptySong({ title: 'Audit Regressions', bpm: 120, measureCount: 4 });
+  const tr = song.tracks[0];
+  // 7/16 powinien mieć 7 szesnastek (dur = 2)
+  const m716 = createEmptyMeasure(7, 16, '', false);
+  assert.equal(m716.beats.length, 7);
+  assert.equal(m716.beats[0].duration, 2);
+
+  // Auto-akord wielodźwiękowy B-D-F# (strict B, nigdy H) oraz bemol Bb-D-F przy accMode=1
+  const bmBeat = createBeat({
+    duration: 0,
+    isRest: false,
+    notes: [
+      { string: 1, fret: 2 },  // B2 (47)
+      { string: 2, fret: 4 },  // F#3 (54)
+      { string: 3, fret: 4 },  // B3 (59)
+      { string: 4, fret: 3 }   // D4 (62)
+    ]
+  });
+  const bmLabel = detectAutoChordForBeat(tr, bmBeat, 2);
+  assert.ok(bmLabel.startsWith('B'), `Expected B-chord (never H), got ${bmLabel}`);
+  assert.ok(!bmLabel.includes('H'));
+
+  const bbBeat = createBeat({
+    duration: 0,
+    isRest: false,
+    notes: [
+      { string: 1, fret: 1 }, // Bb2 (46)
+      { string: 2, fret: 3 }, // F3 (53)
+      { string: 4, fret: 3 }  // D4 (62)
+    ]
+  });
+  const bbLabel = detectAutoChordForBeat(tr, bbBeat, 1);
+  assert.ok(bbLabel.startsWith('Bb'), `Expected Bb chord with accMode=1, got ${bbLabel}`);
+
+  // Arpeggiowany takt bez równoczesnych akordów -> auto-akord taktu + render SVG
+  tr.measures[0].beats = [
+    createBeat({ duration: 1, isRest: false, notes: [{ string: 0, fret: 0 }] }), // E2
+    createBeat({ duration: 1, isRest: false, notes: [{ string: 1, fret: 2 }] }), // B2
+    createBeat({ duration: 1, isRest: false, notes: [{ string: 2, fret: 2 }] }), // E3
+    createBeat({ duration: 1, isRest: false, notes: [{ string: 3, fret: 0 }] })  // G3
+  ];
+  const autoM0 = detectAutoChordsForMeasure(tr, tr.measures[0], 2);
+  assert.equal(autoM0.measureChord, 'Em');
+  const svgWithAuto = renderStudioTabSvg(song, { activeTrackIdx: 0, showAutoChords: true, accMode: 2 });
+  assert.ok(svgWithAuto.includes('studio-auto-chord') && svgWithAuto.includes('>Em<'));
+  const svgNoAuto = renderStudioTabSvg(song, { activeTrackIdx: 0, showAutoChords: false, accMode: 2 });
+  assert.ok(!svgNoAuto.includes('studio-auto-chord'));
+
+  // Pisownia bemolowa na pięciolinii (Bb4 vs A#4 muszą różnić się stopniem na pięciolinii)
+  const aSharpStep = computeStaffStepFromMidi(70, false, 2); // A#4 -> linia A
+  const bFlatStep = computeStaffStepFromMidi(70, false, 1);  // Bb4 -> linia B
+  assert.equal(aSharpStep.accidental, '♯');
+  assert.equal(bFlatStep.accidental, '♭');
+  assert.equal(bFlatStep.step, aSharpStep.step + 1);
+
+  // Multi-volta (1., 2. oraz 3. zakończenie nie powtarza Volty 2 dwa razy!)
+  const voltaSong = createEmptySong({ measureCount: 4 });
+  voltaSong.tracks[0].measures[0].repeatOpen = true;
+  voltaSong.tracks[0].measures[1].voltaMask = 1;
+  voltaSong.tracks[0].measures[1].repeatClose = 3;
+  voltaSong.tracks[0].measures[2].voltaMask = 2;
+  voltaSong.tracks[0].measures[2].repeatClose = 3;
+  voltaSong.tracks[0].measures[3].voltaMask = 4;
+  const tl = expandPlaybackTimeline(voltaSong);
+  assert.deepEqual(tl.map(e => e.measureIdx), [0, 1, 0, 2, 0, 3]);
+
+  // Transpozycja akordu na ścieżce klawiszy (wszystkie dźwięki, nie tylko 1.!) + export payload (bends, drums, keys)
+  const kIdx = addTrack(song, 'keys');
+  const kTr = song.tracks[kIdx];
+  setNoteAt(song, kIdx, 0, 0, 0, 60, { chord: true });
+  setNoteAt(song, kIdx, 0, 0, 0, 64, { chord: true });
+  setNoteAt(song, kIdx, 0, 0, 0, 67, { chord: true });
+  assert.equal(getNoteAt(song, kIdx, 0, 0, -1), null);
+  transposeRange(song, { trackIdx: kIdx, startMeasure: 0, endMeasure: 0, semitones: 2 });
+  const kMidis = kTr.measures[0].beats[0].notes.map(n => n.midi);
+  assert.deepEqual(kMidis, [62, 66, 69]);
+
+  // Bend pos/val i skalowanie perkusji + klawisze w buildSongExportPayload
+  tr.measures[1].beats[0] = createBeat({
+    duration: 0,
+    isRest: false,
+    notes: [{ string: 2, fret: 7, bendPreset: 'full', bendPoints: [{ pos: 0, val: 0 }, { pos: 60, val: 100 }] }]
+  });
+  const exp = buildSongExportPayload(song);
+  assert.equal(exp.tracks[0].measures[1].beats[0].notes[0].bendPoints[1].position, 60);
+  assert.equal(exp.tracks[0].measures[1].beats[0].notes[0].bendPoints[1].value, 100);
+  const expDrumNote = exp.tracks[1].measures[0].beats.find(b => !b.isRest)?.notes?.[0];
+  assert.ok(expDrumNote && expDrumNote.velocity >= 10 && expDrumNote.velocity <= 127);
+  const expKeys = exp.tracks[kIdx];
+  assert.equal(expKeys.tuningId, 'keys');
+  assert.deepEqual(expKeys.measures[0].beats[0].notes.map(n => n.midi), [62, 66, 69]);
+  console.log('[OK] Test 27: Auto-akordy (ChordNamer A-G), bemole pięciolinii, multi-volta, 7/16 i eksport keys/bend/drum');
+}
+
+// 28. Generator Arpeggio / Sweep bezpośrednio w Studio TAB (Gitara 6-str., Bas 4-str., Klawisze)
+{
+  const song = createEmptySong({ title: 'Studio Arp Sweep Test', measureCount: 2 });
+  const gSteps = generateStudioArpeggioOrSweepSteps({
+    mode: 'sweep',
+    rootPc: 4, // Em
+    quality: 'minor',
+    direction: 'up_down',
+    track: song.tracks[0],
+    duration: 2,
+    accMode: 2
+  });
+  assert.ok(gSteps.length >= 6 && gSteps[0].chordSymbol === 'Em');
+  const cursorRes = applyGeneratedStepsToSong(song, 0, gSteps, { insertMode: 'cursor', measureIdx: 0, beatIdx: 0 });
+  assert.ok(cursorRes.ok && cursorRes.insertedBeats === gSteps.length);
+
+  const bIdx = addTrack(song, 'bass');
+  const bassSteps = generateStudioArpeggioOrSweepSteps({
+    mode: 'arpeggio',
+    rootPc: 9, // Am
+    quality: 'minor',
+    direction: 'up',
+    track: song.tracks[bIdx],
+    duration: 1
+  });
+  assert.ok(bassSteps.length >= 3 && bassSteps.every(st => st.notes[0].string < 4));
+  const appRes = applyGeneratedStepsToSong(song, bIdx, bassSteps, { insertMode: 'append', measureIdx: 0 });
+  assert.ok(appRes.ok && appRes.insertedBars >= 1);
+
+  const kIdx = addTrack(song, 'keys');
+  const kSteps = generateStudioArpeggioOrSweepSteps({
+    mode: 'arpeggio',
+    rootPc: 0, // Cmaj7
+    quality: 'maj7',
+    direction: 'up_down',
+    track: song.tracks[kIdx],
+    duration: 1
+  });
+  assert.ok(kSteps.length >= 4 && kSteps.every(st => Number.isFinite(st.notes[0].midi)));
+  const kRes = applyGeneratedStepsToSong(song, kIdx, kSteps, { insertMode: 'cursor', measureIdx: 0, beatIdx: 0 });
+  assert.ok(kRes.ok);
+  console.log('[OK] Test 28: Generator Arpeggio/Sweep w Studio TAB (gitara 6-str., bas 4-str. i klawisze)');
+}
+
+// 29. Lokalna biblioteka użytkownika (Sweep, Progresje, TAB-y, Studio TAB) + eksport/import plików i paczek
+await (async () => {
+  assert.equal(makeSafeFilename('Łąka ąęćłńóśźż #1', 'gitara-sweep.json'), 'laka_aeclnoszz_1.gitara-sweep.json');
+  assert.equal(sanitizeItemId('../evil_id'), 'evil_id');
+
+  const serverDisk = { sweeps: new Map(), progressions: new Map(), tabs: new Map(), studio: new Map(), sessions: new Map() };
+  const memStorageMap = new Map();
+  const mockStorage = {
+    getItem: (k) => (memStorageMap.has(k) ? memStorageMap.get(k) : null),
+    setItem: (k, v) => memStorageMap.set(k, String(v))
+  };
+  const mockFetch = async (url, opts = {}) => {
+    const u = new URL(url, 'http://localhost');
+    if (u.pathname === '/api/library') {
+      const payload = {};
+      for (const [cat, m] of Object.entries(serverDisk)) payload[cat] = Array.from(m.values());
+      return { ok: true, json: async () => payload };
+    }
+    if (u.pathname === '/api/library/save') {
+      const cat = u.searchParams.get('category');
+      const id = u.searchParams.get('id');
+      const obj = JSON.parse(opts.body);
+      serverDisk[cat].set(id, obj);
+      return { ok: true, json: async () => ({ ok: true, category: cat, id }) };
+    }
+    if (u.pathname === '/api/library/delete') {
+      const cat = u.searchParams.get('category');
+      const id = u.searchParams.get('id');
+      const ok = serverDisk[cat].delete(id);
+      return { ok, json: async () => ({ ok }) };
+    }
+    return { ok: false, json: async () => ({}) };
+  };
+
+  const store = createUserLibraryStore({ fetchFn: mockFetch, storage: mockStorage });
+  await store.load();
+
+  const sw = await store.saveItem('sweeps', {
+    id: 'sw_share_1',
+    name: 'Neoklasyczny Sweep Em',
+    items: [{ symbol: 'Em', rootPc: 4, chordId: 'minor', steps: [{ s: 0, f: 7 }], nodes: [] }]
+  });
+  const pr = await store.saveItem('progressions', {
+    id: 'pr_share_1',
+    title: 'Progresja Kolegi',
+    bpm: 118,
+    keyRootPc: 4,
+    isMinor: true,
+    measures: [{ volta: 0, beats: [{ offsetSemi: 0, chordId: 'minor', roman: 'i' }, null, null, null] }]
+  });
+  const tb = await store.saveItem('tabs', {
+    id: 'tb_share_1',
+    title: 'Zagrywka Pentatoniczna',
+    recordedEvents: [{ s: 0, f: 5, midi: 45, note: 'A', dur: 1, tech: '-' }]
+  });
+  const demoStudioSong = createDemoSong('rock_riff_em');
+  const st = await store.saveItem('studio', {
+    id: 'st_share_1',
+    name: demoStudioSong.title,
+    song: demoStudioSong,
+    studioPrefs: { uiMode: 'simple' }
+  });
+
+  // Trwałość po utworzeniu nowej instancji store
+  const store2 = createUserLibraryStore({ fetchFn: mockFetch, storage: new Map() });
+  await store2.load();
+  assert.equal(store2.getItems('sweeps').length, 1);
+  assert.equal(store2.getItems('progressions').length, 1);
+  assert.equal(store2.getItems('tabs').length, 1);
+  assert.equal(store2.getItems('studio').length, 1);
+
+  // Wrapped studio payload zgodny z deserializeStudioSong
+  const wrappedStudioJson = JSON.stringify(exportItemPayload('studio', st));
+  const decodedStudio = deserializeStudioSong(wrappedStudioJson);
+  assert.equal(decodedStudio.song.title, demoStudioSong.title);
+  assert.equal(decodedStudio.studioPrefs.uiMode, 'simple');
+
+  // Eksport paczki + import na czystym magazynie ("wczytaj i ma na stałe")
+  const packJson = JSON.stringify(exportPackPayload(store.getAll(), { name: 'Paczka testowa' }));
+  const cleanDisk = { sweeps: new Map(), progressions: new Map(), tabs: new Map(), studio: new Map(), sessions: new Map() };
+  const cleanStore = createUserLibraryStore({
+    fetchFn: async (url, opts = {}) => {
+      const u = new URL(url, 'http://localhost');
+      if (u.pathname === '/api/library') {
+        const out = {};
+        for (const [c, m] of Object.entries(cleanDisk)) out[c] = Array.from(m.values());
+        return { ok: true, json: async () => out };
+      }
+      if (u.pathname === '/api/library/save') {
+        cleanDisk[u.searchParams.get('category')].set(u.searchParams.get('id'), JSON.parse(opts.body));
+        return { ok: true, json: async () => ({ ok: true }) };
+      }
+      if (u.pathname === '/api/library/delete') {
+        const ok = cleanDisk[u.searchParams.get('category')].delete(u.searchParams.get('id'));
+        return { ok, json: async () => ({ ok }) };
+      }
+      return { ok: false, json: async () => ({}) };
+    },
+    storage: null
+  });
+  const impPack = await cleanStore.importTextPermanently(packJson);
+  assert.equal(impPack.count, 4);
+  assert.equal(cleanStore.getItems('sweeps')[0].source, 'imported');
+  assert.equal(cleanStore.getItems('progressions')[0].title, pr.title);
+  assert.equal(cleanStore.getItems('tabs')[0].title, tb.title);
+  assert.equal(cleanStore.getItems('studio')[0].name, sw ? st.name : '');
+
+  // Legacy Studio .gitara.json importowany bezpośrednio do kategorii 'studio'
+  const legacyStudioJson = serializeStudioSong(demoStudioSong, { uiMode: 'pro' });
+  const impLegacy = await cleanStore.importTextPermanently(legacyStudioJson, 'studio');
+  assert.equal(impLegacy.count, 1);
+  assert.equal(impLegacy.categories[0], 'studio');
+
+  // Usuwanie
+  assert.equal(await store.deleteItem('sweeps', sw.id), true);
+  assert.equal(store.getItems('sweeps').length, 0);
+
+  // Niepoprawny JSON -> czytelny wyjątek
+  assert.throws(() => parseImportText('{bad json'), /Niepoprawny plik JSON/);
+  assert.equal(LIBRARY_FORMAT, 'apka-gitara-library-v1');
+  console.log('[OK] Test 29: Lokalna biblioteka użytkownika (userLibrary.js), paczki i trwały import plików');
+})();
+
+// 30. Notacja Songsterr (sustain, tied, let ring, P.M., H/P, slide, bend, vibrato, wajcha), Zoom TAB/Gryfu i wrażliwość detekcji
+{
+  // A. WHAMMY_PRESETS, palette, input commands & export payload
+  assert.ok(WHAMMY_PRESETS.dive_full && WHAMMY_PRESETS.dive_bomb && WHAMMY_PRESETS.dip_full && WHAMMY_PRESETS.scoop && WHAMMY_PRESETS.raise_half);
+  const wSong = createEmptySong({ measureCount: 1 });
+  setNoteAt(wSong, 0, 0, 0, 2, 12);
+  assert.equal(toggleNoteEffect(wSong, 0, 0, 0, 2, 'whammyPreset', 'dive_bomb'), true);
+  const wNote = getNoteAt(wSong, 0, 0, 0, 2);
+  assert.equal(wNote.whammyPreset, 'dive_bomb');
+  assert.ok(Array.isArray(wNote.whammyPoints) && wNote.whammyPoints.length >= 2);
+  assert.equal(STUDIO_COMMANDS.some(c => c.id === 'whammy:dive_full'), true);
+
+  const palSimpleHtml = renderStudioPaletteHtml({
+    uiMode: 'simple',
+    track: wSong.tracks[0],
+    beat: wSong.tracks[0].measures[0].beats[0],
+    note: wNote,
+    measure: wSong.tracks[0].measures[0],
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 2 }
+  });
+  assert.equal(palSimpleHtml.includes('data-action="palette-whammy"'), false, 'Simple palette must hide whammy');
+  assert.equal(palSimpleHtml.includes('data-cmd="whammy:dive_full"'), false, 'Simple palette must hide whammy button');
+  assert.ok(palSimpleHtml.includes('data-cmd="effect:vibrato"') && palSimpleHtml.includes('data-cmd="effect:hammerOn"') && palSimpleHtml.includes('data-action="palette-bend"') && palSimpleHtml.includes('data-cmd="effect:tied"'), 'Simple palette must include vibrato, legato, bend, and extend-tie');
+
+  const palProHtml = renderStudioPaletteHtml({
+    uiMode: 'pro',
+    track: wSong.tracks[0],
+    beat: wSong.tracks[0].measures[0].beats[0],
+    note: wNote,
+    measure: wSong.tracks[0].measures[0],
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 2 }
+  });
+  assert.ok(palProHtml.includes('data-action="palette-whammy"') && palProHtml.includes('data-cmd="whammy:dive_full"'), 'Pro palette missing whammy UI');
+
+  const cmdSong = createEmptySong({ measureCount: 1 });
+  setNoteAt(cmdSong, 0, 0, 0, 0, 5);
+  const cmdUi = {
+    song: cmdSong,
+    history: createStudioHistory(20),
+    activeTrackIdx: 0,
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 0 },
+    loopEnabled: false,
+    loopStart: 0,
+    loopEnd: 0,
+    clipboard: null,
+    clipboardScope: 'track',
+    clipboardPasteMode: 'overwrite',
+    selectionStart: null,
+    selectionEnd: null,
+    beatSelection: null,
+    inlinePrompt: null,
+    cmdPalette: { open: false, query: '', selectedIdx: 0 }
+  };
+  const inputCtrl = createStudioInputController({
+    getState: () => cmdUi,
+    pushUndo: () => cmdUi.history.push(cmdUi.song),
+    onSongChanged: () => {},
+    onRender: () => {}
+  });
+  assert.equal(inputCtrl.executeCommand('whammy:dive_full'), true);
+  assert.equal(getNoteAt(cmdSong, 0, 0, 0, 0).whammyPreset, 'dive_full');
+  assert.equal(inputCtrl.handleKeyDown({ key: 'w', ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, preventDefault() {} }), true);
+  assert.equal(getNoteAt(cmdSong, 0, 0, 0, 0).whammyPreset, '', 'Second w toggles dive_full off');
+
+  const selSong = createEmptySong({ measureCount: 1 });
+  setNoteAt(selSong, 0, 0, 0, 0, 5);
+  setNoteAt(selSong, 0, 0, 1, 0, 7);
+  assert.equal(applyEffectToSelection(selSong, 0, {
+    trackIdx: 0,
+    anchor: { measureIdx: 0, beatIdx: 0 },
+    focus: { measureIdx: 0, beatIdx: 1 }
+  }, 'whammyPreset', 'dive_bomb'), 2);
+  const expPayload = buildSongExportPayload(selSong);
+  assert.equal(expPayload.tracks[0].measures[0].beats[0].notes[0].whammyPreset, 'dive_bomb');
+  assert.ok(expPayload.tracks[0].measures[0].beats[1].notes[0].whammyPoints.length >= 2);
+
+  // B. Songsterr SVG markers/classes
+  const sg = createEmptySong({ bpm: 120, measureCount: 3 });
+  sg.tracks[0].measures[0].beats = [
+    createBeat({ duration: -2, isRest: false, notes: [createTabNote({ string: 0, fret: 3, letRing: true })] })
+  ];
+  sg.tracks[0].measures[1].beats = [
+    createBeat({ duration: -1, isRest: false, notes: [createTabNote({ string: 1, fret: 5, bendPreset: 'full', vibrato: true })] }),
+    createBeat({ duration: 1, isRest: false, dynamic: 6, notes: [createTabNote({ string: 0, fret: 5 })] }),
+    createBeat({ duration: 1, isRest: false, dynamic: 6, notes: [createTabNote({ string: 0, fret: 5, tied: true })] })
+  ];
+  sg.tracks[0].measures[2].beats = [
+    createBeat({ duration: 2, isRest: false, dynamic: 7, notes: [createTabNote({ string: 2, fret: 7 })] }),
+    createBeat({ duration: 2, isRest: false, dynamic: 1, notes: [createTabNote({ string: 2, fret: 9, hammerOn: true })] }),
+    createBeat({ duration: 2, isRest: false, notes: [createTabNote({ string: 2, fret: 9, slideType: 'shift', palmMute: true })] }),
+    createBeat({ duration: 2, isRest: false, notes: [createTabNote({ string: 2, fret: 12, whammyPreset: 'dive_bomb' })] })
+  ];
+
+  const tabSvg = renderStudioTabSvg(sg, {
+    activeTrackIdx: 0,
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 0 },
+    viewMode: 'tab',
+    containerWidth: 1000
+  });
+  for (const marker of [
+    'studio-tie-arc',
+    'studio-letring-span',
+    'studio-pm-span',
+    'studio-legato-slur',
+    'studio-slide-line',
+    'studio-bend-arrow',
+    'studio-vibrato-wave',
+    'studio-whammy-curve',
+    'w/bar',
+    'studio-rhythm-beam'
+  ]) {
+    assert.ok(tabSvg.includes(marker), `Missing Songsterr SVG marker: ${marker}`);
+  }
+
+  // C. Tied continuation audio merging + pitchCurve + dynamic gain scaling
+  const evs = buildBeatEventsForTrack(sg, 0);
+  const tiedStartEv = evs.find(e => e.measureIdx === 1 && e.beatIdx === 1);
+  const tiedContEv = evs.find(e => e.measureIdx === 1 && e.beatIdx === 2);
+  assert.ok(tiedStartEv, 'Tied start event must exist');
+  assert.equal(tiedContEv, undefined, 'Tied continuation beat with same pitch must merge instead of retriggering');
+  assert.ok(tiedStartEv.notes[0].tieExtraQ > 0.45, `Expected merged tieExtraQ ~0.5, got ${tiedStartEv.notes[0].tieExtraQ}`);
+
+  let fakeNowSec = 30.0;
+  const triggered = [];
+  const pHost = {
+    getState: () => ({ guitarTonePreset: 'lead', a4ReferenceHz: 440 }),
+    ensureAudioCtx: () => ({ currentTime: fakeNowSec }),
+    getMasterAudioOut: () => ({}),
+    pluckGuitarFrequency: (freq, dur, gain, preview, opts) => {
+      triggered.push({ freq, dur, gain, opts: opts || {} });
+    },
+    stopAllPreviewVoices: () => {}
+  };
+  const p = createStudioPlayer({ host: pHost, clockFn: () => fakeNowSec });
+  p.loadSong(sg, 0);
+  p.setMetronome(false);
+  p.play();
+  for (let dt = 0.05; dt <= 6.5; dt += 0.05) {
+    fakeNowSec = 30.0 + dt;
+    p.stepSchedulerForTest(fakeNowSec);
+  }
+  p.stop();
+  p.destroy();
+
+  assert.equal(triggered.length, 7, `Expected 7 triggered note events (with tied note merged), got ${triggered.length}`);
+  const tiedAudio = triggered[2]; // M1 B1 (two tied 1/8 = 1.0 Q -> ~0.48s)
+  const loudAccent = triggered[3]; // M2 B0 (fff dynamic: 7)
+  const quietHammer = triggered[4]; // M2 B1 (pp dynamic: 1, hammerOn)
+  const whammyAudio = triggered[6]; // M2 B3 (whammy dive_bomb)
+  assert.ok(tiedAudio.dur > 0.44, `Merged tied 1/8+1/8 note must sound for ~0.48s, got ${tiedAudio.dur}`);
+  assert.equal(triggered[1].opts.vibrato, true);
+  assert.equal(quietHammer.opts.hammerOn, true);
+  assert.ok(loudAccent.gain > quietHammer.gain * 2.0, `fff beat (${loudAccent.gain}) must be much louder than pp (${quietHammer.gain})`);
+  assert.ok(Array.isArray(whammyAudio.opts.pitchCurve) && whammyAudio.opts.pitchCurve.length >= 2);
+  assert.equal(whammyAudio.opts.pitchCurve[1].val, -250);
+
+  // D. TAB Zoom & Fretboard Zoom SVG dimension scaling + prefs clamping
+  const parseSvgDims = (svgStr) => {
+    const m = svgStr.match(/viewBox="0 0 ([\d.]+) ([\d.]+)" width="([^"]+)" height="(\d+)"/);
+    assert.ok(m, 'SVG missing viewBox/width/height attributes');
+    const vbW = Number(m[1]);
+    const vbH = Number(m[2]);
+    const wNum = Number(m[3]);
+    const hNum = Number(m[4]);
+    return { vbW, vbH, w: m[3], wNum, hNum, visualScale: wNum ? (wNum / vbW) : 0 };
+  };
+  const tabZoom80 = parseSvgDims(renderStudioTabSvg(sg, { containerWidth: 1000, tabZoom: 80 }));
+  const tabZoom100 = parseSvgDims(renderStudioTabSvg(sg, { containerWidth: 1000, tabZoom: 100 }));
+  const tabZoom140 = parseSvgDims(renderStudioTabSvg(sg, { containerWidth: 1000, tabZoom: 140 }));
+  assert.ok(tabZoom140.visualScale > tabZoom100.visualScale && tabZoom100.visualScale > tabZoom80.visualScale, 'tabZoom must increase SVG visual scale (width / viewBoxW) monotonically');
+  assert.ok(tabZoom140.hNum > tabZoom100.hNum && tabZoom100.hNum > tabZoom80.hNum, 'tabZoom must scale SVG height monotonically');
+
+  const fb80 = parseSvgDims(renderStudioFretboardSvg(sg.tracks[0], { fretboardZoom: 80 }));
+  const fb140 = parseSvgDims(renderStudioFretboardSvg(sg.tracks[0], { fretboardZoom: 140 }));
+  assert.ok(fb140.hNum > fb80.hNum, 'fretboardZoom must scale fretboard SVG height');
+  assert.ok(fb140.wNum > 1240, 'fretboardZoom > 100% must emit expanded numeric SVG width');
+
+  const clampedPrefs = clampStudioPrefs({ tabZoom: 999, fretboardZoom: 10, detectSensitivityOffset: 99 });
+  assert.equal(clampedPrefs.tabZoom, 160);
+  assert.equal(clampedPrefs.fretboardZoom, 75);
+  assert.equal(clampedPrefs.detectSensitivityOffset, 5);
+
+  // E. Verified detection sensitivity baseline (Domyślna = 0 -> 0.58 / 0.42) & relative offset mapping
+  const baseSens = sensitivityOffsetToThresholds(0);
+  assert.equal(baseSens.offset, 0);
+  assert.equal(baseSens.thresholdOn, DEFAULT_DSP_THRESHOLD_ON);
+  assert.equal(baseSens.highThresholdOn, DEFAULT_DSP_HIGH_THRESHOLD_ON);
+  assert.equal(baseSens.thresholdOn, 0.58);
+  assert.equal(baseSens.highThresholdOn, 0.42);
+
+  const moreSens = sensitivityOffsetToThresholds(3);
+  const lessSens = sensitivityOffsetToThresholds(-3);
+  assert.ok(moreSens.thresholdOn < baseSens.thresholdOn && moreSens.highThresholdOn < baseSens.highThresholdOn, '+offset lowers threshold');
+  assert.ok(lessSens.thresholdOn > baseSens.thresholdOn && lessSens.highThresholdOn > baseSens.highThresholdOn, '-offset raises threshold');
+  assert.equal(thresholdToSensitivityOffset(0.58), 0);
+  assert.ok(thresholdToSensitivityOffset(0.49) > 0);
+  assert.ok(thresholdToSensitivityOffset(0.70) < 0);
+
+  console.log('[OK] Test 30: Songsterr TAB/audio (tied/w/bar/H/P/bend/vib/dyn), Zoom TAB+Gryfu oraz wrażliwość detekcji');
+}
+
+// 31. Bezkolizyjne pozycje/oktawy zaznaczenia, schowek Arpeggio/Sweep oraz tryb Uproszczony <-> Pro
+{
+  // A. Zaznaczenie fragmentu akordowo-melodycznego -> rozdzielenie tej samej oktawy i innych oktaw bez kolizji strun
+  const song = createEmptySong({ measureCount: 2, bpm: 120 });
+  song.tracks[0].measures[0].beats = [
+    createBeat({ duration: 0, isRest: false, notes: [
+      createTabNote({ string: 0, fret: 5, palmMute: true }), // A2 (45)
+      createTabNote({ string: 1, fret: 7, palmMute: true })  // E3 (52)
+    ] }),
+    createBeat({ duration: 0, isRest: false, notes: [
+      createTabNote({ string: 1, fret: 3 }), // C3 (48)
+      createTabNote({ string: 2, fret: 5 })  // G3 (55)
+    ] }),
+    createBeat({ duration: 0, isRest: false, notes: [createTabNote({ string: 1, fret: 5, hammerOn: true })] }), // D3 (50)
+    createBeat({ duration: 0, isRest: false, notes: [createTabNote({ string: 2, fret: 2, whammyPreset: 'dive_full' })] }) // E3 (52)
+  ];
+  const sel = { trackIdx: 0, anchor: { measureIdx: 0, beatIdx: 0 }, focus: { measureIdx: 0, beatIdx: 3 } };
+
+  const fullNeckAnalysis = analyzeSelectionPositionsAndOctaves(song, 0, sel, { maxFret: 24 });
+  assert.ok(fullNeckAnalysis.sameOctave.length >= 2, `Should offer >=2 collision-free same-octave positions, got ${fullNeckAnalysis.sameOctave.length}`);
+  for (const pos of [...fullNeckAnalysis.sameOctave, ...fullNeckAnalysis.allOctavePositions]) {
+    const byBeat = new Map();
+    for (const a of pos.assignments) {
+      const k = `${a.measureIdx}:${a.beatIdx}`;
+      if (!byBeat.has(k)) byBeat.set(k, new Set());
+      const used = byBeat.get(k);
+      assert.equal(used.has(a.newString), false, `String collision in ${pos.label} beat ${k}`);
+      used.add(a.newString);
+      assert.ok(a.newFret >= 0 && a.newFret <= 24);
+    }
+    assert.ok((pos.maxFret - pos.minFret) <= 7, `Span too wide in ${pos.label}: ${pos.minFret}-${pos.maxFret}`);
+  }
+  const octShifts24 = fullNeckAnalysis.octaveOptions.map(o => o.octaveShift);
+  assert.ok(octShifts24.includes(1) && octShifts24.includes(2), '+1 i +2 okt. muszą być wykryte przy gryfie 24 progów');
+  assert.equal(octShifts24.includes(-1), false, '-1 okt. poniżej E2 nie może być oferowana');
+
+  // Ograniczenie gryfu (np. maxDisplayedFret = 14) dynamicznie ogranicza wykryte oktawy (bez +2 okt.)
+  const shortNeckAnalysis = analyzeSelectionPositionsAndOctaves(song, 0, sel, { maxFret: 14 });
+  assert.equal(shortNeckAnalysis.octaveOptions.some(o => o.octaveShift >= 2), false, '+2 okt. (G5=próg 15) nie mieści się na 14 progach');
+  assert.ok(shortNeckAnalysis.allOctavePositions.every(p => p.maxFret <= 14));
+
+  // Bas 4-strunowy również wykrywa pozycje i oktawy bez kolizji strun (<4 struny)
+  const bassSong = createEmptySong({ measureCount: 1 });
+  const bIdx = addTrack(bassSong, 'bass');
+  bassSong.tracks[bIdx].measures[0].beats = [
+    createBeat({ duration: 0, isRest: false, notes: [
+      createTabNote({ string: 0, fret: 0 }), // E1 (28)
+      createTabNote({ string: 1, fret: 2 })  // B1 (35)
+    ] }),
+    createBeat({ duration: 0, isRest: false, notes: [createTabNote({ string: 1, fret: 5 })] }) // D2 (38)
+  ];
+  const bassSel = { trackIdx: bIdx, anchor: { measureIdx: 0, beatIdx: 0 }, focus: { measureIdx: 0, beatIdx: 1 } };
+  const bassAnalysis = analyzeSelectionPositionsAndOctaves(bassSong, bIdx, bassSel, { maxFret: 21 });
+  assert.ok(bassAnalysis.octaveOptions.some(o => o.octaveShift === 1), 'Bas 4-str. musi wykrywać +1 okt.');
+  assert.ok(bassAnalysis.allOctavePositions.every(p => p.assignments.every(a => a.newString < 4)));
+
+  // Przesunięcie w niemożliwy zakres (-12 półt. poniżej E2) NIE niszczy ani jednej nuty (atomowa odmowa)
+  const beforeSnap = JSON.stringify(song.tracks[0].measures[0]);
+  const badShift = shiftSelectionPitch(song, 0, sel, -12, { maxFret: 24 });
+  assert.equal(badShift.beatsChanged, 0);
+  assert.equal(badShift.outOfRange, true);
+  assert.equal(JSON.stringify(song.tracks[0].measures[0]), beforeSnap, 'Out-of-range shift must not partially mutate notes');
+
+  // Zastosowanie +1 okt. zachowuje techniki (palmMute, hammerOn, whammyPreset) i podnosi MIDI o +12
+  const oct1Pos = fullNeckAnalysis.octaveOptions.find(o => o.octaveShift === 1).positions[0];
+  assert.equal(applyPhrasePosition(song, 0, oct1Pos), 6);
+  const trG = song.tracks[0];
+  assert.equal(noteToMidi(trG, trG.measures[0].beats[0].notes[0]), 57);
+  assert.equal(noteToMidi(trG, trG.measures[0].beats[0].notes[1]), 64);
+  assert.equal(trG.measures[0].beats[0].notes[0].palmMute, true);
+  assert.equal(trG.measures[0].beats[2].notes[0].hammerOn, true);
+  assert.equal(trG.measures[0].beats[3].notes[0].whammyPreset, 'dive_full');
+
+  // B. Bezpośredni solver pojedynczego uderzenia odmawia kolizji (np. dwudźwięk niemożliwy na gryfie)
+  assert.equal(solveBeatFretAssignments(trG, [createTabNote({ string: 0, fret: 0 }), createTabNote({ string: 1, fret: 2 })], -12, { maxFret: 24 }), null);
+
+  // C. Mostek kopiowania z Arpeggio/Sweep (buildBeatsClipboardFromSteps -> pasteBeatsFromClipboard w istniejący utwór)
+  const sweepClip = buildBeatsClipboardFromSteps([
+    { notes: [{ string: 1, fret: 7, hammerOn: true, tap: true }], duration: 2, tupletNumerator: 6, tupletDenominator: 4, chordSymbol: 'Em' },
+    { s: 2, f: 9, tech: 'H', tapped: false, duration: 2, tupletNumerator: 6, tupletDenominator: 4 }
+  ], { label: 'Sweep Em' });
+  assert.equal(sweepClip.kind, 'beats');
+  assert.equal(sweepClip.label, 'Sweep Em');
+  assert.equal(sweepClip.beatCount, 2);
+  assert.equal(sweepClip.beats[0].notes[0].tap, true);
+  assert.equal(sweepClip.beats[0].tupletNumerator, 6);
+  const targetSong = createEmptySong({ measureCount: 2 });
+  setNoteAt(targetSong, 0, 0, 0, 0, 3);
+  const pasteRes = pasteBeatsFromClipboard(targetSong, sweepClip, { targetTrackIdx: 0, targetMeasureIdx: 1, targetBeatIdx: 0, mode: 'overwrite' });
+  assert.ok(pasteRes && pasteRes.pastedCount === 2);
+  assert.equal(getNoteAt(targetSong, 0, 0, 0, 0).fret, 3, 'Takty spoza miejsca wklejenia pozostają nietknięte');
+  assert.equal(getNoteAt(targetSong, 0, 1, 0, 1).tap, true);
+
+  // D. Tryb Uproszczony <-> Pro: rozwijanie powtórzeń na długość liniową + ukrywanie/odzyskiwanie danych Pro
+  const proDemo = createDemoSong('rock_riff_em'); // 8 taktów z |: T.1..T.4 :|| ×2 -> 12 taktów po rozwinięciu
+  assert.equal(hasProRepeatStructure(proDemo), true);
+  proDemo.tracks[0].measures[0].beats[0].pickStroke = 1;
+  proDemo.tracks[0].measures[0].beats[0].fermata = true;
+  proDemo.tracks[0].measures[0].beats[0].notes[0].graceNote = true;
+  proDemo.tracks[0].measures[0].beats[0].notes[0].trill = true;
+
+  const { linearSong, sourceMap } = expandSongToLinearMeasures(proDemo);
+  assert.equal(hasProRepeatStructure(linearSong), false, 'Rozwinięta wersja uproszczona nie ma znaków repetycji');
+  assert.equal(linearSong.tracks[0].measures.length, 12, '4 takty powtórzone ×2 + 4 takty = 12 taktów');
+
+  const baselineLinear = JSON.parse(JSON.stringify(linearSong));
+  // Edytujemy w trybie Uproszczonym takt 1 oraz odpowiadające mu powtórzenie (takt 5), nie dotykając taktu 0
+  setNoteAt(linearSong, 0, 1, 0, 0, 10);
+  setNoteAt(linearSong, 0, 5, 0, 0, 10);
+  const reconciled = reconcileLinearEditsIntoProSong(proDemo, linearSong, sourceMap, baselineLinear);
+  assert.equal(reconciled.foldedToPro, true);
+  assert.equal(reconciled.song.tracks[0].measures.length, 8, 'Powrót do Pro zwija pętlę z powrotem do 8 taktów');
+  assert.equal(reconciled.song.tracks[0].measures[0].repeatOpen, true);
+  assert.equal(reconciled.song.tracks[0].measures[3].repeatClose, 2);
+  assert.equal(reconciled.song.tracks[0].measures[1].beats[0].notes[0].fret, 10, 'Edycje z trybu Uproszczonego zachowane');
+  assert.equal(reconciled.song.tracks[0].measures[0].beats[0].pickStroke, 1, 'pickStroke z trybu Pro przetrwał');
+  assert.equal(reconciled.song.tracks[0].measures[0].beats[0].fermata, true, 'fermata z trybu Pro przetrwała');
+  assert.equal(reconciled.song.tracks[0].measures[0].beats[0].notes[0].trill, true, 'trill z trybu Pro przetrwał');
+
+  const simpleSvg = renderStudioTabSvg(proDemo, { uiMode: 'simple', viewMode: 'tab', containerWidth: 960 });
+  const proSvg = renderStudioTabSvg(proDemo, { uiMode: 'pro', viewMode: 'tab', containerWidth: 960 });
+  assert.equal(simpleSvg.includes('×2'), false, 'Tryb Uproszczony chowa oznaczenia powtórzeń');
+  assert.equal(simpleSvg.includes('𝄐'), false, 'Tryb Uproszczony chowa fermatę Pro');
+  assert.ok(proSvg.includes('×2') && proSvg.includes('⊓') && proSvg.includes('𝄐'), 'Tryb Pro wyświetla pełne oznaczenia');
+
+  const palSimple = renderStudioPaletteHtml({
+    uiMode: 'simple',
+    track: linearSong.tracks[0],
+    beat: linearSong.tracks[0].measures[0].beats[0],
+    note: linearSong.tracks[0].measures[0].beats[0].notes[0],
+    measure: linearSong.tracks[0].measures[0],
+    clipboard: sweepClip,
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 0 }
+  });
+  assert.equal(palSimple.includes('struct:repeatOpen'), false);
+  assert.equal(palSimple.includes('prompt:repeatClose'), false);
+  assert.ok(palSimple.includes('Sweep Em'), 'Tooltip Wklej informuje o skopiowanej sekwencji Sweep/Arpeggio');
+
+  const palPro = renderStudioPaletteHtml({
+    uiMode: 'pro',
+    track: proDemo.tracks[0],
+    beat: proDemo.tracks[0].measures[0].beats[0],
+    note: proDemo.tracks[0].measures[0].beats[0].notes[0],
+    measure: proDemo.tracks[0].measures[0],
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 0 }
+  });
+  assert.ok(palPro.includes('struct:repeatOpen') && palPro.includes('🔁|:') && palPro.includes(':||🔁'));
+
+  const serSimple = serializeStudioSong(linearSong, { uiMode: 'simple' }, { proBackup: { song: proDemo, sourceMap } });
+  const deserSimple = deserializeStudioSong(serSimple);
+  assert.ok(deserSimple.proBackup && deserSimple.proBackup.song.tracks[0].measures.length === 8);
+
+  console.log('[OK] Test 31: Pozycje/oktawy zaznaczenia bez kolizji, kopiowanie Sweep/Arp oraz zgodność Uproszczony <-> Pro');
+}
+
+// 32. Zapamiętywanie wartości rytmicznej (1/16), Wajcha tylko w Pro, Przedłużenie dźwięku na pustym uderzeniu i dokładna synchronizacja Playhead
+{
+  const s32 = createEmptySong({ measureCount: 1, numerator: 4, denominator: 4 });
+  // Ustaw tymczasowo 2 uderzenia w pierwszym takcie, aby przetestować wypełnianie niedopełnionego taktu 4/4 szesnastkami
+  s32.tracks[0].measures[0].beats = [createBeat({ duration: 0, isRest: true }), createBeat({ duration: 0, isRest: true })];
+  const ui32 = {
+    song: s32,
+    history: createStudioHistory(20),
+    activeTrackIdx: 0,
+    cursor: { measureIdx: 0, beatIdx: 0, stringIdx: 0 },
+    activeDuration: null,
+    fretInputMode: 'edit',
+    studioPrefs: { uiMode: 'simple' },
+    loopEnabled: false,
+    loopStart: 0,
+    loopEnd: 0,
+    clipboard: null,
+    clipboardScope: 'track',
+    clipboardPasteMode: 'overwrite',
+    selectionStart: null,
+    selectionEnd: null,
+    beatSelection: null,
+    inlinePrompt: null,
+    cmdPalette: { open: false, query: '', selectedIdx: 0 }
+  };
+  const ctrl32 = createStudioInputController({
+    getState: () => ui32,
+    pushUndo: () => ui32.history.push(ui32.song),
+    onSongChanged: () => {},
+    onRender: () => {}
+  });
+
+  // A. Wybór 1/16 (dur:2) zostaje zapamiętany dla kolejnych nut, pustych pól, +B i nowego taktu
+  assert.equal(ctrl32.executeCommand('dur:2'), true);
+  assert.equal(ui32.activeDuration, 2);
+  assert.equal(s32.tracks[0].measures[0].beats[0].duration, 2);
+  assert.equal(s32.tracks[0].measures[0].beats[1].duration, 2, 'Sąsiednia pusta pauza przejmuje 1/16');
+
+  // Wpisanie cyfry progu na 1. i przesunięcie strzałką w prawo na kolejne sloty
+  ctrl32.handleKeyDown({ key: '5', ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, preventDefault() {} });
+  ctrl32.handleKeyDown({ key: 'ArrowRight', ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, preventDefault() {} });
+  assert.equal(ui32.cursor.beatIdx, 1);
+  assert.equal(s32.tracks[0].measures[0].beats[1].duration, 2);
+  ctrl32.handleKeyDown({ key: '7', ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, preventDefault() {} });
+  ctrl32.handleKeyDown({ key: 'ArrowRight', ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, preventDefault() {} });
+  assert.equal(ui32.cursor.measureIdx, 0, 'Niedopełniony takt 4/4 dopisuje 3. slot szesnastkowy zamiast wracać do 1/4');
+  assert.equal(ui32.cursor.beatIdx, 2);
+  assert.equal(s32.tracks[0].measures[0].beats[2].duration, 2);
+
+  // Kliknięcie gryfu + "+B" + nowy takt również zachowują 1/16
+  ctrl32.handleFretClick(0, 9);
+  ctrl32.executeCommand('edit:insertBeat');
+  assert.equal(s32.tracks[0].measures[0].beats[ui32.cursor.beatIdx].duration, 2);
+  ctrl32.executeCommand('struct:addAfter');
+  assert.equal(s32.tracks[0].measures[1].beats[0].duration, 2, 'Nowy takt po wyborze 1/16 zaczyna się od 1/16');
+  assert.equal(s32.tracks[0].measures[1].beats.length, 16, 'Pełny takt 4/4 w trybie 1/16 ma 16 slotów');
+
+  const palStickyHtml = renderStudioPaletteHtml({
+    uiMode: 'simple',
+    track: s32.tracks[0],
+    beat: s32.tracks[0].measures[1].beats[0],
+    note: null,
+    measure: s32.tracks[0].measures[1],
+    cursor: ui32.cursor,
+    activeDuration: ui32.activeDuration
+  });
+  assert.ok(palStickyHtml.includes('class="studio-pal-btn active" data-action="palette-cmd" data-cmd="dur:2"'), 'Paleta utrzymuje podświetlenie 1/16');
+
+  // B. Tryb uproszczony blokuje Wajchę, a pozwala na Przedłużenie dźwięku na pustym uderzeniu (tieOrExtendPreviousNote)
+  setNoteAt(s32, 0, 1, 0, 0, 5);
+  ui32.cursor = { measureIdx: 1, beatIdx: 0, stringIdx: 0 };
+  assert.equal(ctrl32.executeCommand('whammy:dive_full'), false, 'Wajcha zablokowana w trybie uproszczonym');
+  ui32.studioPrefs.uiMode = 'pro';
+  assert.equal(ctrl32.executeCommand('whammy:dive_full'), true, 'Wajcha dostępna w trybie Pro');
+  ui32.studioPrefs.uiMode = 'simple';
+
+  // Przesuń kursor na puste uderzenie B.1 po nucie z B.0 i wciśnij Przedłuż (effect:tied / L)
+  ui32.cursor = { measureIdx: 1, beatIdx: 1, stringIdx: 0 };
+  assert.equal(ctrl32.executeCommand('effect:tied'), true);
+  const extNote = getNoteAt(s32, 0, 1, 1, 0);
+  assert.ok(extNote && extNote.fret === 5 && extNote.tied === true, 'Puste pole przedłuża poprzednią nutę z tie=true');
+
+  // Przedłużenie działa również przez granicę taktu i dla całego akordu na pustym uderzeniu
+  const tieSong = createEmptySong({ measureCount: 2, numerator: 4, denominator: 4 });
+  const bar0LastIdx = tieSong.tracks[0].measures[0].beats.length - 1;
+  setNoteAt(tieSong, 0, 0, bar0LastIdx, 0, 3);
+  setNoteAt(tieSong, 0, 0, bar0LastIdx, 1, 5);
+  const crossRes = tieOrExtendPreviousNote(tieSong, 0, 1, 0, 2, 1);
+  assert.equal(crossRes.changed, true);
+  assert.equal(crossRes.extended, true);
+  assert.equal(getNoteAt(tieSong, 0, 1, 0, 0).tied, true);
+  assert.equal(getNoteAt(tieSong, 0, 1, 0, 1).tied, true, 'Cały akord przeniesiony i połączony łukiem przez granicę taktu');
+  const tieSvg = renderStudioTabSvg(tieSong, { uiMode: 'simple', viewMode: 'tab', containerWidth: 920 });
+  assert.ok(tieSvg.includes('studio-tie-arc'), 'Przedłużony dźwięk rysuje łuk Tie w SVG');
+  const tieEvs = buildBeatEventsForTrack(tieSong, 0);
+  assert.equal(tieEvs.length, 1, 'Połączony akord gra jako jedno ciągłe zdarzenie audio');
+  assert.ok(tieEvs[0].notes.every(n => Math.abs(n.tieExtraQ - 0.5) < 1e-5));
+
+  // C. Dokładna synchronizacja Playhead (linii przechodzącej) z pozycjami nut `beatsCx` w pełnym i niedopełnionym takcie
+  const syncSong = createEmptySong({ bpm: 120, measureCount: 1, numerator: 4, denominator: 4 });
+  // Dwie krótkie szesnastki w takcie 4/4 (tak jak podczas komponowania niedopełnionego taktu)
+  syncSong.tracks[0].measures[0].beats = [
+    createBeat({ duration: 2, isRest: false, notes: [createTabNote({ string: 0, fret: 5 })] }),
+    createBeat({ duration: 2, isRest: false, notes: [createTabNote({ string: 0, fret: 7 })] })
+  ];
+  const syncSvg = renderStudioTabSvg(syncSong, { uiMode: 'simple', viewMode: 'tab', containerWidth: 900 });
+  const boundsMatch = syncSvg.match(/data-beats-cx="([^"]+)"\s+data-inner-right="([^"]+)"/);
+  assert.ok(boundsMatch, 'SVG musi emitować dokładne pozycje nut data-beats-cx');
+  const parsedCx = boundsMatch[1].split(',').map(Number);
+  const parsedInnerRight = Number(boundsMatch[2]);
+  assert.equal(parsedCx.length, 2);
+
+  let fakeSec = 0;
+  let lastPosEv = null;
+  const syncPlayer = createStudioPlayer({
+    host: { ensureAudioCtx: () => null, pluckGuitarFrequency: () => {}, playMetronomeTickAudio: () => {}, stopAllPreviewVoices: () => {} },
+    clockFn: () => fakeSec,
+    onPositionChange: (p) => { lastPosEv = p; }
+  });
+  syncPlayer.loadSong(syncSong, 0);
+  syncPlayer.play();
+  // T=0 -> nuta 0 (beatProgress=0) -> px musi trafiać dokładnie w środek nuty 0 (parsedCx[0])
+  assert.equal(lastPosEv.beatIdx, 0);
+  assert.ok(Math.abs(lastPosEv.beatProgress - 0) < 1e-6);
+  const pxBeat0 = computePlayheadXForMeasure({
+    beatsCx: parsedCx, innerRight: parsedInnerRight, barX: 60, barW: 500,
+    beatIdx: lastPosEv.beatIdx, beatProgress: lastPosEv.beatProgress, barProgress: lastPosEv.progress
+  });
+  assert.ok(Math.abs(pxBeat0 - parsedCx[0]) < 0.05, `Playhead beat 0 (${pxBeat0}) musi trafiać w cx[0] (${parsedCx[0]})`);
+
+  // T=0.125 s przy 120 BPM (= 0.25 Q = początek nuty 1) -> px musi być dokładnie w cx[1]!
+  fakeSec = 0.125;
+  syncPlayer.stepSchedulerForTest(fakeSec);
+  assert.equal(lastPosEv.beatIdx, 1);
+  assert.ok(Math.abs(lastPosEv.beatProgress - 0) < 1e-6);
+  const pxBeat1 = computePlayheadXForMeasure({
+    beatsCx: parsedCx, innerRight: parsedInnerRight, barX: 60, barW: 500,
+    beatIdx: lastPosEv.beatIdx, beatProgress: lastPosEv.beatProgress, barProgress: lastPosEv.progress
+  });
+  assert.ok(Math.abs(pxBeat1 - parsedCx[1]) < 0.05, `Playhead beat 1 (${pxBeat1}) musi trafiać dokładnie w cx[1] (${parsedCx[1]})`);
+
+  // Weryfikacja seekTo na drugie uderzenie w trakcie odtwarzania
+  syncPlayer.pause();
+  syncPlayer.seekTo(0, 1);
+  syncPlayer.play();
+  assert.equal(lastPosEv.beatIdx, 1, 'seekTo(0, 1) musi wznawiać dokładnie od 2. uderzenia');
+  syncPlayer.destroy();
+
+  console.log('[OK] Test 32: Zapamiętywanie 1/16, Wajcha w Pro, Przedłużenie dźwięku i synchronizacja Playhead');
+}
+
+console.log('\nWszystkie testy Studio TAB (32/32) zakończone sukcesem!');

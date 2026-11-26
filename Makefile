@@ -16,6 +16,7 @@ LIB_SRCS := \
     libs/theory/src/Arpeggio.cpp \
     libs/score/src/Score.cpp \
     libs/score/src/StudioJsonCodec.cpp \
+    libs/score/src/UserLibrary.cpp \
     libs/dsp/src/SignalConditioner.cpp \
     libs/dsp/src/PitchDetector.cpp \
     libs/dsp/src/OnsetDetector.cpp \

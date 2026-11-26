@@ -317,30 +317,38 @@ ChordProgression expandThroughAll12Keys(const ChordProgression& prog) {
         return out;
     }
 
-    const auto baseSection = prog.sections.front();
+    const auto origSections = prog.sections;
     out.sections.clear();
 
     // Przejście po kole kwart (co +5 półtonów: C, F, Bb, Eb, Ab, Db, Gb, B, E, A, D, G)
     for (int k = 0; k < 12; ++k) {
         int semiShift = (k * 5) % 12;
         Note currentKey = Note::fromPitchClass((prog.keyRoot.pitchClass() + semiShift) % 12);
-        ProgressionSection sec = baseSection;
-        sec.name = currentKey.toString(true);
-        for (auto& m : sec.measures) {
-            for (auto& slot : m.chords) {
-                int newSemi = (slot.rootOffsetFromKey.semitones + semiShift) % 12;
-                slot.rootOffsetFromKey = intervalFromSemitones(newSemi);
+        for (const auto& baseSec : origSections) {
+            ProgressionSection sec = baseSec;
+            sec.name = origSections.size() > 1
+                ? (currentKey.toString(true) + " · " + baseSec.name)
+                : currentKey.toString(true);
+            for (auto& m : sec.measures) {
+                for (auto& slot : m.chords) {
+                    int newSemi = (slot.rootOffsetFromKey.semitones + semiShift) % 12;
+                    slot.rootOffsetFromKey = intervalFromSemitones(newSemi);
+                }
             }
+            out.sections.push_back(std::move(sec));
         }
-        out.sections.push_back(std::move(sec));
     }
 
     return out;
 }
 
 gitara::score::Song generateBackingTrackSong(
-    const ChordProgression& prog,
+    const ChordProgression& inputProg,
     gitara::theory::AccidentalMode mode) {
+    const ChordProgression prog = (inputProg.cycleThroughKeys && inputProg.sections.size() < 12)
+        ? expandThroughAll12Keys(inputProg)
+        : inputProg;
+
     gitara::score::Song song{};
     song.title = prog.title;
     song.tempoBpm = prog.tempoBpm;
@@ -356,6 +364,11 @@ gitara::score::Song generateBackingTrackSong(
     bassTrack.midiChannel = 1;
     bassTrack.midiProgram = 33; // Electric Bass (finger)
     bassTrack.tuning = gitara::theory::findTuning("standard");
+
+    const auto beatDur = (prog.denominator == 2) ? gitara::score::DurationValue::Half
+                       : (prog.denominator == 8) ? gitara::score::DurationValue::Eighth
+                       : (prog.denominator == 16) ? gitara::score::DurationValue::Sixteenth
+                       : gitara::score::DurationValue::Quarter;
 
     for (const auto& sec : prog.sections) {
         const int repeats = std::max(1, sec.repeatCount);
@@ -378,19 +391,20 @@ gitara::score::Song generateBackingTrackSong(
                     : pm.chords.front().resolveInKey(prog.keyRoot, mode);
 
                 auto voicings = guitarFb.generateChordVoicings(activeChord, false);
-                const auto chordNotes = activeChord.notes(mode);
+                auto chordNotes = activeChord.notes(mode);
 
-                // 4 ćwierćnuty w takcie: akompaniament + linia kroczącego basu (pryma -> tercja -> kwinta -> dźwięk prowadzący)
+                // Uderzenia wg metrum taktu: akompaniament + linia kroczącego basu
                 for (int beatIdx = 0; beatIdx < prog.numerator; ++beatIdx) {
                     for (const auto& slot : pm.chords) {
                         if (slot.beatIndex == beatIdx) {
                             activeChord = slot.resolveInKey(prog.keyRoot, mode);
                             voicings = guitarFb.generateChordVoicings(activeChord, false);
+                            chordNotes = activeChord.notes(mode);
                         }
                     }
 
                     gitara::score::Beat compBeat{};
-                    compBeat.duration = gitara::score::DurationValue::Quarter;
+                    compBeat.duration = beatDur;
                     if (!voicings.empty()) {
                         const auto& v = voicings.front();
                         for (std::size_t s = 0; s < v.frets.size(); ++s) {
@@ -404,7 +418,7 @@ gitara::score::Song generateBackingTrackSong(
 
                     // Kroczący bas na najniższych strunach (E2 / A2)
                     gitara::score::Beat bassBeat{};
-                    bassBeat.duration = gitara::score::DurationValue::Quarter;
+                    bassBeat.duration = beatDur;
                     int targetPc = activeChord.root.pitchClass();
                     if (!chordNotes.empty()) {
                         targetPc = chordNotes[static_cast<std::size_t>(beatIdx) % chordNotes.size()].pitchClass();
@@ -422,7 +436,9 @@ gitara::score::Song generateBackingTrackSong(
         }
     }
 
-    song.tracks.push_back(std::move(compTrack));
+    if (prog.rhythmGuitarEnabled) {
+        song.tracks.push_back(std::move(compTrack));
+    }
     if (prog.backingBandEnabled) {
         song.tracks.push_back(std::move(bassTrack));
     }
