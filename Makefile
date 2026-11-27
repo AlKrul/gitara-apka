@@ -43,7 +43,8 @@ PLATFORM_CORE_SRCS := \
 
 APP_HOST_SRCS := \
     app/platform/AutoUpdater.cpp \
-    app/platform/WindowsHost.cpp
+    app/platform/WindowsHost.cpp \
+    app/platform/EmbeddedAssetsGlobal.cpp
 
 BUILD_DIR := build
 

@@ -3,16 +3,6 @@
 #include <algorithm>
 #include <cstring>
 
-#if defined(GITARA_EMBEDDED_ASSETS) && defined(_WIN32)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-#endif
-
 namespace gitara::platform {
 namespace {
 
@@ -105,53 +95,6 @@ std::optional<EmbeddedAssetView> EmbeddedAssetPack::find(std::string_view urlPat
         return EmbeddedAssetView{it->body, it->mime};
     }
     return std::nullopt;
-}
-
-#if defined(GITARA_EMBEDDED_ASSETS) && !defined(_WIN32)
-#if defined(GITARA_EMBEDDED_ASSETS_CPP)
-extern "C" {
-const std::uint8_t* gitara_assets_pak_data() noexcept;
-std::size_t gitara_assets_pak_size() noexcept;
-}
-#else
-extern "C" {
-extern const std::uint8_t gitara_assets_pak_start[];
-extern const std::uint8_t gitara_assets_pak_end[];
-}
-#endif
-#endif
-
-const EmbeddedAssetPack& globalEmbeddedAssets() {
-    static const EmbeddedAssetPack pack = []() {
-        EmbeddedAssetPack p;
-#if defined(GITARA_EMBEDDED_ASSETS)
-#if defined(_WIN32)
-        if (HRSRC res = ::FindResourceW(nullptr, MAKEINTRESOURCEW(101), RT_RCDATA)) {
-            if (HGLOBAL hData = ::LoadResource(nullptr, res)) {
-                const auto* bytes = static_cast<const std::uint8_t*>(::LockResource(hData));
-                const DWORD sz = ::SizeofResource(nullptr, res);
-                if (bytes != nullptr && sz > 0) {
-                    p.parse(bytes, static_cast<std::size_t>(sz));
-                }
-            }
-        }
-#elif defined(GITARA_EMBEDDED_ASSETS_CPP)
-        const std::uint8_t* bytes = gitara_assets_pak_data();
-        const std::size_t sz = gitara_assets_pak_size();
-        if (bytes != nullptr && sz > 0) {
-            p.parse(bytes, sz);
-        }
-#else
-        const std::uintptr_t startAddr = reinterpret_cast<std::uintptr_t>(gitara_assets_pak_start);
-        const std::uintptr_t endAddr = reinterpret_cast<std::uintptr_t>(gitara_assets_pak_end);
-        if (endAddr > startAddr) {
-            p.parse(gitara_assets_pak_start, static_cast<std::size_t>(endAddr - startAddr));
-        }
-#endif
-#endif
-        return p;
-    }();
-    return pack;
 }
 
 } // namespace gitara::platform

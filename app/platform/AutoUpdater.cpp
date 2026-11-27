@@ -706,7 +706,7 @@ AutoUpdateOutcome runPreLaunchAutoUpdate(const AutoUpdateOptions& opts) {
     wc.cbSize = sizeof(wc);
     wc.lpfnWndProc = splashWndProc;
     wc.hInstance = hInst;
-    wc.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
+    wc.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512)); // IDC_ARROW (wariant W bez UNICODE)
     wc.lpszClassName = L"ApkaGitarowaUpdaterSplash";
     ::RegisterClassExW(&wc);
 

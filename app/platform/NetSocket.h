@@ -7,6 +7,10 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+// Bez GDI: windows.h deklaruje funkcje Chord()/Arc()/Pie() kolidujace z gitara::theory::Chord.
+#ifndef NOGDI
+#define NOGDI
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>

@@ -139,7 +139,7 @@ target_compile_options(gitara_platform_core PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:$<IF:$<CXX_COMPILER_ID:MSVC>,/W4,-Wall -Wextra>>
 )
 if(WIN32)
-    target_link_libraries(gitara_platform_core PUBLIC shell32 ole32)
+    target_link_libraries(gitara_platform_core PUBLIC shell32 ole32 uuid)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -241,6 +241,7 @@ elseif(GITARA_BUILD_DESKTOP_APP)
         app/Main.cpp
         app/platform/AutoUpdater.cpp
         app/platform/WindowsHost.cpp
+        app/platform/EmbeddedAssetsGlobal.cpp
         "${GITARA_EMBED_FILE}"
     )
     if(WIN32)

@@ -116,6 +116,7 @@ def render_rc_embed(
     ver_str = f"{v0}.{v1}.{v2}.{v3}"
     pak_posix = pak_path.resolve().as_posix().replace('"', '\\"')
     lines = [
+        "// Apka Gitarowa - zasoby generowane przez tools/pack_assets.py",
         "#pragma code_page(65001)",
         "#include <winver.h>",
         "",
