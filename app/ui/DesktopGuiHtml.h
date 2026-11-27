@@ -22603,6 +22603,28 @@ window.__gitaraStudioHost = {
   },
   refreshAfterLibraryImport: () => { syncAllUserLibrariesIntoState(); }
 };
+
+(() => {
+  let closingSent = false;
+  const pingBeat = () => {
+    fetch('/api/heartbeat', { method: 'POST', cache: 'no-store' }).catch(() => {});
+  };
+  const sendClosing = () => {
+    if (closingSent) return;
+    closingSent = true;
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/closing');
+        return;
+      }
+    } catch (_) {}
+    fetch('/api/closing', { method: 'POST', keepalive: true }).catch(() => {});
+  };
+  pingBeat();
+  setInterval(pingBeat, 3000);
+  window.addEventListener('pagehide', sendClosing);
+  window.addEventListener('beforeunload', sendClosing);
+})();
 </script>
 <input id="globalLibraryFileInput" type="file" accept=".json,.gitara.json,.gitara-sweep.json,.gitara-prog.json,.gitara-tab.json,.gitara-studio.json,.gitara-pack.json,application/json" style="display:none;" onchange="onGlobalLibraryFileSelected(this)">
 </body>

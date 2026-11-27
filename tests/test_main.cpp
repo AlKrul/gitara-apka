@@ -1,3 +1,6 @@
+#include "app/platform/AppPaths.h"
+#include "app/platform/EmbeddedAssets.h"
+#include "app/platform/UpdateLogic.h"
 #include "gitara/dsp/ChordDetector.h"
 #include "gitara/dsp/GuitarNoteEngine.h"
 #include "gitara/dsp/KarplusStrongSynth.h"
@@ -24,6 +27,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <numbers>
 #include <set>
@@ -1372,6 +1376,195 @@ void testUserLibraryPersistenceAndSecurity() {
     std::filesystem::remove_all(tmpRoot, ec);
 }
 
+void testPlatformUpdaterAndEmbeddedAssets() {
+    using namespace gitara::platform;
+
+    // 1. Wektory testowe SHA-256 (NIST FIPS 180-4)
+    CHECK(sha256Hex("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    CHECK(sha256Hex("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    CHECK(sha256Hex("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq") ==
+          "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
+
+    // Wielokawałkowe hashowanie 100 KB strumienia
+    const std::string bigData(100000, 'a');
+    const std::string expectedBig = sha256Hex(bigData);
+    Sha256 streamed;
+    std::size_t off = 0;
+    const std::size_t chunkLens[] = {1, 7, 63, 64, 65, 513, 4096};
+    std::size_t ci = 0;
+    while (off < bigData.size()) {
+        const std::size_t take = std::min(chunkLens[ci % 7], bigData.size() - off);
+        streamed.update(bigData.data() + off, take);
+        off += take;
+        ++ci;
+    }
+    CHECK(streamed.finalHex() == expectedBig);
+
+    // 2. Parser manifest.json
+    const std::string validCommit = "0123456789abcdef0123456789abcdef01234567";
+    const std::string newerCommit = "fedcba9876543210fedcba9876543210fedcba98";
+    const std::string validSha = "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90";
+    const std::string validUrl = "https://github.com/AlKrul/gitara-apka/releases/download/latest/ApkaGitarowa.exe";
+    const std::string manifestJson =
+        "{\n"
+        "  \"schema\": 1,\n"
+        "  \"version\": \"0.1.0\",\n"
+        "  \"commit\": \"" + newerCommit + "\",\n"
+        "  \"shortCommit\": \"fedcba9\",\n"
+        "  \"builtAt\": \"2026-11-27T00:00:00Z\",\n"
+        "  \"assetName\": \"ApkaGitarowa.exe\",\n"
+        "  \"downloadUrl\": \"" + validUrl + "\",\n"
+        "  \"sha256\": \"" + validSha + "\",\n"
+        "  \"size\": 4567890\n"
+        "}\n";
+    auto parsed = parseUpdateManifest(manifestJson);
+    CHECK(parsed.has_value());
+    if (parsed.has_value()) {
+        CHECK(parsed->schema == 1);
+        CHECK(parsed->version == "0.1.0");
+        CHECK(parsed->commit == newerCommit);
+        CHECK(parsed->downloadUrl == validUrl);
+        CHECK(parsed->sha256 == validSha);
+        CHECK(parsed->size == 4567890ull);
+    }
+
+    CHECK(!parseUpdateManifest("{\"schema\":2,\"version\":\"0.1.0\",\"commit\":\"" + newerCommit + "\",\"downloadUrl\":\"" + validUrl + "\",\"sha256\":\"" + validSha + "\"}").has_value());
+    CHECK(!parseUpdateManifest("{\"schema\":1,\"version\":\"0.1.0\",\"downloadUrl\":\"" + validUrl + "\"}").has_value());
+    CHECK(!parseUpdateManifest("not json").has_value());
+    CHECK(!parseUpdateManifest("{\"schema\":1,\"version\":\"0.1.0\",}").has_value());
+
+    // 3. Walidacja adresów pobierania
+    CHECK(isAllowedDownloadUrl(validUrl, "AlKrul/gitara-apka"));
+    CHECK(isAllowedDownloadUrl("https://github.com/alkrul/GITARA-APKA/releases/latest/download/ApkaGitarowa.exe", "AlKrul/gitara-apka"));
+    CHECK(isAllowedDownloadUrl("https://objects.githubusercontent.com/github-production-release-asset/12345", "AlKrul/gitara-apka"));
+    CHECK(!isAllowedDownloadUrl("http://github.com/AlKrul/gitara-apka/releases/download/latest/ApkaGitarowa.exe", "AlKrul/gitara-apka"));
+    CHECK(!isAllowedDownloadUrl("https://github.com/OtherUser/gitara-apka/releases/download/latest/ApkaGitarowa.exe", "AlKrul/gitara-apka"));
+    CHECK(!isAllowedDownloadUrl("https://github.com.evil.com/AlKrul/gitara-apka/releases/download/latest/ApkaGitarowa.exe", "AlKrul/gitara-apka"));
+    CHECK(!isAllowedDownloadUrl("https://user@github.com/AlKrul/gitara-apka/releases/download/latest/ApkaGitarowa.exe", "AlKrul/gitara-apka"));
+    CHECK(!isAllowedDownloadUrl("https://evil.example/ApkaGitarowa.exe", "AlKrul/gitara-apka"));
+
+    // 4. Decyzje auto-update
+    CHECK(parsed.has_value());
+    if (parsed.has_value()) {
+        CHECK(evaluateUpdate("dev", *parsed, "AlKrul/gitara-apka", false) == UpdateCheckDecision::SkippedDevBuild);
+        CHECK(evaluateUpdate("dev", *parsed, "AlKrul/gitara-apka", true) == UpdateCheckDecision::UpdateAvailable);
+        CHECK(evaluateUpdate(validCommit, *parsed, "AlKrul/gitara-apka") == UpdateCheckDecision::UpdateAvailable);
+        CHECK(evaluateUpdate(newerCommit, *parsed, "AlKrul/gitara-apka") == UpdateCheckDecision::UpToDate);
+        CHECK(evaluateUpdate("FEDCBA9876543210FEDCBA9876543210FEDCBA98", *parsed, "AlKrul/gitara-apka") == UpdateCheckDecision::UpToDate);
+
+        UpdateManifest badSha = *parsed;
+        badSha.sha256 = "abcd";
+        CHECK(evaluateUpdate(validCommit, badSha, "AlKrul/gitara-apka") == UpdateCheckDecision::InvalidManifest);
+
+        UpdateManifest badHost = *parsed;
+        badHost.downloadUrl = "https://evil.example/ApkaGitarowa.exe";
+        CHECK(evaluateUpdate(validCommit, badHost, "AlKrul/gitara-apka") == UpdateCheckDecision::InvalidManifest);
+    }
+
+    // 5. Parser GITAPAK1 dla zasobów wbudowanych
+    auto appendU32 = [](std::vector<std::uint8_t>& buf, std::uint32_t v) {
+        buf.push_back(static_cast<std::uint8_t>(v & 0xffu));
+        buf.push_back(static_cast<std::uint8_t>((v >> 8) & 0xffu));
+        buf.push_back(static_cast<std::uint8_t>((v >> 16) & 0xffu));
+        buf.push_back(static_cast<std::uint8_t>((v >> 24) & 0xffu));
+    };
+    auto appendU64 = [](std::vector<std::uint8_t>& buf, std::uint64_t v) {
+        for (int i = 0; i < 8; ++i) {
+            buf.push_back(static_cast<std::uint8_t>((v >> (i * 8)) & 0xffu));
+        }
+    };
+    auto appendStr = [](std::vector<std::uint8_t>& buf, std::string_view s) {
+        buf.insert(buf.end(), s.begin(), s.end());
+    };
+
+    const std::string p1 = "/index.html";
+    const std::string m1 = "text/html; charset=utf-8";
+    const std::string d1 = "<html>ok</html>";
+    const std::string p2 = "/web/test.js";
+    const std::string m2 = "application/javascript; charset=utf-8";
+    const std::string d2 = "export const x = 42;";
+
+    const std::uint64_t tocBytes =
+        (4 + p1.size() + 4 + m1.size() + 16) +
+        (4 + p2.size() + 4 + m2.size() + 16);
+    const std::uint64_t off1 = 12 + tocBytes;
+    const std::uint64_t off2 = off1 + d1.size();
+
+    std::vector<std::uint8_t> pak;
+    appendStr(pak, "GITAPAK1");
+    appendU32(pak, 2);
+    appendU32(pak, static_cast<std::uint32_t>(p1.size()));
+    appendStr(pak, p1);
+    appendU32(pak, static_cast<std::uint32_t>(m1.size()));
+    appendStr(pak, m1);
+    appendU64(pak, off1);
+    appendU64(pak, d1.size());
+    appendU32(pak, static_cast<std::uint32_t>(p2.size()));
+    appendStr(pak, p2);
+    appendU32(pak, static_cast<std::uint32_t>(m2.size()));
+    appendStr(pak, m2);
+    appendU64(pak, off2);
+    appendU64(pak, d2.size());
+    appendStr(pak, d1);
+    appendStr(pak, d2);
+
+    EmbeddedAssetPack pack;
+    CHECK(pack.parse(pak.data(), pak.size()));
+    CHECK(pack.count() == 2);
+    auto v1 = pack.find("/index.html");
+    CHECK(v1.has_value() && v1->body == d1 && v1->mime == m1);
+    auto v2 = pack.find("/web/test.js");
+    CHECK(v2.has_value() && v2->body == d2 && v2->mime == m2);
+    CHECK(!pack.find("/missing.js").has_value());
+
+    // Uszkodzone paczki musza byc bezpiecznie odrzucane
+    std::vector<std::uint8_t> badMagic = pak;
+    badMagic[0] = 'X';
+    CHECK(!pack.parse(badMagic.data(), badMagic.size()));
+    CHECK(pack.empty());
+
+    std::vector<std::uint8_t> truncated(pak.begin(), pak.begin() + 14);
+    CHECK(!pack.parse(truncated.data(), truncated.size()));
+
+    std::vector<std::uint8_t> hugeCount = pak;
+    hugeCount[8] = 0xff;
+    hugeCount[9] = 0xff;
+    hugeCount[10] = 0xff;
+    hugeCount[11] = 0x7f;
+    CHECK(!pack.parse(hugeCount.data(), hugeCount.size()));
+
+    // 6. Rozwiazywanie sciezek aplikacji
+    std::error_code ec;
+    const std::filesystem::path tmpBase = std::filesystem::temp_directory_path() / "gitara_paths_test";
+    std::filesystem::remove_all(tmpBase, ec);
+    const std::filesystem::path fakeExe = tmpBase / "bin" / "ApkaGitarowa.exe";
+    const std::filesystem::path emptyCwd = tmpBase / "empty_cwd";
+    std::filesystem::create_directories(fakeExe.parent_path(), ec);
+    std::filesystem::create_directories(emptyCwd, ec);
+
+    const AppPaths portablePaths = resolveAppPaths(true, fakeExe, emptyCwd);
+    CHECK(!portablePaths.isDevCheckout);
+    CHECK(portablePaths.dataDir == fakeExe.parent_path());
+    CHECK(portablePaths.settingsFile == fakeExe.parent_path() / "settings.json");
+    CHECK(portablePaths.userLibraryDir == fakeExe.parent_path() / "user_library");
+
+    const std::filesystem::path fakeDevCwd = tmpBase / "dev_repo";
+    std::filesystem::create_directories(fakeDevCwd / "web" / "js" / "dsp", ec);
+    {
+        std::ofstream ofs(fakeDevCwd / "web" / "js" / "dsp" / "guitarDspEngine.js");
+        ofs << "// test\n";
+    }
+    CHECK(isDevCheckoutDir(fakeDevCwd));
+    CHECK(!isDevCheckoutDir(emptyCwd));
+#ifndef _WIN32
+    const AppPaths devPaths = resolveAppPaths(false, fakeExe, fakeDevCwd);
+    CHECK(devPaths.isDevCheckout);
+    CHECK(devPaths.settingsFile == fakeDevCwd / ".apka_gitara_settings.json");
+    CHECK(devPaths.userLibraryDir == fakeDevCwd / "user_library");
+#endif
+    std::filesystem::remove_all(tmpBase, ec);
+}
+
 } // namespace
 
 int main() {
@@ -1385,6 +1578,7 @@ int main() {
     testArpeggioWorkshopEarTrainerProgressionsAndSessions();
     testAuditRegressions();
     testUserLibraryPersistenceAndSecurity();
+    testPlatformUpdaterAndEmbeddedAssets();
 
     std::cout << "========================================\n"
               << "Wynik testow: " << g_passed << " zaliczonych, "

@@ -6,7 +6,48 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(GITARA_BUILD_JUCE_APP "Pobierz JUCE 8 i zbuduj natywne okno GUI (Direct2D / ASIO / WASAPI)" OFF)
+option(GITARA_BUILD_DESKTOP_APP "Zbuduj samodzielna aplikacje desktopowa (HTTP GUI + wbudowane zasoby + auto-update)" ON)
 option(GITARA_BUILD_TESTS "Zbuduj pakiet testow automatycznych" ON)
+
+set(GITARA_BUILD_COMMIT "" CACHE STRING "Pelny SHA commita umieszczany w binarce")
+set(GITARA_BUILD_TIMESTAMP "" CACHE STRING "Znacznik czasu buildu (UTC)")
+set(GITARA_UPDATE_REPO "AlKrul/gitara-apka" CACHE STRING "Repozytorium GitHub dla auto-update")
+set(GITARA_UPDATE_TAG "latest" CACHE STRING "Tag wydania GitHub dla auto-update")
+
+if(NOT GITARA_BUILD_COMMIT)
+    find_package(Git QUIET)
+    if(GIT_FOUND)
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            OUTPUT_VARIABLE GITARA_GIT_HEAD
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+    endif()
+    if(GITARA_GIT_HEAD)
+        set(GITARA_BUILD_COMMIT "${GITARA_GIT_HEAD}")
+    else()
+        set(GITARA_BUILD_COMMIT "dev")
+    endif()
+endif()
+
+if(GITARA_BUILD_COMMIT STREQUAL "dev")
+    set(GITARA_BUILD_SHORT_COMMIT "dev")
+else()
+    string(SUBSTRING "${GITARA_BUILD_COMMIT}" 0 7 GITARA_BUILD_SHORT_COMMIT)
+endif()
+
+if(NOT GITARA_BUILD_TIMESTAMP)
+    string(TIMESTAMP GITARA_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
+endif()
+
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+if(WIN32)
+    add_compile_definitions(WIN32_LEAN_AND_MEAN NOMINMAX)
+endif()
 
 # ------------------------------------------------------------------------------
 # [L0] libs/theory — czysty C++20 bez zaleznosci od JUCE (system A–G, bez H)
@@ -85,8 +126,24 @@ target_include_directories(gitara_shared_code INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Warstwa platformowa (sciezki danych, zasoby wbudowane, logika auto-update)
+add_library(gitara_platform_core STATIC
+    app/platform/UpdateLogic.cpp
+    app/platform/EmbeddedAssets.cpp
+    app/platform/AppPaths.cpp
+)
+target_include_directories(gitara_platform_core PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(gitara_platform_core PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:$<IF:$<CXX_COMPILER_ID:MSVC>,/W4,-Wall -Wextra>>
+)
+if(WIN32)
+    target_link_libraries(gitara_platform_core PUBLIC shell32 ole32)
+endif()
+
 # ------------------------------------------------------------------------------
-# [L3] app — Samodzielna aplikacja JUCE 8 (Windows Direct2D + ASIO/WASAPI)
+# [L3] app — Samodzielna aplikacja JUCE 8 (opcjonalna) lub Desktop App (HTTP + Edge)
 # ------------------------------------------------------------------------------
 if(GITARA_BUILD_JUCE_APP)
     include(FetchContent)
@@ -129,16 +186,113 @@ if(GITARA_BUILD_JUCE_APP)
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
     )
+elseif(GITARA_BUILD_DESKTOP_APP)
+    find_package(Threads REQUIRED)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+    file(GLOB_RECURSE GITARA_WEB_ASSETS CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/web/*"
+    )
+    set(GITARA_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+    set(GITARA_PAK_FILE "${GITARA_GENERATED_DIR}/gitara_assets.pak")
+    set(GITARA_PACK_EXTRA_ARGS)
+    set(GITARA_PACK_EXTRA_DEPS)
+
+    if(WIN32)
+        set(GITARA_PACK_MODE "rc")
+        set(GITARA_EMBED_FILE "${GITARA_GENERATED_DIR}/gitara_resources.rc")
+        set(GITARA_ICON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/app/resources/apka_gitara.ico")
+        list(APPEND GITARA_PACK_EXTRA_ARGS --icon "${GITARA_ICON_FILE}")
+        list(APPEND GITARA_PACK_EXTRA_DEPS "${GITARA_ICON_FILE}")
+    elseif(UNIX AND NOT APPLE)
+        enable_language(ASM)
+        set(GITARA_PACK_MODE "asm")
+        set(GITARA_EMBED_FILE "${GITARA_GENERATED_DIR}/gitara_assets.S")
+    else()
+        set(GITARA_PACK_MODE "cpp")
+        set(GITARA_EMBED_FILE "${GITARA_GENERATED_DIR}/gitara_assets_blob.cpp")
+    endif()
+
+    add_custom_command(
+        OUTPUT "${GITARA_PAK_FILE}" "${GITARA_EMBED_FILE}"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/pack_assets.py"
+            --html "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/DesktopGuiHtml.h"
+            --web-dir "${CMAKE_CURRENT_SOURCE_DIR}/web"
+            --out-pak "${GITARA_PAK_FILE}"
+            --mode "${GITARA_PACK_MODE}"
+            --out-embed "${GITARA_EMBED_FILE}"
+            --version "${PROJECT_VERSION}"
+            --commit "${GITARA_BUILD_COMMIT}"
+            ${GITARA_PACK_EXTRA_ARGS}
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/pack_assets.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/DesktopGuiHtml.h"
+            ${GITARA_WEB_ASSETS}
+            ${GITARA_PACK_EXTRA_DEPS}
+        COMMENT "Pakowanie zasobow GUI i web/ do binarki ApkaGitarowa"
+        VERBATIM
+    )
+
+    set_source_files_properties("${GITARA_EMBED_FILE}" PROPERTIES
+        OBJECT_DEPENDS "${GITARA_PAK_FILE};${GITARA_PACK_EXTRA_DEPS}"
+    )
+
+    add_executable(ApkaGitarowa
+        app/Main.cpp
+        app/platform/AutoUpdater.cpp
+        app/platform/WindowsHost.cpp
+        "${GITARA_EMBED_FILE}"
+    )
+    if(WIN32)
+        set_target_properties(ApkaGitarowa PROPERTIES WIN32_EXECUTABLE TRUE)
+    endif()
+
+    target_compile_definitions(ApkaGitarowa PRIVATE
+        GITARA_EMBEDDED_ASSETS=1
+        GITARA_APP_VERSION="${PROJECT_VERSION}"
+        GITARA_BUILD_COMMIT="${GITARA_BUILD_COMMIT}"
+        GITARA_BUILD_SHORT_COMMIT="${GITARA_BUILD_SHORT_COMMIT}"
+        GITARA_BUILD_TIMESTAMP="${GITARA_BUILD_TIMESTAMP}"
+        GITARA_UPDATE_REPO="${GITARA_UPDATE_REPO}"
+        GITARA_UPDATE_TAG="${GITARA_UPDATE_TAG}"
+    )
+    if(GITARA_PACK_MODE STREQUAL "cpp")
+        target_compile_definitions(ApkaGitarowa PRIVATE GITARA_EMBEDDED_ASSETS_CPP=1)
+    endif()
+
+    target_compile_options(ApkaGitarowa PRIVATE
+        $<$<COMPILE_LANGUAGE:CXX>:$<IF:$<CXX_COMPILER_ID:MSVC>,/W4,-Wall -Wextra>>
+    )
+
+    target_link_libraries(ApkaGitarowa PRIVATE
+        gitara_shared_code
+        gitara_platform_core
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(ApkaGitarowa PRIVATE
+            ws2_32
+            winhttp
+            shell32
+            ole32
+            user32
+            gdi32
+            advapi32
+        )
+    endif()
 endif()
 
 # ------------------------------------------------------------------------------
-# Testy jednostkowe i integracyjne (L0–L2)
+# Testy jednostkowe i integracyjne (L0–L2 + platform core)
 # ------------------------------------------------------------------------------
 if(GITARA_BUILD_TESTS)
     enable_testing()
     add_executable(GitaraTests
         tests/test_main.cpp
     )
-    target_link_libraries(GitaraTests PRIVATE gitara_shared_code)
+    target_link_libraries(GitaraTests PRIVATE
+        gitara_shared_code
+        gitara_platform_core
+    )
     add_test(NAME GitaraTests COMMAND GitaraTests)
 endif()

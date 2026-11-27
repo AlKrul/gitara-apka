@@ -1,0 +1,128 @@
+name: Release Windows Executable
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-windows-latest
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Configure CMake (Windows Desktop App)
+        run: >
+          cmake -B build
+          -DGITARA_BUILD_JUCE_APP=OFF
+          -DGITARA_BUILD_DESKTOP_APP=ON
+          -DGITARA_BUILD_TESTS=ON
+          -DGITARA_BUILD_COMMIT=${{ github.sha }}
+          -DGITARA_UPDATE_REPO=${{ github.repository }}
+          -DGITARA_UPDATE_TAG=latest
+
+      - name: Build Release
+        run: cmake --build build --config Release --parallel
+
+      - name: Run Unit Tests
+        run: ctest --test-dir build --output-on-failure -C Release
+
+      - name: Standalone Smoke Test Outside Repo
+        shell: pwsh
+        run: |
+          $smokeDir = Join-Path $env:RUNNER_TEMP "smoke"
+          New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
+          $smokeExe = Join-Path $smokeDir "ApkaGitarowa.exe"
+          Copy-Item "build\Release\ApkaGitarowa.exe" $smokeExe -Force
+
+          $verOut = Join-Path $smokeDir "version.txt"
+          $pVer = Start-Process -FilePath $smokeExe -ArgumentList "--version" -Wait -NoNewWindow -PassThru -RedirectStandardOutput $verOut
+          if (Test-Path $verOut) { Get-Content $verOut }
+          if ($pVer.ExitCode -ne 0) { throw "--version failed with exit code $($pVer.ExitCode)" }
+
+          $pCheck = Start-Process -FilePath $smokeExe -ArgumentList "--headless-check","--no-update" -Wait -NoNewWindow -PassThru
+          if ($pCheck.ExitCode -ne 0) { throw "--headless-check failed with exit code $($pCheck.ExitCode)" }
+
+      - name: Prepare Release Bundle (EXE, Checksums, Manifest)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+          Copy-Item "build\Release\ApkaGitarowa.exe" "dist\ApkaGitarowa.exe" -Force
+          python tools/make_manifest.py `
+            --exe "dist\ApkaGitarowa.exe" `
+            --repo "${{ github.repository }}" `
+            --tag "latest" `
+            --version "0.1.0" `
+            --commit "${{ github.sha }}" `
+            --out-dir "dist"
+          if ($LASTEXITCODE -ne 0) { throw "make_manifest.py failed with exit code $LASTEXITCODE" }
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ApkaGitarowa-windows-x64
+          path: dist/
+          retention-days: 14
+
+      - name: Publish Rolling Latest Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f latest "$env:TARGET_SHA"
+          if ($LASTEXITCODE -ne 0) { throw "git tag failed" }
+          git push origin refs/tags/latest --force
+          if ($LASTEXITCODE -ne 0) { throw "git push tag failed" }
+
+          $prevEap = $ErrorActionPreference
+          $ErrorActionPreference = 'Continue'
+          gh release view latest *> $null
+          $releaseExists = ($LASTEXITCODE -eq 0)
+          $ErrorActionPreference = $prevEap
+
+          if (-not $releaseExists) {
+            gh release create latest `
+              "dist\ApkaGitarowa.exe" `
+              "dist\SHA256SUMS.txt" `
+              "dist\manifest.json" `
+              --title "Apka Gitarowa (Latest)" `
+              --notes-file "dist\release_notes.md" `
+              --latest
+            if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
+          } else {
+            gh release upload latest `
+              "dist\ApkaGitarowa.exe" `
+              "dist\SHA256SUMS.txt" `
+              --clobber
+            if ($LASTEXITCODE -ne 0) { throw "gh release upload (exe/sums) failed" }
+
+            gh release upload latest `
+              "dist\manifest.json" `
+              --clobber
+            if ($LASTEXITCODE -ne 0) { throw "gh release upload (manifest) failed" }
+
+            gh release edit latest `
+              --title "Apka Gitarowa (Latest)" `
+              --notes-file "dist\release_notes.md" `
+              --latest
+            if ($LASTEXITCODE -ne 0) { throw "gh release edit failed" }
+          }

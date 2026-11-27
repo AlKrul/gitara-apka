@@ -13,9 +13,56 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Configure CMake (Core + Tests)
-        run: cmake -B build -DGITARA_BUILD_JUCE_APP=OFF -DGITARA_BUILD_TESTS=ON
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node.js
+        if: runner.os == 'Linux'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure CMake (Core + Desktop App + Tests)
+        run: cmake -B build -DGITARA_BUILD_JUCE_APP=OFF -DGITARA_BUILD_DESKTOP_APP=ON -DGITARA_BUILD_TESTS=ON
+
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config Release --parallel
+
       - name: Run Unit & DSP Tests
         run: ctest --test-dir build --output-on-failure -C Release
+
+      - name: Standalone Smoke Check (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p "${{ runner.temp }}/standalone-check"
+          cp build/ApkaGitarowa "${{ runner.temp }}/standalone-check/ApkaGitarowa"
+          "${{ runner.temp }}/standalone-check/ApkaGitarowa" --version
+          "${{ runner.temp }}/standalone-check/ApkaGitarowa" --headless-check --no-update
+
+      - name: Standalone Smoke Check (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $smokeDir = Join-Path $env:RUNNER_TEMP "standalone-check"
+          New-Item -ItemType Directory -Force -Path $smokeDir | Out-Null
+          $smokeExe = Join-Path $smokeDir "ApkaGitarowa.exe"
+          Copy-Item "build\Release\ApkaGitarowa.exe" $smokeExe -Force
+
+          $verOut = Join-Path $smokeDir "version.txt"
+          $pVer = Start-Process -FilePath $smokeExe -ArgumentList "--version" -Wait -NoNewWindow -PassThru -RedirectStandardOutput $verOut
+          if (Test-Path $verOut) { Get-Content $verOut }
+          if ($pVer.ExitCode -ne 0) { throw "--version failed with exit code $($pVer.ExitCode)" }
+
+          $pCheck = Start-Process -FilePath $smokeExe -ArgumentList "--headless-check","--no-update" -Wait -NoNewWindow -PassThru
+          if ($pCheck.ExitCode -ne 0) { throw "--headless-check failed with exit code $($pCheck.ExitCode)" }
+
+      - name: Run JS DSP & Studio Tests
+        if: runner.os == 'Linux'
+        run: |
+          node tests/dechorder_web_test.mjs
+          node tests/dsp_web_test.mjs
+          node tests/ear_web_test.mjs
+          node tests/studio_web_test.mjs

@@ -1,5 +1,7 @@
 #include "app/MainWindow.h"
+#if !defined(GITARA_EMBEDDED_ASSETS)
 #include "app/ui/DesktopGuiHtml.h"
+#endif
 #include "gitara/engine/EarTrainer.h"
 #include "gitara/engine/ProgressionEngine.h"
 #include "gitara/engine/SessionManager.h"
@@ -13,6 +15,7 @@
 #include "gitara/theory/Scale.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -73,13 +76,25 @@ START_JUCE_APPLICATION(gitara::app::GitaraApplication)
 
 #else
 
-#include <arpa/inet.h>
+#include "app/BuildInfo.h"
+#include "app/platform/AppPaths.h"
+#include "app/platform/AutoUpdater.h"
+#include "app/platform/EmbeddedAssets.h"
+#include "app/platform/NetSocket.h"
+#include "app/platform/UpdateLogic.h"
+#include "app/platform/WindowsHost.h"
+
+#include <atomic>
 #include <cctype>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <unistd.h>
+#include <chrono>
+#include <filesystem>
+#include <mutex>
+#include <system_error>
+#include <thread>
+
+#ifdef _WIN32
+#include <shellapi.h>
+#endif
 
 namespace {
 
@@ -1485,7 +1500,11 @@ std::string handleWorkshopEventsApi(std::string_view query) {
     return oss.str();
 }
 
-bool tryReadWebAsset(std::string_view urlPath, std::string& outBody, std::string_view& outMime) {
+bool tryReadWebAsset(
+    std::string_view urlPath,
+    bool allowDiskDev,
+    std::string& outBody,
+    std::string_view& outMime) {
     constexpr std::string_view kPrefix = "/web/";
     if (urlPath.size() <= kPrefix.size() || urlPath.substr(0, kPrefix.size()) != kPrefix) {
         return false;
@@ -1524,76 +1543,631 @@ bool tryReadWebAsset(std::string_view urlPath, std::string& outBody, std::string
         return false;
     }
 
-    const std::string candidates[2] = {
-        std::string("web/") + std::string(rel),
-        std::string("../web/") + std::string(rel)
-    };
-    for (const auto& filePath : candidates) {
-        std::ifstream ifs(filePath, std::ios::binary);
-        if (ifs) {
-            outBody.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-            return true;
+    if (allowDiskDev) {
+        const std::filesystem::path relPath(rel);
+        const std::filesystem::path candidates[2] = {
+            std::filesystem::path("web") / relPath,
+            std::filesystem::path("..") / "web" / relPath
+        };
+        for (const auto& filePath : candidates) {
+            std::ifstream ifs(filePath, std::ios::binary);
+            if (ifs) {
+                outBody.assign((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+                return true;
+            }
         }
+    }
+
+    if (auto embedded = gitara::platform::globalEmbeddedAssets().find(urlPath)) {
+        outBody.assign(embedded->body.data(), embedded->body.size());
+        outMime = embedded->mime;
+        return true;
     }
     return false;
 }
 
-void openDesktopAppWindow(int port) {
-    std::string url = "http://127.0.0.1:" + std::to_string(port);
-    // W środowisku Windows + WSL2 otwieramy natywne okno aplikacyjne bez paska adresu (--app=...)
-    std::string cmd =
-        "( \"/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe\" --app=" + url +
-        " >/dev/null 2>&1 || cmd.exe /c start " + url +
-        " >/dev/null 2>&1 || xdg-open " + url + " >/dev/null 2>&1 ) &";
-    int rc = std::system(cmd.c_str());
-    (void)rc;
-}
+bool tryReadIndexHtml(bool allowDiskDev, std::string& outBody) {
+    if (allowDiskDev) {
+        static std::mutex sHtmlCacheMutex;
+        static std::string sCachedLiveHtml;
+        static std::filesystem::file_time_type sCachedHtmlMtime{};
+        static bool sHasCachedMtime = false;
 
-} // namespace
-
-int main(int argc, char** argv) {
-    for (int i = 1; i < argc; ++i) {
-        if (std::string_view(argv[i]) == "--headless-check") {
-            auto initJson = handleInitApi();
-            auto fbJson = handleFretboardApi("rootPc=0&scaleId=major");
-            std::string dspModule, ppModule, ppWasm, ppModel, ppBridge;
-            std::string_view dspMime, ppMime, wasmMime, binMime, bridgeMime;
-            const bool webDspOk = tryReadWebAsset("/web/js/dsp/guitarDspEngine.js", dspModule, dspMime) &&
-                                  !dspModule.empty() && dspMime.find("javascript") != std::string_view::npos;
-            const bool pitchPleaseOk =
-                tryReadWebAsset("/web/vendor/pitchplease/pitchplease.js", ppModule, ppMime) && !ppModule.empty() &&
-                tryReadWebAsset("/web/vendor/pitchplease/engine/incport.wasm", ppWasm, wasmMime) && !ppWasm.empty() &&
-                wasmMime == "application/wasm" &&
-                tryReadWebAsset("/web/vendor/pitchplease/models/piano.bin", ppModel, binMime) && !ppModel.empty() &&
-                binMime == "application/octet-stream" &&
-                tryReadWebAsset("/web/js/dsp/pitchPleaseBridge.js", ppBridge, bridgeMime) && !ppBridge.empty();
-            std::string studioCss, studioModelJs, studioPaletteJs, studioInputsJs, studioViewJs, studioSfJs;
-            std::string_view studioCssMime, studioModelMime, studioPaletteMime, studioInputsMime, studioViewMime, studioSfMime;
-            const bool studioAssetsOk =
-                tryReadWebAsset("/web/css/studio.css", studioCss, studioCssMime) &&
-                !studioCss.empty() && studioCssMime.find("css") != std::string_view::npos &&
-                tryReadWebAsset("/web/js/studio/studioModel.js", studioModelJs, studioModelMime) &&
-                !studioModelJs.empty() && studioModelMime.find("javascript") != std::string_view::npos &&
-                tryReadWebAsset("/web/js/studio/studioPalette.js", studioPaletteJs, studioPaletteMime) &&
-                !studioPaletteJs.empty() && studioPaletteMime.find("javascript") != std::string_view::npos &&
-                tryReadWebAsset("/web/js/studio/studioInputs.js", studioInputsJs, studioInputsMime) &&
-                !studioInputsJs.empty() && studioInputsMime.find("javascript") != std::string_view::npos &&
-                tryReadWebAsset("/web/js/studio/studioSoundFont.js", studioSfJs, studioSfMime) &&
-                !studioSfJs.empty() && studioSfMime.find("javascript") != std::string_view::npos &&
-                tryReadWebAsset("/web/js/studio/studioView.js", studioViewJs, studioViewMime) &&
-                !studioViewJs.empty() && studioViewMime.find("javascript") != std::string_view::npos;
-            return (!initJson.empty() && !fbJson.empty() && webDspOk && pitchPleaseOk && studioAssetsOk) ? 0 : 1;
+        std::lock_guard<std::mutex> lock(sHtmlCacheMutex);
+        const std::filesystem::path candidates[2] = {
+            std::filesystem::path("app") / "ui" / "DesktopGuiHtml.h",
+            std::filesystem::path("..") / "app" / "ui" / "DesktopGuiHtml.h"
+        };
+        for (const auto& cand : candidates) {
+            std::error_code ec;
+            if (!std::filesystem::exists(cand, ec) || ec) continue;
+            auto mtime = std::filesystem::last_write_time(cand, ec);
+            if (!ec && (sCachedLiveHtml.empty() || !sHasCachedMtime || mtime != sCachedHtmlMtime)) {
+                std::ifstream ifs(cand, std::ios::binary);
+                if (ifs) {
+                    std::string fileContent((std::istreambuf_iterator<char>(ifs)),
+                                            std::istreambuf_iterator<char>());
+                    const std::string startTag = "R\"HTML(";
+                    const std::string endTag = ")HTML\"";
+                    const auto p1 = fileContent.find(startTag);
+                    const auto p2 = fileContent.rfind(endTag);
+                    if (p1 != std::string::npos && p2 != std::string::npos && p2 > p1 + startTag.size()) {
+                        sCachedLiveHtml = fileContent.substr(p1 + startTag.size(), p2 - (p1 + startTag.size()));
+                        sCachedHtmlMtime = mtime;
+                        sHasCachedMtime = true;
+                    }
+                }
+            }
+            if (!sCachedLiveHtml.empty()) {
+                outBody = sCachedLiveHtml;
+                return true;
+            }
         }
     }
 
-    int serverFd = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (serverFd < 0) {
+    if (auto embedded = gitara::platform::globalEmbeddedAssets().find("/index.html")) {
+        outBody.assign(embedded->body.data(), embedded->body.size());
+        return true;
+    }
+
+#if !defined(GITARA_EMBEDDED_ASSETS)
+    outBody = gitara::app::ui::kDesktopGuiHtml;
+    return true;
+#else
+    return false;
+#endif
+}
+
+struct RuntimeConfig {
+    gitara::platform::AppPaths paths;
+    bool allowDiskDevAssets = false;
+    bool embeddedOnly = false;
+    bool autoShutdown = false;
+    bool noBrowser = false;
+    bool noUpdate = false;
+    bool skipUpdateOnce = false;
+    bool forceUpdateCheck = false;
+    bool portable = false;
+};
+
+std::mutex gStorageMutex;
+std::atomic<bool> gStopRequested{false};
+std::atomic<bool> gHasClientConnected{false};
+std::atomic<long long> gLastClientActivityMs{0};
+std::atomic<long long> gClosingSinceMs{0};
+std::atomic<int> gActiveClientThreads{0};
+
+long long nowSteadyMs() noexcept {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+void markClientActivity() noexcept {
+    gHasClientConnected.store(true);
+    gLastClientActivityMs.store(nowSteadyMs());
+    gClosingSinceMs.store(0);
+}
+
+#ifdef _WIN32
+bool isEnvFlagSet(const char* name) noexcept {
+    char buf[32]{};
+    const DWORD len = ::GetEnvironmentVariableA(name, buf, static_cast<DWORD>(sizeof(buf)));
+    return len > 0 && buf[0] != '\0' && std::string_view(buf) != "0";
+}
+#endif
+
+std::string buildVersionJson() {
+    std::ostringstream oss;
+    oss << "{\"version\":\"" << jsonEscape(GITARA_APP_VERSION)
+        << "\",\"commit\":\"" << jsonEscape(GITARA_BUILD_COMMIT)
+        << "\",\"shortCommit\":\"" << jsonEscape(GITARA_BUILD_SHORT_COMMIT)
+        << "\",\"builtAt\":\"" << jsonEscape(GITARA_BUILD_TIMESTAMP)
+        << "\",\"repo\":\"" << jsonEscape(GITARA_UPDATE_REPO) << "\"}";
+    return oss.str();
+}
+
+std::string readSettingsJson(const std::filesystem::path& settingsFile) {
+    std::lock_guard<std::mutex> lock(gStorageMutex);
+    std::ifstream sfs(settingsFile, std::ios::binary);
+    std::string body = "{}";
+    if (sfs) {
+        body.assign((std::istreambuf_iterator<char>(sfs)), std::istreambuf_iterator<char>());
+        if (body.empty()) body = "{}";
+    }
+    return body;
+}
+
+void writeSettingsJson(const gitara::platform::AppPaths& paths, std::string_view payload) {
+    if (payload.empty() || payload.front() != '{') return;
+    std::lock_guard<std::mutex> lock(gStorageMutex);
+    gitara::platform::ensureAppDirectories(paths);
+
+    std::filesystem::path tmpPath = paths.settingsFile;
+    tmpPath += ".tmp";
+    bool wroteTmp = false;
+    {
+        std::ofstream ofs(tmpPath, std::ios::binary | std::ios::trunc);
+        if (ofs) {
+            ofs.write(payload.data(), static_cast<std::streamsize>(payload.size()));
+            ofs.flush();
+            wroteTmp = ofs.good();
+        }
+    }
+    if (wroteTmp) {
+        std::error_code ec;
+        std::filesystem::rename(tmpPath, paths.settingsFile, ec);
+        if (!ec) return;
+        std::error_code rmEc;
+        std::filesystem::remove(tmpPath, rmEc);
+    }
+
+    std::ofstream ofs(paths.settingsFile, std::ios::binary | std::ios::trunc);
+    if (ofs) {
+        ofs.write(payload.data(), static_cast<std::streamsize>(payload.size()));
+    }
+}
+
+#ifdef _WIN32
+int readActivePortFile(const std::filesystem::path& portFile) {
+    std::ifstream ifs(portFile);
+    if (!ifs) return 0;
+    int port = 0;
+    ifs >> port;
+    return (port >= 1024 && port <= 65535) ? port : 0;
+}
+#endif
+
+void writeActivePortFile(const gitara::platform::AppPaths& paths, int port) {
+    gitara::platform::ensureAppDirectories(paths);
+    std::ofstream ofs(paths.activePortFile, std::ios::trunc);
+    if (ofs) {
+        ofs << port << "\n";
+    }
+}
+
+void handleClientConnection(gitara::platform::SocketHandle clientFd, const RuntimeConfig& cfg) {
+    struct ThreadGuard {
+        gitara::platform::SocketHandle sock;
+        ~ThreadGuard() {
+            gitara::platform::closeSocket(sock);
+            gActiveClientThreads.fetch_sub(1);
+        }
+    } guard{clientFd};
+
+    gitara::platform::setRecvTimeoutMs(clientFd, 2000);
+    gitara::platform::setSendTimeoutMs(clientFd, 5000);
+
+    // Odczyt pełnego żądania HTTP (nagłówki + opcjonalne ciało POST) bez limitu 8 KB!
+    std::string reqStr;
+    reqStr.reserve(16384);
+    constexpr std::size_t kMaxReqBytes = 4 * 1024 * 1024;
+    std::size_t headerEnd = std::string::npos;
+    std::size_t contentLength = 0;
+    char chunk[8192];
+    while (reqStr.size() < kMaxReqBytes) {
+        const int nRead = gitara::platform::socketRecv(clientFd, chunk, static_cast<int>(sizeof(chunk)));
+        if (nRead <= 0) break;
+        reqStr.append(chunk, static_cast<std::size_t>(nRead));
+        if (headerEnd == std::string::npos) {
+            headerEnd = reqStr.find("\r\n\r\n");
+            if (headerEnd != std::string::npos) {
+                std::string lowerHdr;
+                lowerHdr.reserve(headerEnd);
+                for (std::size_t i = 0; i < headerEnd; ++i) {
+                    lowerHdr.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(reqStr[i]))));
+                }
+                const std::size_t clPos = lowerHdr.find("content-length:");
+                if (clPos != std::string::npos) {
+                    std::size_t valStart = clPos + 15;
+                    while (valStart < headerEnd && (reqStr[valStart] == ' ' || reqStr[valStart] == '\t')) ++valStart;
+                    contentLength = static_cast<std::size_t>(std::max<long long>(0, std::atoll(reqStr.c_str() + valStart)));
+                }
+            }
+        }
+        if (headerEnd != std::string::npos) {
+            const std::size_t bodyRead = reqStr.size() - (headerEnd + 4);
+            if (bodyRead >= contentLength) break;
+        }
+    }
+    if (reqStr.empty()) {
+        return;
+    }
+
+    std::string_view req(reqStr);
+    std::string_view reqBody = (headerEnd != std::string::npos && reqStr.size() >= headerEnd + 4)
+        ? std::string_view(reqStr.data() + headerEnd + 4,
+                           std::min(contentLength, reqStr.size() - (headerEnd + 4)))
+        : std::string_view{};
+
+    const std::size_t firstSpace = req.find(' ');
+    const std::size_t secondSpace = (firstSpace != std::string_view::npos)
+        ? req.find(' ', firstSpace + 1)
+        : std::string_view::npos;
+
+    const std::string_view fullTarget = (firstSpace != std::string_view::npos && secondSpace != std::string_view::npos)
+        ? req.substr(firstSpace + 1, secondSpace - firstSpace - 1)
+        : "/";
+
+    const std::size_t qPos = fullTarget.find('?');
+    const std::string_view path = (qPos == std::string_view::npos) ? fullTarget : fullTarget.substr(0, qPos);
+    const std::string_view query = (qPos == std::string_view::npos) ? "" : fullTarget.substr(qPos + 1);
+
+    auto writeAll = [&](const char* ptr, std::size_t len) {
+        std::size_t sent = 0;
+        while (sent < len) {
+            const int toSend = static_cast<int>(std::min<std::size_t>(len - sent, 1u << 20));
+            const int w = gitara::platform::socketSend(clientFd, ptr + sent, toSend);
+            if (w <= 0) break;
+            sent += static_cast<std::size_t>(w);
+        }
+    };
+
+    auto sendResponse = [&](std::string_view status,
+                            std::string_view contentType,
+                            const void* data,
+                            std::size_t size,
+                            std::string_view extraHeaders = "") {
+        std::ostringstream hdr;
+        hdr << "HTTP/1.1 " << status << "\r\n"
+            << "Content-Type: " << contentType << "\r\n"
+            << "Content-Length: " << size << "\r\n";
+        if (extraHeaders.find("Cache-Control:") == std::string_view::npos) {
+            hdr << "Cache-Control: no-store\r\n";
+        }
+        hdr << extraHeaders
+            << "Connection: close\r\n\r\n";
+        const std::string hStr = hdr.str();
+        writeAll(hStr.data(), hStr.size());
+        if (size > 0 && data != nullptr) {
+            writeAll(static_cast<const char*>(data), size);
+        }
+    };
+
+    if (path == "/" || path == "/index.html") {
+        markClientActivity();
+        std::string htmlBody;
+        if (tryReadIndexHtml(cfg.allowDiskDevAssets, htmlBody)) {
+            sendResponse("200 OK", "text/html; charset=utf-8", htmlBody.data(), htmlBody.size());
+        } else {
+            const char* notFound = "Index HTML unavailable";
+            sendResponse("500 Internal Server Error", "text/plain; charset=utf-8", notFound, std::strlen(notFound));
+        }
+    } else if (path.size() > 5 && path.substr(0, 5) == "/web/") {
+        std::string assetBody;
+        std::string_view assetMime;
+        if (tryReadWebAsset(path, cfg.allowDiskDevAssets, assetBody, assetMime)) {
+            const bool isHeavyModelOrWasm =
+                (path.size() >= 4 && path.substr(path.size() - 4) == ".bin") ||
+                (path.size() >= 5 && path.substr(path.size() - 5) == ".wasm");
+            sendResponse("200 OK", assetMime, assetBody.data(), assetBody.size(),
+                         isHeavyModelOrWasm ? "Cache-Control: public, max-age=3600\r\n" : "");
+        } else {
+            const char* notFound = "Not Found";
+            sendResponse("404 Not Found", "text/plain; charset=utf-8", notFound, std::strlen(notFound));
+        }
+    } else if (path == "/api/ping") {
+        const char* ok = "{\"ok\":true}";
+        sendResponse("200 OK", "application/json; charset=utf-8", ok, std::strlen(ok));
+    } else if (path == "/api/version") {
+        const std::string body = buildVersionJson();
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/heartbeat") {
+        markClientActivity();
+        const char* ok = "{\"ok\":true}";
+        sendResponse("200 OK", "application/json; charset=utf-8", ok, std::strlen(ok));
+    } else if (path == "/api/closing") {
+        long long expected = 0;
+        gClosingSinceMs.compare_exchange_strong(expected, nowSteadyMs());
+        const char* ok = "{\"ok\":true}";
+        sendResponse("200 OK", "application/json; charset=utf-8", ok, std::strlen(ok));
+    } else if (path == "/api/init") {
+        const std::string body = handleInitApi();
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/settings") {
+        const std::string body = readSettingsJson(cfg.paths.settingsFile);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/save_settings") {
+        std::string jsonPayload = (!reqBody.empty() && reqBody.front() == '{')
+            ? std::string(reqBody)
+            : getQueryParam(query, "data", "{}");
+        writeSettingsJson(cfg.paths, jsonPayload);
+        const char* ok = "{\"ok\":true}";
+        sendResponse("200 OK", "application/json; charset=utf-8", ok, std::strlen(ok));
+    } else if (path == "/api/fretboard") {
+        const std::string body = handleFretboardApi(query);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/voicings") {
+        const std::string body = handleVoicingsApi(query);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/harmonics") {
+        const std::string body = handleHarmonicsApi(query);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/search") {
+        const std::string body = handleSearchApi(query);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/detect-scale") {
+        const std::string body = handleDetectScaleApi(query);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/diatonic") {
+        const std::string body = handleDiatonicApi(query);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/arpeggio") {
+        const std::string body = handleArpeggioApi(query);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/tab_preview") {
+        const std::string body = handleTabPreviewApi(query, reqBody);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/workshop_events") {
+        const std::string body = handleWorkshopEventsApi(query);
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/export/gp5") {
+        std::string evs = (!reqBody.empty() && reqBody.front() == '[')
+            ? std::string(reqBody)
+            : getQueryParam(query, "events", "[]");
+        Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120), resolveRequestedTuning(query));
+        auto bytes = exportToGp5Bytes(song);
+        sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
+                     "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.gp5\"\r\n");
+    } else if (path == "/api/export/mid") {
+        std::string evs = (!reqBody.empty() && reqBody.front() == '[')
+            ? std::string(reqBody)
+            : getQueryParam(query, "events", "[]");
+        Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120), resolveRequestedTuning(query));
+        auto bytes = exportToMidiBytes(song);
+        sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
+                     "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.mid\"\r\n");
+    } else if (path == "/api/export/progression_gp5") {
+        ChordProgression prog{};
+        bool hasBodyJson = false;
+        for (char c : reqBody) {
+            if (c == ' ' || c == '\t' || c == '\r' || c == '\n') continue;
+            hasBodyJson = (c == '{');
+            break;
+        }
+        if (hasBodyJson) {
+            prog = buildCustomProgressionFromJson(reqBody);
+        } else {
+            auto progOpt = findBuiltinProgression(getQueryParam(query, "id", "blues_12"));
+            prog = progOpt.value_or(builtinProgressions().front());
+            int reqKey = getQueryInt(query, "keyRootPc", -1);
+            int reqBpm = getQueryInt(query, "bpm", 0);
+            if (reqKey >= 0 && reqKey < 12) {
+                prog = transposeProgression(prog, Note::fromPitchClass(reqKey));
+            }
+            if (reqBpm >= 40 && reqBpm <= 240) {
+                prog.tempoBpm = reqBpm;
+            }
+        }
+        Song song = generateBackingTrackSong(prog);
+        auto bytes = exportToGp5Bytes(song);
+        std::string fname = sanitizeAsciiFilenameSlug(hasBodyJson ? prog.title : prog.id, "progresja") + "_tuxguitar.gp5";
+        std::string disp = "Content-Disposition: attachment; filename=\"" + fname + "\"\r\n";
+        sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(), disp);
+    } else if (path == "/api/library") {
+        std::string body;
+        {
+            std::lock_guard<std::mutex> lock(gStorageMutex);
+            body = gitara::score::listAllLibraryItemsJson(cfg.paths.userLibraryDir);
+        }
+        sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
+    } else if (path == "/api/library/save") {
+        std::string cat = getQueryParam(query, "category", "");
+        std::string id = getQueryParam(query, "id", "");
+        std::string errMsg;
+        bool saved = false;
+        {
+            std::lock_guard<std::mutex> lock(gStorageMutex);
+            saved = gitara::score::saveLibraryItem(cfg.paths.userLibraryDir, cat, id, reqBody, &errMsg);
+        }
+        if (saved) {
+            std::string okJson = "{\"ok\":true,\"category\":\"" + jsonEscape(cat) +
+                                 "\",\"id\":\"" + jsonEscape(gitara::score::sanitizeLibraryId(id)) + "\"}";
+            sendResponse("200 OK", "application/json; charset=utf-8", okJson.data(), okJson.size());
+        } else {
+            std::string errJson = "{\"ok\":false,\"error\":\"" + jsonEscape(errMsg) + "\"}";
+            sendResponse("400 Bad Request", "application/json; charset=utf-8", errJson.data(), errJson.size());
+        }
+    } else if (path == "/api/library/delete") {
+        std::string cat = getQueryParam(query, "category", "");
+        std::string id = getQueryParam(query, "id", "");
+        std::string errMsg;
+        bool deleted = false;
+        {
+            std::lock_guard<std::mutex> lock(gStorageMutex);
+            deleted = gitara::score::deleteLibraryItem(cfg.paths.userLibraryDir, cat, id, &errMsg);
+        }
+        if (deleted) {
+            const char* okJson = "{\"ok\":true}";
+            sendResponse("200 OK", "application/json; charset=utf-8", okJson, std::strlen(okJson));
+        } else {
+            const bool badInput = !gitara::score::isAllowedLibraryCategory(cat) ||
+                                  gitara::score::sanitizeLibraryId(id).empty();
+            std::string errJson = "{\"ok\":false,\"error\":\"" + jsonEscape(errMsg) + "\"}";
+            sendResponse(badInput ? "400 Bad Request" : "404 Not Found",
+                         "application/json; charset=utf-8", errJson.data(), errJson.size());
+        }
+    } else if (path == "/api/studio/export_gp5") {
+        Song studioSong{};
+        std::string parseErr;
+        if (!gitara::score::parseStudioSongJson(reqBody, studioSong, &parseErr)) {
+            sendResponse("400 Bad Request", "text/plain; charset=utf-8", parseErr.data(), parseErr.size());
+        } else {
+            auto bytes = exportToGp5Bytes(studioSong);
+            sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
+                         "Content-Disposition: attachment; filename=\"studio_tab.gp5\"\r\n");
+        }
+    } else if (path == "/api/studio/export_mid") {
+        Song studioSong{};
+        std::string parseErr;
+        if (!gitara::score::parseStudioSongJson(reqBody, studioSong, &parseErr)) {
+            sendResponse("400 Bad Request", "text/plain; charset=utf-8", parseErr.data(), parseErr.size());
+        } else {
+            auto bytes = exportToMidiBytes(studioSong);
+            sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
+                         "Content-Disposition: attachment; filename=\"studio_tab.mid\"\r\n");
+        }
+    } else {
+        const char* notFound = "{}";
+        sendResponse("404 Not Found", "application/json", notFound, 2);
+    }
+}
+
+int runHeadlessCheck(bool embeddedOnly) {
+#if defined(GITARA_EMBEDDED_ASSETS)
+    const bool useEmbeddedDirect = true;
+    (void)embeddedOnly;
+#else
+    const bool useEmbeddedDirect = embeddedOnly;
+#endif
+
+    const auto initJson = handleInitApi();
+    const auto fbJson = handleFretboardApi("rootPc=0&scaleId=major");
+
+    std::string htmlBody;
+    const bool htmlOk = useEmbeddedDirect
+        ? [&]() {
+              if (auto found = gitara::platform::globalEmbeddedAssets().find("/index.html")) {
+                  htmlBody.assign(found->body.data(), found->body.size());
+                  return !htmlBody.empty();
+              }
+              return false;
+          }()
+        : tryReadIndexHtml(true, htmlBody) && !htmlBody.empty();
+
+    auto verifyWebAsset = [&](std::string_view urlPath, std::string_view expectedMimeSubstr) -> bool {
+        std::string body;
+        std::string_view mime;
+        if (useEmbeddedDirect) {
+            if (auto found = gitara::platform::globalEmbeddedAssets().find(urlPath)) {
+                body.assign(found->body.data(), found->body.size());
+                mime = found->mime;
+            } else {
+                return false;
+            }
+        } else {
+            if (!tryReadWebAsset(urlPath, true, body, mime)) {
+                return false;
+            }
+        }
+        return !body.empty() && mime.find(expectedMimeSubstr) != std::string_view::npos;
+    };
+
+    const bool webDspOk = verifyWebAsset("/web/js/dsp/guitarDspEngine.js", "javascript");
+    const bool pitchPleaseOk =
+        verifyWebAsset("/web/vendor/pitchplease/pitchplease.js", "javascript") &&
+        verifyWebAsset("/web/vendor/pitchplease/engine/incport.wasm", "application/wasm") &&
+        verifyWebAsset("/web/vendor/pitchplease/models/piano.bin", "application/octet-stream") &&
+        verifyWebAsset("/web/js/dsp/pitchPleaseBridge.js", "javascript");
+    const bool studioAssetsOk =
+        verifyWebAsset("/web/css/studio.css", "css") &&
+        verifyWebAsset("/web/js/studio/studioModel.js", "javascript") &&
+        verifyWebAsset("/web/js/studio/studioPalette.js", "javascript") &&
+        verifyWebAsset("/web/js/studio/studioInputs.js", "javascript") &&
+        verifyWebAsset("/web/js/studio/studioSoundFont.js", "javascript") &&
+        verifyWebAsset("/web/js/studio/studioView.js", "javascript");
+
+    return (!initJson.empty() && !fbJson.empty() && htmlOk &&
+            webDspOk && pitchPleaseOk && studioAssetsOk) ? 0 : 1;
+}
+
+int appMain(int argc, char** argv) {
+    bool headlessCheck = false;
+    bool printVersion = false;
+    RuntimeConfig cfg{};
+#ifdef _WIN32
+    cfg.autoShutdown = true;
+#else
+    cfg.autoShutdown = false;
+#endif
+
+    std::vector<std::string> forwardArgs;
+    for (int i = 1; i < argc; ++i) {
+        const std::string_view arg(argv[i]);
+        forwardArgs.emplace_back(arg);
+        if (arg == "--headless-check") headlessCheck = true;
+        else if (arg == "--version") printVersion = true;
+        else if (arg == "--no-update") cfg.noUpdate = true;
+        else if (arg == "--skip-update-once") cfg.skipUpdateOnce = true;
+        else if (arg == "--force-update-check") cfg.forceUpdateCheck = true;
+        else if (arg == "--portable") cfg.portable = true;
+        else if (arg == "--no-browser") cfg.noBrowser = true;
+        else if (arg == "--auto-shutdown") cfg.autoShutdown = true;
+        else if (arg == "--no-auto-shutdown") cfg.autoShutdown = false;
+        else if (arg == "--embedded-only") cfg.embeddedOnly = true;
+    }
+
+    if (printVersion) {
+        gitara::platform::attachConsoleIfPresent();
+        std::cout << "Apka Gitarowa v" << GITARA_APP_VERSION
+                  << " (" << GITARA_BUILD_SHORT_COMMIT
+                  << ", built " << GITARA_BUILD_TIMESTAMP
+                  << ", repo " << GITARA_UPDATE_REPO << ")\n";
+        return 0;
+    }
+
+    if (headlessCheck) {
+        gitara::platform::attachConsoleIfPresent();
+        return runHeadlessCheck(cfg.embeddedOnly);
+    }
+
+    cfg.paths = gitara::platform::resolveAppPaths(cfg.portable);
+#if defined(GITARA_EMBEDDED_ASSETS)
+    cfg.allowDiskDevAssets = cfg.paths.isDevCheckout && !cfg.embeddedOnly;
+#else
+    cfg.allowDiskDevAssets = !cfg.embeddedOnly;
+#endif
+
+    gitara::platform::cleanupPreviousUpdateArtifacts();
+
+    gitara::platform::SocketInit socketInit;
+    if (!socketInit.ok()) {
+        std::cerr << "Blad inicjalizacji warstwy sieciowej.\n";
+        return 1;
+    }
+
+    gitara::platform::SingleInstanceLock singleInstance;
+#ifdef _WIN32
+    const int lockRetryMs = cfg.skipUpdateOnce ? 2500 : 0;
+    if (!singleInstance.acquire(lockRetryMs)) {
+        const int existingPort = readActivePortFile(cfg.paths.activePortFile);
+        if (existingPort > 0 && gitara::platform::probeLocalhostPing(existingPort, 500)) {
+            (void)gitara::platform::launchAppWindow(existingPort, cfg.paths);
+            return 0;
+        }
+        return 0;
+    }
+
+    const bool envNoUpdate = isEnvFlagSet("GITARA_NO_UPDATE");
+    if (!cfg.noUpdate && !cfg.skipUpdateOnce && !envNoUpdate) {
+        gitara::platform::AutoUpdateOptions updOpts{};
+        updOpts.currentCommit = GITARA_BUILD_COMMIT;
+        updOpts.repo = GITARA_UPDATE_REPO;
+        updOpts.tag = GITARA_UPDATE_TAG;
+        updOpts.forceCheck = cfg.forceUpdateCheck;
+        updOpts.forwardArgs = forwardArgs;
+
+        const auto outcome = gitara::platform::runPreLaunchAutoUpdate(updOpts);
+        if (outcome.result == gitara::platform::AutoUpdateResult::UpdatedAndRelaunchReady) {
+            singleInstance.release();
+            if (gitara::platform::spawnRelaunchedApp(outcome.relaunchExePath, forwardArgs)) {
+                return 0;
+            }
+            (void)singleInstance.acquire(0);
+        }
+    }
+#endif
+
+    gitara::platform::ensureAppDirectories(cfg.paths);
+    // Wstępna inicjalizacja statycznych słowników przed startem wątków HTTP
+    (void)handleInitApi();
+
+    gitara::platform::SocketHandle serverFd = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (serverFd == gitara::platform::kInvalidSocket) {
         std::cerr << "Blad utworzenia gniazda GUI.\n";
         return 1;
     }
 
-    int opt = 1;
-    ::setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    gitara::platform::setReuseAddr(serverFd);
 
     int port = 8765;
     sockaddr_in addr{};
@@ -1603,7 +2177,7 @@ int main(int argc, char** argv) {
     bool bound = false;
     for (int p = 8765; p < 8785; ++p) {
         addr.sin_port = htons(static_cast<std::uint16_t>(p));
-        if (::bind(serverFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
+        if (::bind(serverFd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) == 0) {
             port = p;
             bound = true;
             break;
@@ -1611,305 +2185,128 @@ int main(int argc, char** argv) {
     }
     if (!bound || ::listen(serverFd, 32) < 0) {
         std::cerr << "Nie udalo sie uruchomic lokalnego serwera GUI.\n";
-        ::close(serverFd);
+        gitara::platform::closeSocket(serverFd);
         return 1;
     }
 
+    writeActivePortFile(cfg.paths, port);
+
+    const auto dataDirU8 = cfg.paths.dataDir.u8string();
     std::cout << "====================================================================\n";
-    std::cout << " 🎸 Apka Gitarowa (GUI) uruchomiona!\n";
-    std::cout << " -> Okno graficzne otwiera sie automatycznie: http://127.0.0.1:" << port << "\n";
-    std::cout << " -> Nacisnij Ctrl+C, aby zamknac aplikacje.\n";
+    std::cout << " Apka Gitarowa (GUI) uruchomiona!\n";
+    std::cout << " -> Adres lokalny: http://127.0.0.1:" << port << "\n";
+    std::cout << " -> Katalog danych: "
+              << std::string_view(reinterpret_cast<const char*>(dataDirU8.data()), dataDirU8.size())
+              << "\n";
     std::cout << "====================================================================\n";
 
-    openDesktopAppWindow(port);
-
-    while (true) {
-        sockaddr_in clientAddr{};
-        socklen_t clientLen = sizeof(clientAddr);
-        int clientFd = ::accept(serverFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
-        if (clientFd < 0) continue;
-
-        timeval tv{};
-        tv.tv_sec = 2;
-        tv.tv_usec = 0;
-        ::setsockopt(clientFd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-
-        // Odczyt pełnego żądania HTTP (nagłówki + opcjonalne ciało POST) bez limitu 8 KB!
-        std::string reqStr;
-        reqStr.reserve(16384);
-        constexpr std::size_t kMaxReqBytes = 4 * 1024 * 1024;
-        std::size_t headerEnd = std::string::npos;
-        std::size_t contentLength = 0;
-        char chunk[8192];
-        while (reqStr.size() < kMaxReqBytes) {
-            ssize_t nRead = ::read(clientFd, chunk, sizeof(chunk));
-            if (nRead <= 0) break;
-            reqStr.append(chunk, static_cast<std::size_t>(nRead));
-            if (headerEnd == std::string::npos) {
-                headerEnd = reqStr.find("\r\n\r\n");
-                if (headerEnd != std::string::npos) {
-                    std::string lowerHdr;
-                    lowerHdr.reserve(headerEnd);
-                    for (std::size_t i = 0; i < headerEnd; ++i) {
-                        lowerHdr.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(reqStr[i]))));
-                    }
-                    std::size_t clPos = lowerHdr.find("content-length:");
-                    if (clPos != std::string::npos) {
-                        std::size_t valStart = clPos + 15;
-                        while (valStart < headerEnd && (reqStr[valStart] == ' ' || reqStr[valStart] == '\t')) ++valStart;
-                        contentLength = static_cast<std::size_t>(std::max<long long>(0, std::atoll(reqStr.c_str() + valStart)));
-                    }
-                }
-            }
-            if (headerEnd != std::string::npos) {
-                std::size_t bodyRead = reqStr.size() - (headerEnd + 4);
-                if (bodyRead >= contentLength) break;
-            }
-        }
-        if (reqStr.empty()) {
-            ::close(clientFd);
-            continue;
-        }
-
-        std::string_view req(reqStr);
-        std::string_view reqBody = (headerEnd != std::string::npos && reqStr.size() >= headerEnd + 4)
-            ? std::string_view(reqStr.data() + headerEnd + 4,
-                               std::min(contentLength, reqStr.size() - (headerEnd + 4)))
-            : std::string_view{};
-
-        std::size_t firstSpace = req.find(' ');
-        std::size_t secondSpace = (firstSpace != std::string_view::npos)
-            ? req.find(' ', firstSpace + 1)
-            : std::string_view::npos;
-
-        std::string_view fullTarget = (firstSpace != std::string_view::npos && secondSpace != std::string_view::npos)
-            ? req.substr(firstSpace + 1, secondSpace - firstSpace - 1)
-            : "/";
-
-        std::size_t qPos = fullTarget.find('?');
-        std::string_view path = (qPos == std::string_view::npos) ? fullTarget : fullTarget.substr(0, qPos);
-        std::string_view query = (qPos == std::string_view::npos) ? "" : fullTarget.substr(qPos + 1);
-
-        auto writeAll = [&](const char* ptr, std::size_t len) {
-            std::size_t sent = 0;
-            while (sent < len) {
-                ssize_t w = ::write(clientFd, ptr + sent, len - sent);
-                if (w <= 0) break;
-                sent += static_cast<std::size_t>(w);
-            }
-        };
-
-        auto sendResponse = [&](std::string_view status,
-                                std::string_view contentType,
-                                const void* data,
-                                std::size_t size,
-                                std::string_view extraHeaders = "") {
-            std::ostringstream hdr;
-            hdr << "HTTP/1.1 " << status << "\r\n"
-                << "Content-Type: " << contentType << "\r\n"
-                << "Content-Length: " << size << "\r\n";
-            if (extraHeaders.find("Cache-Control:") == std::string_view::npos) {
-                hdr << "Cache-Control: no-store\r\n";
-            }
-            hdr << extraHeaders
-                << "Connection: close\r\n\r\n";
-            std::string hStr = hdr.str();
-            writeAll(hStr.data(), hStr.size());
-            if (size > 0 && data != nullptr) {
-                writeAll(static_cast<const char*>(data), size);
-            }
-        };
-
-        if (path == "/" || path == "/index.html") {
-            static std::string cachedLiveHtml;
-            static time_t cachedHtmlMtime = 0;
-            struct stat htmlSt{};
-            if (::stat("app/ui/DesktopGuiHtml.h", &htmlSt) == 0 &&
-                (cachedLiveHtml.empty() || htmlSt.st_mtime != cachedHtmlMtime)) {
-                std::ifstream ifs("app/ui/DesktopGuiHtml.h", std::ios::binary);
-                if (ifs) {
-                    std::string fileContent((std::istreambuf_iterator<char>(ifs)),
-                                            std::istreambuf_iterator<char>());
-                    const std::string startTag = "R\"HTML(";
-                    const std::string endTag = ")HTML\"";
-                    auto p1 = fileContent.find(startTag);
-                    auto p2 = fileContent.rfind(endTag);
-                    if (p1 != std::string::npos && p2 != std::string::npos && p2 > p1 + startTag.size()) {
-                        cachedLiveHtml = fileContent.substr(p1 + startTag.size(), p2 - (p1 + startTag.size()));
-                        cachedHtmlMtime = htmlSt.st_mtime;
-                    }
-                }
-            }
-            if (!cachedLiveHtml.empty()) {
-                sendResponse("200 OK", "text/html; charset=utf-8", cachedLiveHtml.data(), cachedLiveHtml.size());
-            } else {
-                const char* html = gitara::app::ui::kDesktopGuiHtml;
-                sendResponse("200 OK", "text/html; charset=utf-8", html, std::strlen(html));
-            }
-        } else if (path.size() > 5 && path.substr(0, 5) == "/web/") {
-            std::string assetBody;
-            std::string_view assetMime;
-            if (tryReadWebAsset(path, assetBody, assetMime)) {
-                const bool isHeavyModelOrWasm =
-                    (path.size() >= 4 && path.substr(path.size() - 4) == ".bin") ||
-                    (path.size() >= 5 && path.substr(path.size() - 5) == ".wasm");
-                sendResponse("200 OK", assetMime, assetBody.data(), assetBody.size(),
-                             isHeavyModelOrWasm ? "Cache-Control: public, max-age=3600\r\n" : "");
-            } else {
-                const char* notFound = "Not Found";
-                sendResponse("404 Not Found", "text/plain; charset=utf-8", notFound, std::strlen(notFound));
-            }
-        } else if (path == "/api/init") {
-            std::string body = handleInitApi();
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/settings") {
-            std::ifstream sfs(".apka_gitara_settings.json", std::ios::binary);
-            std::string body = "{}";
-            if (sfs) {
-                body.assign((std::istreambuf_iterator<char>(sfs)),
-                            std::istreambuf_iterator<char>());
-                if (body.empty()) body = "{}";
-            }
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/save_settings") {
-            std::string jsonPayload = (!reqBody.empty() && reqBody.front() == '{')
-                ? std::string(reqBody)
-                : getQueryParam(query, "data", "{}");
-            if (!jsonPayload.empty() && jsonPayload.front() == '{') {
-                std::ofstream ofs(".apka_gitara_settings.json", std::ios::binary | std::ios::trunc);
-                if (ofs) ofs.write(jsonPayload.data(), static_cast<std::streamsize>(jsonPayload.size()));
-            }
-            const char* ok = "{\"ok\":true}";
-            sendResponse("200 OK", "application/json; charset=utf-8", ok, std::strlen(ok));
-        } else if (path == "/api/fretboard") {
-            std::string body = handleFretboardApi(query);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/voicings") {
-            std::string body = handleVoicingsApi(query);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/harmonics") {
-            std::string body = handleHarmonicsApi(query);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/search") {
-            std::string body = handleSearchApi(query);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/detect-scale") {
-            std::string body = handleDetectScaleApi(query);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/diatonic") {
-            std::string body = handleDiatonicApi(query);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/arpeggio") {
-            std::string body = handleArpeggioApi(query);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/tab_preview") {
-            std::string body = handleTabPreviewApi(query, reqBody);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/workshop_events") {
-            std::string body = handleWorkshopEventsApi(query);
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/export/gp5") {
-            std::string evs = (!reqBody.empty() && reqBody.front() == '[')
-                ? std::string(reqBody)
-                : getQueryParam(query, "events", "[]");
-            Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120), resolveRequestedTuning(query));
-            auto bytes = exportToGp5Bytes(song);
-            sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
-                         "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.gp5\"\r\n");
-        } else if (path == "/api/export/mid") {
-            std::string evs = (!reqBody.empty() && reqBody.front() == '[')
-                ? std::string(reqBody)
-                : getQueryParam(query, "events", "[]");
-            Song song = buildSongFromJsonEvents(evs, getQueryInt(query, "bpm", 120), resolveRequestedTuning(query));
-            auto bytes = exportToMidiBytes(song);
-            sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
-                         "Content-Disposition: attachment; filename=\"cwiczenie_tuxguitar.mid\"\r\n");
-        } else if (path == "/api/export/progression_gp5") {
-            ChordProgression prog{};
-            bool hasBodyJson = false;
-            for (char c : reqBody) {
-                if (c == ' ' || c == '\t' || c == '\r' || c == '\n') continue;
-                hasBodyJson = (c == '{');
-                break;
-            }
-            if (hasBodyJson) {
-                prog = buildCustomProgressionFromJson(reqBody);
-            } else {
-                auto progOpt = findBuiltinProgression(getQueryParam(query, "id", "blues_12"));
-                prog = progOpt.value_or(builtinProgressions().front());
-                int reqKey = getQueryInt(query, "keyRootPc", -1);
-                int reqBpm = getQueryInt(query, "bpm", 0);
-                if (reqKey >= 0 && reqKey < 12) {
-                    prog = transposeProgression(prog, Note::fromPitchClass(reqKey));
-                }
-                if (reqBpm >= 40 && reqBpm <= 240) {
-                    prog.tempoBpm = reqBpm;
-                }
-            }
-            Song song = generateBackingTrackSong(prog);
-            auto bytes = exportToGp5Bytes(song);
-            std::string fname = sanitizeAsciiFilenameSlug(hasBodyJson ? prog.title : prog.id, "progresja") + "_tuxguitar.gp5";
-            std::string disp = "Content-Disposition: attachment; filename=\"" + fname + "\"\r\n";
-            sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(), disp);
-        } else if (path == "/api/library") {
-            std::string body = gitara::score::listAllLibraryItemsJson("user_library");
-            sendResponse("200 OK", "application/json; charset=utf-8", body.data(), body.size());
-        } else if (path == "/api/library/save") {
-            std::string cat = getQueryParam(query, "category", "");
-            std::string id = getQueryParam(query, "id", "");
-            std::string errMsg;
-            if (gitara::score::saveLibraryItem("user_library", cat, id, reqBody, &errMsg)) {
-                std::string okJson = "{\"ok\":true,\"category\":\"" + jsonEscape(cat) +
-                                     "\",\"id\":\"" + jsonEscape(gitara::score::sanitizeLibraryId(id)) + "\"}";
-                sendResponse("200 OK", "application/json; charset=utf-8", okJson.data(), okJson.size());
-            } else {
-                std::string errJson = "{\"ok\":false,\"error\":\"" + jsonEscape(errMsg) + "\"}";
-                sendResponse("400 Bad Request", "application/json; charset=utf-8", errJson.data(), errJson.size());
-            }
-        } else if (path == "/api/library/delete") {
-            std::string cat = getQueryParam(query, "category", "");
-            std::string id = getQueryParam(query, "id", "");
-            std::string errMsg;
-            if (gitara::score::deleteLibraryItem("user_library", cat, id, &errMsg)) {
-                const char* okJson = "{\"ok\":true}";
-                sendResponse("200 OK", "application/json; charset=utf-8", okJson, std::strlen(okJson));
-            } else {
-                const bool badInput = !gitara::score::isAllowedLibraryCategory(cat) ||
-                                      gitara::score::sanitizeLibraryId(id).empty();
-                std::string errJson = "{\"ok\":false,\"error\":\"" + jsonEscape(errMsg) + "\"}";
-                sendResponse(badInput ? "400 Bad Request" : "404 Not Found",
-                             "application/json; charset=utf-8", errJson.data(), errJson.size());
-            }
-        } else if (path == "/api/studio/export_gp5") {
-            Song studioSong{};
-            std::string parseErr;
-            if (!gitara::score::parseStudioSongJson(reqBody, studioSong, &parseErr)) {
-                sendResponse("400 Bad Request", "text/plain; charset=utf-8", parseErr.data(), parseErr.size());
-            } else {
-                auto bytes = exportToGp5Bytes(studioSong);
-                sendResponse("200 OK", "application/octet-stream", bytes.data(), bytes.size(),
-                             "Content-Disposition: attachment; filename=\"studio_tab.gp5\"\r\n");
-            }
-        } else if (path == "/api/studio/export_mid") {
-            Song studioSong{};
-            std::string parseErr;
-            if (!gitara::score::parseStudioSongJson(reqBody, studioSong, &parseErr)) {
-                sendResponse("400 Bad Request", "text/plain; charset=utf-8", parseErr.data(), parseErr.size());
-            } else {
-                auto bytes = exportToMidiBytes(studioSong);
-                sendResponse("200 OK", "audio/midi", bytes.data(), bytes.size(),
-                             "Content-Disposition: attachment; filename=\"studio_tab.mid\"\r\n");
-            }
-        } else {
-            const char* notFound = "{}";
-            sendResponse("404 Not Found", "application/json", notFound, 2);
-        }
-
-        ::close(clientFd);
+    gitara::platform::BrowserLaunchResult browserLaunch{};
+    if (!cfg.noBrowser) {
+        browserLaunch = gitara::platform::launchAppWindow(port, cfg.paths);
     }
 
-    ::close(serverFd);
+    const long long startTimeMs = nowSteadyMs();
+    gLastClientActivityMs.store(startTimeMs);
+    long long browserExitedAtMs = 0;
+
+    while (!gStopRequested.load()) {
+        const int ready = gitara::platform::waitReadableMs(serverFd, 200);
+        if (ready > 0) {
+            sockaddr_in clientAddr{};
+#ifdef _WIN32
+            int clientLen = sizeof(clientAddr);
+#else
+            socklen_t clientLen = sizeof(clientAddr);
+#endif
+            const gitara::platform::SocketHandle clientFd =
+                ::accept(serverFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
+            if (clientFd != gitara::platform::kInvalidSocket) {
+                gActiveClientThreads.fetch_add(1);
+                std::thread([clientFd, &cfg]() {
+                    handleClientConnection(clientFd, cfg);
+                }).detach();
+            }
+        }
+
+        if (cfg.autoShutdown) {
+            const long long nowMs = nowSteadyMs();
+            const bool connected = gHasClientConnected.load();
+            const long long lastAct = gLastClientActivityMs.load();
+            const long long closingAt = gClosingSinceMs.load();
+
+            if (browserLaunch.dedicatedProcess && gitara::platform::isBrowserProcessExited(browserLaunch)) {
+                if (browserExitedAtMs == 0) {
+                    browserExitedAtMs = nowMs;
+                } else if (nowMs - browserExitedAtMs >= 1500) {
+                    // Jeśli aplikacja przekazała okno do istniejącego procesu Edge i nadal wysyła heartbeat,
+                    // nie zamykamy serwera — przechodzimy na kontrolę przez /api/closing i heartbeat.
+                    if (connected && (nowMs - lastAct) < 2500) {
+                        gitara::platform::closeBrowserHandle(browserLaunch);
+                        browserExitedAtMs = 0;
+                    } else if (connected || (nowMs - startTimeMs) >= 5000) {
+                        gStopRequested.store(true);
+                    }
+                }
+            }
+
+            if (closingAt > 0 && (nowMs - closingAt) >= 4000) {
+                gStopRequested.store(true);
+            } else if (connected && (nowMs - lastAct) >= 15000) {
+                gStopRequested.store(true);
+            } else if (!connected && (nowMs - startTimeMs) >= 60000) {
+                gStopRequested.store(true);
+            }
+        }
+    }
+
+    gitara::platform::closeSocket(serverFd);
+    for (int waitIter = 0; waitIter < 100 && gActiveClientThreads.load() > 0; ++waitIter) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+
+    std::error_code rmEc;
+    std::filesystem::remove(cfg.paths.activePortFile, rmEc);
+    gitara::platform::closeBrowserHandle(browserLaunch);
+    singleInstance.release();
     return 0;
 }
+
+} // namespace
+
+#ifdef _WIN32
+int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
+    int wargc = 0;
+    LPWSTR* wargv = ::CommandLineToArgvW(::GetCommandLineW(), &wargc);
+    std::vector<std::string> storage;
+    std::vector<char*> argvPtrs;
+    if (wargv != nullptr && wargc > 0) {
+        storage.reserve(static_cast<std::size_t>(wargc));
+        argvPtrs.reserve(static_cast<std::size_t>(wargc) + 1);
+        for (int i = 0; i < wargc; ++i) {
+            const int len = ::WideCharToMultiByte(
+                CP_UTF8, 0, wargv[i], -1, nullptr, 0, nullptr, nullptr);
+            std::string s(len > 0 ? static_cast<std::size_t>(len - 1) : 0u, '\0');
+            if (len > 1) {
+                ::WideCharToMultiByte(
+                    CP_UTF8, 0, wargv[i], -1, s.data(), len, nullptr, nullptr);
+            }
+            storage.push_back(std::move(s));
+        }
+        ::LocalFree(wargv);
+        for (auto& s : storage) {
+            argvPtrs.push_back(s.data());
+        }
+    } else {
+        storage.emplace_back("ApkaGitarowa.exe");
+        argvPtrs.push_back(storage.back().data());
+    }
+    argvPtrs.push_back(nullptr);
+    return appMain(static_cast<int>(storage.size()), argvPtrs.data());
+}
+#else
+int main(int argc, char** argv) {
+    return appMain(argc, argv);
+}
+#endif
 
 #endif
